@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
+	"github.com/fluffle/goirc/client"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -17,13 +20,36 @@ func main() {
 	)
 	nickListBoxModel := &listboxModel{}
 
-	go func() {
-		for i := 0; i < 100; i++ {
-			nickListBoxModel.Items = append(nickListBoxModel.Items, fmt.Sprintf("shazbot%03d", i))
-			nickListBoxModel.PublishItemChanged(i)
-			<-time.After(time.Second)
+	printMessage := func(nick, msg string) {
+		str := fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), nick, msg)
+		log.Println(str)
+		textBuffer.AppendText(str + "\r\n")
+	}
+
+	host := "irc.lainchan.org"
+	port := 6697
+	ssl := true
+	nick := "tso|testing"
+	join := "#bots"
+
+	irc := newConn(host, port, ssl, nick, join)
+	irc.HandleFunc(client.PRIVMSG, func(c *client.Conn, l *client.Line) {
+		printMessage(l.Nick, l.Args[1])
+	})
+	sendMessage := func(msg string) {
+		irc.Privmsg(join, msg)
+		printMessage(nick, msg)
+	}
+
+	// NAMES
+	irc.HandleFunc("353", func(c *client.Conn, l *client.Line) {
+		for _, nick := range strings.Split(l.Args[3], " ") {
+			if nick != "" {
+				nickListBoxModel.Items = append(nickListBoxModel.Items, nick)
+				nickListBoxModel.PublishItemChanged(len(nickListBoxModel.Items) - 1)
+			}
 		}
-	}()
+	})
 
 	MainWindow{
 		AssignTo: &mw,
@@ -52,7 +78,7 @@ func main() {
 				AssignTo: &textInput,
 				OnKeyDown: func(key walk.Key) {
 					if key == walk.KeyReturn {
-						textBuffer.AppendText("<nobody> " + textInput.Text() + "\r\n")
+						sendMessage(textInput.Text())
 						textInput.SetText("")
 					}
 				},
@@ -60,12 +86,8 @@ func main() {
 		},
 	}.Create()
 
-	go func() {
-		for {
-			textBuffer.AppendText("<nobody> lel\r\n")
-			<-time.After(time.Second * 2)
-		}
-	}()
+	log.Println(irc.ConnectTo(host))
+	irc.Raw("NAMES " + join)
 
 	mw.Run()
 }
