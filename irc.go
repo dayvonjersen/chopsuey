@@ -7,7 +7,19 @@ import (
 	"github.com/fluffle/goirc/client"
 )
 
+type tsoLogger struct {
+	LogFn func(string)
+}
+
+func (l *tsoLogger) Debug(f string, a ...interface{}) {
+	l.LogFn(fmt.Sprintf(f, a...))
+}
+func (l *tsoLogger) Info(f string, a ...interface{})  {}
+func (l *tsoLogger) Warn(f string, a ...interface{})  {}
+func (l *tsoLogger) Error(f string, a ...interface{}) {}
+
 func newConn(host string, port int, ssl bool, nick string, join string) *client.Conn {
+
 	cfg := client.NewConfig(nick)
 	if ssl {
 		cfg.SSL = true
