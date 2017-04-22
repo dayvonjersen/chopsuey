@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	goirc "github.com/fluffle/goirc/client"
 )
@@ -21,9 +22,10 @@ func (servConn *serverConnection) connect() {
 }
 
 type chatBox struct {
-	printMessage func(nick, msg string)
+	printMessage func(msg string)
 	sendMessage  func(msg string)
 	setNickList  func(nicks []string)
+	messages     chan string
 }
 
 func newServerConnection(cfg *clientConfig) *serverConnection {
@@ -49,24 +51,23 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		for _, channel := range cfg.Autojoin {
 			conn.Join(channel)
-			servConn.chatBoxes[channel] = &chatBox{}
+			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string)}
 			servConn.newChats <- channel
 		}
 	})
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
-		chat, ok := servConn.chatBoxes[l.Args[0]]
+		channel := l.Args[0]
+		if channel == servConn.cfg.Nick {
+			channel = l.Nick
+		}
+		chat, ok := servConn.chatBoxes[channel]
 		if !ok {
-			log.Printf("%#v", l)
-			channel := l.Args[0]
-			if channel == servConn.cfg.Nick {
-				channel = l.Nick
-			}
-			servConn.chatBoxes[channel] = &chatBox{}
+			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string)}
 			servConn.newChats <- channel
 			chat = servConn.chatBoxes[channel]
 		}
-		chat.printMessage(l.Nick, l.Args[1])
+		chat.messages <- fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), l.Nick, l.Args[1])
 	})
 
 	// NAMES

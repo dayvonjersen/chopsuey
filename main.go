@@ -11,10 +11,9 @@ import (
 )
 
 var tabWidget *walk.TabWidget
+var mw *walk.MainWindow
 
 func main() {
-	var mw *walk.MainWindow
-
 	MainWindow{
 		AssignTo: &mw,
 		Title:    "IRC",
@@ -84,14 +83,13 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 		return
 	}
 
-	chat.printMessage = func(nick, msg string) {
-		str := fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), nick, msg)
-		textBuffer.AppendText(str + "\r\n")
+	chat.printMessage = func(msg string) {
+		textBuffer.AppendText(msg + "\r\n")
 	}
 
 	chat.sendMessage = func(msg string) {
 		servConn.conn.Privmsg(join, msg)
-		chat.printMessage(servConn.cfg.Nick, msg)
+		chat.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), servConn.cfg.Nick, msg))
 	}
 
 	chat.setNickList = func(nicks []string) {
@@ -100,6 +98,18 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 			nickListBoxModel.PublishItemChanged(len(nickListBoxModel.Items) - 1)
 		}
 	}
+
+	go func() {
+		for {
+			msg, ok := <-chat.messages
+			if !ok {
+				return
+			}
+			mw.WindowBase.Synchronize(func() {
+				chat.printMessage(msg)
+			})
+		}
+	}()
 	servConn.chatBoxes[join] = chat
 
 	page, err := walk.NewTabPage()
