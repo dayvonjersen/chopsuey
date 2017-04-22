@@ -3,29 +3,17 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
-	"github.com/fluffle/goirc/client"
 	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
 
+var tabWidget *walk.TabWidget
+
 func main() {
-	host := "chopstick"
-	port := 6667
-	ssl := false
-	nick := "tso|testing"
-	join := "#test"
-	var (
-		mw          *walk.MainWindow
-		tabWidget   *walk.TabWidget
-		nickListBox *walk.ListBox
-		textBuffer  *walk.TextEdit
-		textInput   *walk.LineEdit
-	)
-	nickListBoxModel := &listboxModel{}
+	var mw *walk.MainWindow
 
 	MainWindow{
 		AssignTo: &mw,
@@ -39,6 +27,10 @@ func main() {
 		},
 	}.Create()
 
+	tabWidget.SetPersistent(true)
+
+	cfg := getClientConfig()
+
 	var tb *walk.TextEdit
 
 	l := &tsoLogger{}
@@ -48,40 +40,75 @@ func main() {
 
 	logging.SetLogger(l)
 
-	var p *walk.TabPage
-	p, _ = walk.NewTabPage()
-	p.SetTitle(host)
+	p, err := walk.NewTabPage()
+	checkErr(err)
+	p.SetTitle(cfg.Host)
 	v := walk.NewVBoxLayout()
 	p.SetLayout(v)
 	b := NewBuilder(p)
 	TextEdit{
-		MinSize:    Size{480, 640},
+		MinSize:    Size{480, 600},
 		AssignTo:   &tb,
 		ReadOnly:   true,
 		Persistent: true,
 	}.Create(b)
 	tabWidget.Pages().Add(p)
+	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(p)))
+	tabWidget.SaveState()
 
-	printMessage := func(nick, msg string) {
+	servConn := newServerConnection(cfg)
+	go func() {
+		for {
+			join := <-servConn.newChats
+			mw.WindowBase.Synchronize(func() {
+				newChatBoxTab(servConn, join)
+			})
+		}
+	}()
+	servConn.connect()
+
+	mw.Run()
+}
+
+func newChatBoxTab(servConn *serverConnection, join string) {
+	var (
+		nickListBox *walk.ListBox
+		textBuffer  *walk.TextEdit
+		textInput   *walk.LineEdit
+	)
+	nickListBoxModel := &listboxModel{}
+
+	chat, ok := servConn.chatBoxes[join]
+	if !ok {
+		log.Println("newChatBoxTab() called but user not on channel:", join)
+		return
+	}
+
+	chat.printMessage = func(nick, msg string) {
 		str := fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), nick, msg)
 		textBuffer.AppendText(str + "\r\n")
 	}
 
-	irc := newConn(host, port, ssl, nick, join)
-	irc.HandleFunc(client.PRIVMSG, func(c *client.Conn, l *client.Line) {
-		printMessage(l.Nick, l.Args[1])
-	})
-	sendMessage := func(msg string) {
-		irc.Privmsg(join, msg)
-		printMessage(nick, msg)
+	chat.sendMessage = func(msg string) {
+		servConn.conn.Privmsg(join, msg)
+		chat.printMessage(servConn.cfg.Nick, msg)
 	}
 
-	var page *walk.TabPage
-	page, _ = walk.NewTabPage()
+	chat.setNickList = func(nicks []string) {
+		for _, nick := range nicks {
+			nickListBoxModel.Items = append(nickListBoxModel.Items, nick)
+			nickListBoxModel.PublishItemChanged(len(nickListBoxModel.Items) - 1)
+		}
+	}
+	servConn.chatBoxes[join] = chat
+
+	page, err := walk.NewTabPage()
+	checkErr(err)
 	page.SetTitle(join)
 	vbox := walk.NewVBoxLayout()
 	page.SetLayout(vbox)
 	builder := NewBuilder(page)
+
 	HSplitter{
 		AlwaysConsumeSpace: true,
 		Children: []Widget{
@@ -103,29 +130,15 @@ func main() {
 		AssignTo: &textInput,
 		OnKeyDown: func(key walk.Key) {
 			if key == walk.KeyReturn {
-				sendMessage(textInput.Text())
+				chat.sendMessage(textInput.Text())
 				textInput.SetText("")
 			}
 		},
 	}.Create(builder)
 
-	tabWidget.Pages().Add(page)
-
-	// NAMES
-	irc.HandleFunc("353", func(c *client.Conn, l *client.Line) {
-		for _, nick := range strings.Split(l.Args[3], " ") {
-			if nick != "" {
-				nickListBoxModel.Items = append(nickListBoxModel.Items, nick)
-				nickListBoxModel.PublishItemChanged(len(nickListBoxModel.Items) - 1)
-			}
-		}
-	})
-
-	checkErr(irc.ConnectTo(host))
-
-	irc.Raw("NAMES " + join)
-
-	mw.Run()
+	checkErr(tabWidget.Pages().Add(page))
+	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(page)))
+	tabWidget.SaveState()
 }
 
 type listboxModel struct {
