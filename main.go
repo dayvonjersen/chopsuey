@@ -27,6 +27,11 @@ func main() {
 		},
 	}.Create()
 
+	font, err := walk.NewFont("ProFontWindows", 9, 0)
+	checkErr(err)
+
+	mw.WindowBase.SetFont(font)
+
 	tabWidget.SetPersistent(true)
 
 	cfg := getClientConfig()
@@ -47,7 +52,7 @@ func main() {
 	p.SetLayout(v)
 	b := NewBuilder(p)
 	TextEdit{
-		MinSize:    Size{480, 600},
+		MinSize:    Size{480, 580},
 		AssignTo:   &tb,
 		ReadOnly:   true,
 		Persistent: true,
@@ -121,19 +126,17 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 	builder := NewBuilder(page)
 
 	HSplitter{
-		AlwaysConsumeSpace: true,
 		Children: []Widget{
 			TextEdit{
-				MinSize:    Size{380, 640},
-				AssignTo:   &textBuffer,
-				ReadOnly:   true,
-				Persistent: true,
+				MinSize:            Size{340, 560},
+				AssignTo:           &textBuffer,
+				ReadOnly:           true,
+				AlwaysConsumeSpace: true,
 			},
 			ListBox{
-				MinSize:    Size{100, 640},
-				AssignTo:   &nickListBox,
-				Model:      nickListBoxModel,
-				Persistent: true,
+				MinSize:  Size{100, 560},
+				AssignTo: &nickListBox,
+				Model:    nickListBoxModel,
 			},
 		},
 	}.Create(builder)
