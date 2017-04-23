@@ -98,22 +98,26 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 		chat.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), servConn.cfg.Nick, msg))
 	}
 
-	chat.setNickList = func(nicks []string) {
-		for _, nick := range nicks {
-			nickListBoxModel.Items = append(nickListBoxModel.Items, nick)
-			nickListBoxModel.PublishItemChanged(len(nickListBoxModel.Items) - 1)
-		}
+	chat.updateNickList = func() {
+		nickListBoxModel.Items = chat.nickList
+		nickListBoxModel.PublishItemsReset()
 	}
 
 	go func() {
 		for {
-			msg, ok := <-chat.messages
-			if !ok {
-				return
+			select {
+			case msg, ok := <-chat.messages:
+				if !ok {
+					return
+				}
+				mw.WindowBase.Synchronize(func() {
+					chat.printMessage(msg)
+				})
+			case <-chat.nickListUpdate:
+				mw.WindowBase.Synchronize(func() {
+					chat.updateNickList()
+				})
 			}
-			mw.WindowBase.Synchronize(func() {
-				chat.printMessage(msg)
-			})
 		}
 	}()
 	servConn.chatBoxes[join] = chat
@@ -192,4 +196,13 @@ func checkErr(err error) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func has(slice []string, value string) bool {
+	for _, s := range slice {
+		if s == value {
+			return true
+		}
+	}
+	return false
 }

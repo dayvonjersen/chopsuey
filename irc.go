@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,10 +23,12 @@ func (servConn *serverConnection) connect() {
 }
 
 type chatBox struct {
-	printMessage func(msg string)
-	sendMessage  func(msg string)
-	setNickList  func(nicks []string)
-	messages     chan string
+	printMessage   func(msg string)
+	sendMessage    func(msg string)
+	updateNickList func()
+	nickList       []string
+	nickListUpdate chan struct{}
+	messages       chan string
 }
 
 func newServerConnection(cfg *clientConfig) *serverConnection {
@@ -51,7 +54,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		for _, channel := range cfg.Autojoin {
 			conn.Join(channel)
-			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string)}
+			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string), nickList: []string{}, nickListUpdate: make(chan struct{})}
 			servConn.newChats <- channel
 		}
 	})
@@ -63,7 +66,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		chat, ok := servConn.chatBoxes[channel]
 		if !ok {
-			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string)}
+			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string), nickList: []string{}, nickListUpdate: make(chan struct{})}
 			servConn.newChats <- channel
 			chat = servConn.chatBoxes[channel]
 		}
@@ -79,11 +82,54 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		nicks := []string{}
 		for _, nick := range strings.Split(l.Args[3], " ") {
-			if nick != "" {
+			if nick != "" && !has(chat.nickList, nick) {
 				nicks = append(nicks, nick)
 			}
 		}
-		chat.setNickList(nicks)
+		chat.nickList = append(chat.nickList, nicks...)
+		sort.Strings(chat.nickList)
+		chat.nickListUpdate <- struct{}{}
+	})
+
+	conn.HandleFunc(goirc.JOIN, func(c *goirc.Conn, l *goirc.Line) {
+		chat, ok := servConn.chatBoxes[l.Args[0]]
+		if !ok {
+			log.Println("got JOIN but user not on channel:", l.Args[0])
+			return
+		}
+		if !has(chat.nickList, l.Nick) {
+			chat.nickList = append(chat.nickList, l.Nick)
+			sort.Strings(chat.nickList)
+			chat.nickListUpdate <- struct{}{}
+		}
+		chat.messages <- "* " + l.Nick + " has joined " + l.Args[0]
+	})
+
+	conn.HandleFunc(goirc.PART, func(c *goirc.Conn, l *goirc.Line) {
+		chat, ok := servConn.chatBoxes[l.Args[0]]
+		if !ok {
+			log.Println("got PART but user not on channel:", l.Args[0])
+			return
+		}
+		if has(chat.nickList, l.Nick) {
+			idx := sort.SearchStrings(chat.nickList, l.Nick)
+			chat.nickList = append(chat.nickList[0:idx], chat.nickList[idx+1:]...)
+			sort.Strings(chat.nickList)
+			chat.nickListUpdate <- struct{}{}
+			chat.messages <- "** " + l.Nick + " has left " + l.Args[0]
+		}
+	})
+
+	conn.HandleFunc(goirc.QUIT, func(c *goirc.Conn, l *goirc.Line) {
+		for _, chat := range servConn.chatBoxes {
+			if has(chat.nickList, l.Nick) {
+				idx := sort.SearchStrings(chat.nickList, l.Nick)
+				chat.nickList = append(chat.nickList[0:idx], chat.nickList[idx+1:]...)
+				sort.Strings(chat.nickList)
+				chat.nickListUpdate <- struct{}{}
+				chat.messages <- "** " + l.Nick + " has quit: " + l.Args[0]
+			}
+		}
 	})
 
 	return servConn
