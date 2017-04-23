@@ -67,7 +67,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			servConn.newChats <- channel
 			chat = servConn.chatBoxes[channel]
 		}
-		chat.messages <- fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), l.Nick, l.Args[1])
+		chat.messages <- fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
 	})
 
 	// NAMES

@@ -1,5 +1,5 @@
 {
-    "host": "chopstick",
+    "host": "192.168.1.5",
 	"port": 6667,
 	"ssl": false,
 	"nick": "tso|testing",

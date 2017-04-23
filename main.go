@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -89,7 +90,7 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 
 	chat.sendMessage = func(msg string) {
 		servConn.conn.Privmsg(join, msg)
-		chat.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("3:04"), servConn.cfg.Nick, msg))
+		chat.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), servConn.cfg.Nick, msg))
 	}
 
 	chat.setNickList = func(nicks []string) {
@@ -140,7 +141,27 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 		AssignTo: &textInput,
 		OnKeyDown: func(key walk.Key) {
 			if key == walk.KeyReturn {
-				chat.sendMessage(textInput.Text())
+				text := textInput.Text()
+				if len(text) < 1 {
+					return
+				}
+				if text[0] == '/' {
+					parts := strings.Split(text[1:], " ")
+					cmd := parts[0]
+					var args []string
+					if len(parts) > 1 {
+						args = parts[1:]
+					} else {
+						args = []string{}
+					}
+					if cmdFn, ok := clientCommands[cmd]; ok {
+						cmdFn(&clientContext{servConn, join}, args...)
+					} else {
+						log.Println("unrecognized command:", cmd)
+					}
+				} else {
+					chat.sendMessage(text)
+				}
 				textInput.SetText("")
 			}
 		},
