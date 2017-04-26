@@ -21,6 +21,12 @@ func (servConn *serverConnection) connect() {
 	checkErr(servConn.conn.ConnectTo(servConn.cfg.Host))
 }
 
+func (servConn *serverConnection) join(channel string) {
+	servConn.conn.Join(channel)
+	servConn.chatBoxes[channel] = newChatBox()
+	servConn.newChats <- channel
+}
+
 type chatBox struct {
 	printMessage   func(msg string)
 	sendMessage    func(msg string)
@@ -28,6 +34,10 @@ type chatBox struct {
 	nickList       *nickList
 	nickListUpdate chan struct{}
 	messages       chan string
+}
+
+func newChatBox() *chatBox {
+	return &chatBox{messages: make(chan string), nickList: &nickList{}, nickListUpdate: make(chan struct{})}
 }
 
 func newServerConnection(cfg *clientConfig) *serverConnection {
@@ -52,9 +62,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		for _, channel := range cfg.Autojoin {
-			conn.Join(channel)
-			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string), nickList: &nickList{}, nickListUpdate: make(chan struct{})}
-			servConn.newChats <- channel
+			servConn.join(channel)
 		}
 	})
 
@@ -65,7 +73,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		chat, ok := servConn.chatBoxes[channel]
 		if !ok {
-			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string), nickList: &nickList{}, nickListUpdate: make(chan struct{})}
+			servConn.chatBoxes[channel] = newChatBox()
 			servConn.newChats <- channel
 			chat = servConn.chatBoxes[channel]
 		}
@@ -79,7 +87,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		chat, ok := servConn.chatBoxes[channel]
 		if !ok {
-			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string), nickList: &nickList{}, nickListUpdate: make(chan struct{})}
+			servConn.chatBoxes[channel] = newChatBox()
 			servConn.newChats <- channel
 			chat = servConn.chatBoxes[channel]
 		}
