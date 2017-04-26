@@ -13,7 +13,7 @@ func (n *nick) String() string {
 	return n.prefix + n.name
 }
 
-var nickRegex = regexp.MustCompile("^([@+]*)(.+)$")
+var nickRegex = regexp.MustCompile("^([@%+]*)(.+)$")
 
 func splitNick(prefixed string) *nick {
 	m := nickRegex.FindAllStringSubmatch(prefixed, -1)
@@ -21,8 +21,29 @@ func splitNick(prefixed string) *nick {
 }
 
 type nickList []*nick
+type nickListByPrefix []*nick
 
-// sort.Interface
+func (nl nickListByPrefix) Len() int { return len(nl) }
+func (nl nickListByPrefix) Less(i, j int) bool {
+	a, b := nl[i].prefix, nl[j].prefix
+	if a == b {
+		return nl[i].name < nl[j].name
+	}
+	switch a {
+	case "@":
+		return true
+	case "%":
+		return b != "@"
+	case "+":
+		return b == ""
+	case "":
+		return false
+	}
+
+	panic("unhandled prefix: " + a)
+}
+func (nl nickListByPrefix) Swap(i, j int) { nl[i], nl[j] = nl[j], nl[i] }
+
 func (nl nickList) Len() int           { return len(nl) }
 func (nl nickList) Less(i, j int) bool { return nl[i].name < nl[j].name }
 func (nl nickList) Swap(i, j int)      { nl[i], nl[j] = nl[j], nl[i] }
@@ -52,6 +73,9 @@ func (nl *nickList) Add(prefixed string) {
 	} else {
 		(*nl) = append(*nl, n)
 	}
+	if !sort.IsSorted(*nl) {
+		sort.Sort(*nl)
+	}
 }
 
 func (nl *nickList) Remove(prefixed string) {
@@ -60,11 +84,16 @@ func (nl *nickList) Remove(prefixed string) {
 	if i < len(*nl) && (*nl)[i].name == n.name {
 		(*nl) = append((*nl)[0:i], (*nl)[i+1:]...)
 	}
+	if !sort.IsSorted(*nl) {
+		sort.Sort(*nl)
+	}
 }
 
-func (nl nickList) StringSlice() []string {
+func (nl *nickList) StringSlice() []string {
 	s := []string{}
-	for _, n := range nl {
+	byprefix := (*nickListByPrefix)(nl)
+	sort.Sort(byprefix)
+	for _, n := range *byprefix {
 		s = append(s, n.String())
 	}
 	return s

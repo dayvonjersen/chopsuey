@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestNickList(t *testing.T) {
 	nl := &nickList{}
@@ -19,16 +22,33 @@ func TestNickList(t *testing.T) {
 		t.Fatalf("%#v", nl)
 	}
 	if nl.Has("something") {
-		t.Fatal("nickList.Has is broken")
+		t.Fatalf("nickList.Has is broken")
 	}
 
 	nl.Add("someone")
 	nl.Add("@someone")
 	if nl.StringSlice()[0] != "@someone" {
-		t.Fatal("%#v", nl)
+		t.Fatalf("%#v", nl)
 	}
 	nl.Add("someone")
 	if nl.StringSlice()[0] != "someone" {
-		t.Fatal("%#v", nl)
+		t.Fatalf("%#v", nl)
+	}
+
+	nl = &nickList{}
+	nl.Add("zebra")
+	nl.Add("@yak")
+	nl.Add("+xenyx")
+	nl.Add("walrus")
+	nl.Add("%velociraptor")
+	expect := "&[%velociraptor walrus +xenyx @yak zebra]"
+	actual := fmt.Sprintf("%v", nl)
+	if expect != actual {
+		t.Fatal("expect:", expect, "actual:", actual)
+	}
+	expect = "[@yak %velociraptor +xenyx walrus zebra]"
+	actual = fmt.Sprintf("%v", nl.StringSlice())
+	if expect != actual {
+		t.Fatal("expect:", expect, "actual:", actual)
 	}
 }
