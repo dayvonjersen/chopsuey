@@ -161,16 +161,20 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 				if text[0] == '/' {
 					parts := strings.Split(text[1:], " ")
 					cmd := parts[0]
-					var args []string
-					if len(parts) > 1 {
-						args = parts[1:]
+					if cmd[0] == '/' {
+						chat.sendMessage(cmd)
 					} else {
-						args = []string{}
-					}
-					if cmdFn, ok := clientCommands[cmd]; ok {
-						cmdFn(&clientContext{servConn, join}, args...)
-					} else {
-						chat.printMessage("unrecognized command: " + cmd)
+						var args []string
+						if len(parts) > 1 {
+							args = parts[1:]
+						} else {
+							args = []string{}
+						}
+						if cmdFn, ok := clientCommands[cmd]; ok {
+							cmdFn(&clientContext{servConn, join}, args...)
+						} else {
+							chat.printMessage("unrecognized command: " + cmd)
+						}
 					}
 				} else {
 					chat.sendMessage(text)
