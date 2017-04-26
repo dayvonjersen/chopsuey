@@ -20,7 +20,6 @@ func splitNick(prefixed string) *nick {
 	return &nick{m[0][1], m[0][2]}
 }
 
-type nickList []*nick
 type nickListByPrefix []*nick
 
 func (nl nickListByPrefix) Len() int { return len(nl) }
@@ -44,14 +43,23 @@ func (nl nickListByPrefix) Less(i, j int) bool {
 }
 func (nl nickListByPrefix) Swap(i, j int) { nl[i], nl[j] = nl[j], nl[i] }
 
+type nickList []*nick
+
 func (nl nickList) Len() int           { return len(nl) }
 func (nl nickList) Less(i, j int) bool { return nl[i].name < nl[j].name }
 func (nl nickList) Swap(i, j int)      { nl[i], nl[j] = nl[j], nl[i] }
 
 func (nl *nickList) FindIndex(n *nick) int {
-	for i, o := range *nl {
-		if o.name == n.name {
-			return i
+	i, j := 0, len(*nl)-1
+	for i <= j {
+		k := (i + j) / 2
+		o := (*nl)[k].name
+		if o > n.name {
+			j = k - 1
+		} else if o < n.name {
+			i = k + 1
+		} else {
+			return k
 		}
 	}
 	return len(*nl)
