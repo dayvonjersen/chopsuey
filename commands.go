@@ -20,6 +20,7 @@ var clientCommands = map[string]clientCommand{
 	"part":   partCmd,
 	"notice": noticeCmd,
 	"msg":    privmsgCmd,
+	"nick":   nickCmd,
 }
 
 func testCmd(ctx *clientContext, args ...string) {
@@ -78,4 +79,13 @@ func privmsgCmd(ctx *clientContext, args ...string) {
 	go func() {
 		chat.messages <- fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), ctx.servConn.cfg.Nick, msg)
 	}()
+}
+
+func nickCmd(ctx *clientContext, args ...string) {
+	if len(args) != 1 {
+		chat := ctx.servConn.chatBoxes[ctx.channel]
+		chat.messages <- "usage: /nick [new nick]"
+		return
+	}
+	ctx.servConn.conn.Nick(args[0])
 }

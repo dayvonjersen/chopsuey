@@ -182,6 +182,20 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 	})
 
+	conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
+		if l.Nick == servConn.cfg.Nick {
+			servConn.cfg.Nick = l.Args[0]
+		}
+		for _, chat := range servConn.chatBoxes {
+			if chat.nickList.Has(l.Nick) {
+				chat.messages <- "** " + l.Nick + " is now known as " + l.Args[0]
+				chat.nickList.Remove(l.Nick)
+				chat.nickList.Add(l.Args[0])
+				chat.nickListUpdate <- struct{}{}
+			}
+		}
+	})
+
 	return servConn
 }
 
