@@ -15,10 +15,11 @@ type clientContext struct {
 type clientCommand func(ctx *clientContext, args ...string)
 
 var clientCommands = map[string]clientCommand{
-	"test": testCmd,
-	"me":   meCmd,
-	"join": joinCmd,
-	"part": partCmd,
+	"test":   testCmd,
+	"me":     meCmd,
+	"join":   joinCmd,
+	"part":   partCmd,
+	"notice": noticeCmd,
 }
 
 func testCmd(ctx *clientContext, args ...string) {
@@ -48,4 +49,15 @@ func joinCmd(ctx *clientContext, args ...string) {
 
 func partCmd(ctx *clientContext, args ...string) {
 	ctx.servConn.part(ctx.channel, strings.Join(args, " "))
+}
+
+func noticeCmd(ctx *clientContext, args ...string) {
+	chat := ctx.servConn.chatBoxes[ctx.channel]
+	if len(args) < 2 {
+		chat.messages <- "usage: /notice [#channel or nick] [message...]"
+		return
+	}
+	msg := strings.Join(args[1:], " ")
+	ctx.servConn.conn.Notice(args[0], msg)
+	chat.messages <- fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), ctx.servConn.cfg.Nick, msg)
 }

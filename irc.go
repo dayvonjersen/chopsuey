@@ -111,6 +111,29 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		chat.messages <- fmt.Sprintf("%s * %s %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
 	})
 
+	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
+		channel := l.Args[0]
+		if channel == servConn.cfg.Nick {
+			channel = l.Nick
+		}
+		if channel == "AUTH" && servConn.cfg.Nick != "AUTH" {
+			// servers commonly send these NOTICEs when connecting:
+			//
+			// :irc.example.org NOTICE AUTH :*** Looking up your hostname...
+			// :irc.example.org NOTICE AUTH :*** Found your hostname
+			//
+			// dropping these messages for now...
+			return
+		}
+		chat, ok := servConn.chatBoxes[channel]
+		if !ok {
+			servConn.chatBoxes[channel] = newChatBox()
+			servConn.newChats <- channel
+			chat = servConn.chatBoxes[channel]
+		}
+		chat.messages <- fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
+	})
+
 	// NAMES
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		chat, ok := servConn.chatBoxes[l.Args[2]]
