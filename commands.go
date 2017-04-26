@@ -21,6 +21,7 @@ var clientCommands = map[string]clientCommand{
 	"notice": noticeCmd,
 	"msg":    privmsgCmd,
 	"nick":   nickCmd,
+	"quit":   quitCmd,
 }
 
 func testCmd(ctx *clientContext, args ...string) {
@@ -88,4 +89,9 @@ func nickCmd(ctx *clientContext, args ...string) {
 		return
 	}
 	ctx.servConn.conn.Nick(args[0])
+}
+
+func quitCmd(ctx *clientContext, args ...string) {
+	ctx.servConn.conn.Quit(strings.Join(args, " "))
+	mw.Close()
 }
