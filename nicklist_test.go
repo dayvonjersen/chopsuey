@@ -37,10 +37,27 @@ func TestNickList(t *testing.T) {
 
 	nl = &nickList{}
 	nl.Add("zebra")
+	if !nl.Has("zebra") {
+		t.Fatalf("has is broken")
+	}
 	nl.Add("@yak")
+	if !nl.Has("@yak") {
+		n := splitNick("@yak")
+		fmt.Printf("%#v %#v %#v\n", nl, n, nl.FindIndex(n))
+		t.Fatalf("has is broken")
+	}
 	nl.Add("+xenyx")
+	if !nl.Has("+xenyx") {
+		t.Fatalf("has is broken")
+	}
 	nl.Add("walrus")
+	if !nl.Has("walrus") {
+		t.Fatalf("has is broken")
+	}
 	nl.Add("%velociraptor")
+	if !nl.Has("%velociraptor") {
+		t.Fatalf("has is broken")
+	}
 	expect := "&[%velociraptor walrus +xenyx @yak zebra]"
 	actual := fmt.Sprintf("%v", nl)
 	if expect != actual {

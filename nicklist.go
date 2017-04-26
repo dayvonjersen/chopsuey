@@ -49,9 +49,12 @@ func (nl nickList) Less(i, j int) bool { return nl[i].name < nl[j].name }
 func (nl nickList) Swap(i, j int)      { nl[i], nl[j] = nl[j], nl[i] }
 
 func (nl *nickList) FindIndex(n *nick) int {
-	return sort.Search(len(*nl), func(i int) bool {
-		return (*nl)[i].name == n.name
-	})
+	for i, o := range *nl {
+		if o.name == n.name {
+			return i
+		}
+	}
+	return len(*nl)
 }
 
 func (nl *nickList) Has(prefixed string) bool {
