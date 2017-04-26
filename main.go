@@ -99,7 +99,7 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 	}
 
 	chat.updateNickList = func() {
-		nickListBoxModel.Items = chat.nickList
+		nickListBoxModel.Items = chat.nickList.StringSlice()
 		nickListBoxModel.PublishItemsReset()
 	}
 
@@ -196,13 +196,4 @@ func checkErr(err error) {
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-func has(slice []string, value string) bool {
-	for _, s := range slice {
-		if s == value {
-			return true
-		}
-	}
-	return false
 }

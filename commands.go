@@ -20,7 +20,8 @@ var clientCommands = map[string]clientCommand{
 }
 
 func testCmd(ctx *clientContext, args ...string) {
-	log.Println("hello world")
+	log.Printf("%#v", ctx.servConn.chatBoxes[ctx.channel])
+	log.Printf("%#v", ctx.servConn.chatBoxes[ctx.channel].nickList.StringSlice())
 }
 
 func meCmd(ctx *clientContext, args ...string) {
