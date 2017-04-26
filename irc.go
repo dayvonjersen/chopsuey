@@ -73,6 +73,20 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		chat.messages <- fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
 	})
 
+	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
+		channel := l.Args[0]
+		if channel == servConn.cfg.Nick {
+			channel = l.Nick
+		}
+		chat, ok := servConn.chatBoxes[channel]
+		if !ok {
+			servConn.chatBoxes[channel] = &chatBox{messages: make(chan string), nickList: []string{}, nickListUpdate: make(chan struct{})}
+			servConn.newChats <- channel
+			chat = servConn.chatBoxes[channel]
+		}
+		chat.messages <- fmt.Sprintf("%s * %s %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
+	})
+
 	// NAMES
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		chat, ok := servConn.chatBoxes[l.Args[2]]
