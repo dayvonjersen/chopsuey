@@ -64,10 +64,17 @@ func main() {
 	servConn := newServerConnection(cfg)
 	go func() {
 		for {
-			join := <-servConn.newChats
-			mw.WindowBase.Synchronize(func() {
-				newChatBoxTab(servConn, join)
-			})
+			select {
+			case join := <-servConn.newChats:
+				mw.WindowBase.Synchronize(func() {
+					newChatBoxTab(servConn, join)
+				})
+			case chat := <-servConn.closeChats:
+				mw.WindowBase.Synchronize(func() {
+					checkErr(tabWidget.Pages().Remove(chat.tabPage))
+					tabWidget.SaveState()
+				})
+			}
 		}
 	}()
 	servConn.connect()
@@ -120,7 +127,6 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 			}
 		}
 	}()
-	servConn.chatBoxes[join] = chat
 
 	page, err := walk.NewTabPage()
 	checkErr(err)
@@ -164,7 +170,7 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 					if cmdFn, ok := clientCommands[cmd]; ok {
 						cmdFn(&clientContext{servConn, join}, args...)
 					} else {
-						log.Println("unrecognized command:", cmd)
+						chat.printMessage("unrecognized command: " + cmd)
 					}
 				} else {
 					chat.sendMessage(text)
@@ -177,6 +183,9 @@ func newChatBoxTab(servConn *serverConnection, join string) {
 	checkErr(tabWidget.Pages().Add(page))
 	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(page)))
 	tabWidget.SaveState()
+
+	chat.tabPage = page
+	servConn.chatBoxes[join] = chat
 }
 
 type listboxModel struct {

@@ -8,13 +8,15 @@ import (
 	"time"
 
 	goirc "github.com/fluffle/goirc/client"
+	"github.com/lxn/walk"
 )
 
 type serverConnection struct {
-	cfg       *clientConfig
-	conn      *goirc.Conn
-	chatBoxes map[string]*chatBox
-	newChats  chan string
+	cfg        *clientConfig
+	conn       *goirc.Conn
+	chatBoxes  map[string]*chatBox
+	newChats   chan string
+	closeChats chan *chatBox
 }
 
 func (servConn *serverConnection) connect() {
@@ -27,6 +29,19 @@ func (servConn *serverConnection) join(channel string) {
 	servConn.newChats <- channel
 }
 
+func (servConn *serverConnection) part(channel, reason string) {
+	if channel[0] == '#' {
+		servConn.conn.Part(channel, reason)
+	}
+	chat, ok := servConn.chatBoxes[channel]
+	if !ok {
+		log.Panicln("user not on channel:", channel)
+	}
+	close(chat.messages)
+	servConn.closeChats <- chat
+	delete(servConn.chatBoxes, channel)
+}
+
 type chatBox struct {
 	printMessage   func(msg string)
 	sendMessage    func(msg string)
@@ -34,6 +49,7 @@ type chatBox struct {
 	nickList       *nickList
 	nickListUpdate chan struct{}
 	messages       chan string
+	tabPage        *walk.TabPage
 }
 
 func newChatBox() *chatBox {
@@ -54,10 +70,11 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	conn := goirc.Client(goircCfg)
 
 	servConn := &serverConnection{
-		cfg:       cfg,
-		conn:      conn,
-		chatBoxes: map[string]*chatBox{},
-		newChats:  make(chan string),
+		cfg:        cfg,
+		conn:       conn,
+		chatBoxes:  map[string]*chatBox{},
+		newChats:   make(chan string),
+		closeChats: make(chan *chatBox),
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {

@@ -18,6 +18,7 @@ var clientCommands = map[string]clientCommand{
 	"test": testCmd,
 	"me":   meCmd,
 	"join": joinCmd,
+	"part": partCmd,
 }
 
 func testCmd(ctx *clientContext, args ...string) {
@@ -43,4 +44,8 @@ func joinCmd(ctx *clientContext, args ...string) {
 		return
 	}
 	ctx.servConn.join(args[0])
+}
+
+func partCmd(ctx *clientContext, args ...string) {
+	ctx.servConn.part(ctx.channel, strings.Join(args, " "))
 }
