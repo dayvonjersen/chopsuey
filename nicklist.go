@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"sort"
@@ -21,42 +22,7 @@ func splitNick(prefixed string) *nick {
 	return &nick{m[0][1], m[0][2]}
 }
 
-func sortPrefix(prefix string) string {
-	s := []byte(prefix)
-	sort.Slice(s, func(i, j int) bool {
-		a, b := s[i], s[j]
-		switch a {
-		case '~':
-			return true
-		case '&':
-			return b != '~'
-		case '@':
-			return b != '~' && b != '&'
-		case '%':
-			return b != '~' && b != '&' && b != '@'
-		case '+':
-			return false
-		}
-		panic("unhandled prefix: " + string(a))
-		return false
-	})
-	return string(s)
-}
-
-type nickListByPrefix []*nick
-
-func (nl nickListByPrefix) Len() int { return len(nl) }
-func (nl nickListByPrefix) Less(i, j int) bool {
-	if nl[i].prefix == nl[j].prefix {
-		return nl[i].name < nl[j].name
-	}
-	if len(nl[i].prefix) == 0 {
-		return false
-	}
-	if len(nl[j].prefix) == 0 {
-		return true
-	}
-	a, b := nl[i].prefix[0], nl[j].prefix[0]
+func cmpPrefix(a, b byte) bool {
 	switch a {
 	case '~':
 		return true
@@ -69,35 +35,78 @@ func (nl nickListByPrefix) Less(i, j int) bool {
 	case '+':
 		return false
 	}
-
 	panic("unhandled prefix: " + string(a))
+	return false
 }
-func (nl nickListByPrefix) Swap(i, j int) { nl[i], nl[j] = nl[j], nl[i] }
 
-type nickList []*nick
+func sortPrefix(prefix string) string {
+	s := []byte(prefix)
+	sort.Slice(s, func(i, j int) bool {
+		a, b := s[i], s[j]
+		return cmpPrefix(a, b)
+	})
+	return string(s)
+}
 
-func (nl nickList) Len() int           { return len(nl) }
-func (nl nickList) Less(i, j int) bool { return nl[i].name < nl[j].name }
-func (nl nickList) Swap(i, j int)      { nl[i], nl[j] = nl[j], nl[i] }
+type nickListByPrefix []*nick
+
+func (nl nickListByPrefix) Len() int {
+	return len(nl)
+}
+
+func (nl nickListByPrefix) Less(i, j int) bool {
+	a, b := nl[i].prefix, nl[j].prefix
+	if a == b {
+		return a < b
+	}
+	if len(a) == 0 {
+		return false
+	}
+	if len(b) == 0 {
+		return true
+	}
+
+	return cmpPrefix(a[0], b[0])
+}
+
+func (nl nickListByPrefix) Swap(i, j int) {
+	nl[i], nl[j] = nl[j], nl[i]
+}
+
+type nickList struct {
+	slice []*nick
+}
+
+func (nl *nickList) Len() int {
+	return len(nl.slice)
+}
+func (nl *nickList) Less(i, j int) bool {
+	return nl.slice[i].name < nl.slice[j].name
+}
+func (nl *nickList) Swap(i, j int) {
+	nl.slice[i], nl.slice[j] = nl.slice[j], nl.slice[i]
+}
 
 func (nl *nickList) FindIndex(n *nick) int {
 	return nl.FindIndexSelection(n)
+
+	// return sort.Search(nl.Len(), func(i int) bool { return nl.slice[i].name == n.name })
 }
 
 func (nl *nickList) FindIndexSelection(n *nick) int {
-	for i, o := range *nl {
+	for i, o := range nl.slice {
 		if o.name == n.name {
 			return i
 		}
 	}
-	return len(*nl)
+	return nl.Len()
 }
 
 func (nl *nickList) FindIndexBinary(n *nick) int {
-	i, j := 0, len(*nl)-1
+	i, j := 0, nl.Len()-1
 	for i <= j {
 		k := (i + j) / 2
-		o := (*nl)[k].name
+		o := nl.slice[k].name
 		if o > n.name {
 			j = k - 1
 		} else if o < n.name {
@@ -106,13 +115,13 @@ func (nl *nickList) FindIndexBinary(n *nick) int {
 			return k
 		}
 	}
-	return len(*nl)
+	return nl.Len()
 }
 
 func (nl *nickList) Has(prefixed string) bool {
 	n := splitNick(prefixed)
 	i := nl.FindIndex(n)
-	if i < len(*nl) && (*nl)[i].name == n.name {
+	if i < nl.Len() && nl.slice[i].name == n.name {
 		return true
 	}
 	return false
@@ -122,30 +131,33 @@ func (nl *nickList) Add(prefixed string) {
 	n := splitNick(prefixed)
 	i := nl.FindIndex(n)
 	n.prefix = sortPrefix(n.prefix)
-	if i < len(*nl) && (*nl)[i].name == n.name {
-		if (*nl)[i].prefix != n.prefix {
-			(*nl)[i].prefix = n.prefix
+	if i < nl.Len() && nl.slice[i].name == n.name {
+		if nl.slice[i].prefix != n.prefix {
+			nl.slice[i].prefix = n.prefix
 		}
+	} else if i < nl.Len() {
+		nl.slice = append(nl.slice[:i], append([]*nick{n}, nl.slice[i:]...)...)
 	} else {
-		(*nl) = append((*nl)[:i], append([]*nick{n}, (*nl)[i:]...)...)
+		nl.slice = append(nl.slice, n)
 	}
-	sort.Sort(*nl)
+	if !sort.IsSorted(nl) {
+		sort.Sort(nl)
+	}
 }
 
 func (nl *nickList) Remove(prefixed string) {
 	n := splitNick(prefixed)
 	i := nl.FindIndex(n)
-	if i < len(*nl) && (*nl)[i].name == n.name {
-		(*nl) = append((*nl)[0:i], (*nl)[i+1:]...)
+	if i < nl.Len() && nl.slice[i].name == n.name {
+		nl.slice = append(nl.slice[0:i], nl.slice[i+1:]...)
 	}
-	sort.Sort(*nl)
 }
 
 func (nl *nickList) Replace(old, new string) {
 	n := splitNick(old)
 	i := nl.FindIndex(n)
-	if i < len(*nl) && (*nl)[i].name == n.name {
-		a := (*nl)[i]
+	if i < nl.Len() && nl.slice[i].name == n.name {
+		a := nl.slice[i]
 		b := splitNick(new)
 		b.prefix = a.prefix
 		log.Println("old:", a, "new:", b)
@@ -157,8 +169,8 @@ func (nl *nickList) Replace(old, new string) {
 func (nl *nickList) GetPrefix(nick string) string {
 	n := splitNick(nick)
 	i := nl.FindIndex(n)
-	if i < len(*nl) && (*nl)[i].name == n.name {
-		return (*nl)[i].prefix
+	if i < nl.Len() && nl.slice[i].name == n.name {
+		return nl.slice[i].prefix
 	}
 	return ""
 }
@@ -166,17 +178,21 @@ func (nl *nickList) GetPrefix(nick string) string {
 func (nl *nickList) SetPrefix(nick, prefix string) {
 	n := splitNick(nick)
 	i := nl.FindIndex(n)
-	if i < len(*nl) && (*nl)[i].name == n.name {
-		(*nl)[i].prefix = sortPrefix(prefix)
+	if i < nl.Len() && nl.slice[i].name == n.name {
+		nl.slice[i].prefix = sortPrefix(prefix)
 	}
+}
+
+func (nl *nickList) String() string {
+	return fmt.Sprintf("%s", nl.slice)
 }
 
 func (nl *nickList) StringSlice() []string {
 	s := []string{}
-	byprefix := (*nickListByPrefix)(nl)
+	var byprefix nickListByPrefix = nl.slice[:]
 	sort.Sort(byprefix)
-	for _, n := range *byprefix {
-		s = append(s, n.String())
+	for _, n := range byprefix {
+		s = append(s, (*n).String())
 	}
 	return s
 }

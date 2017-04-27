@@ -9,28 +9,68 @@ import (
 	"testing"
 )
 
-func TestNickListAsync(t *testing.T) {
+func TestNickListSync(t *testing.T) {
 	f, err := os.Open("nicklist_test.data")
 	checkErr(err)
 	defer f.Close()
 
 	nl := &nickList{}
-	mu := &sync.Mutex{}
 	all := []string{}
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		nicks := strings.Split(scanner.Text(), " ")
 		all = append(all, nicks...)
+		for _, n := range nicks {
+			nl.Add(n)
+		}
+	}
+
+	for _, n := range all {
+		if !nl.Has(n) {
+			t.Fatal(n, "was not Added to nickList")
+		}
+		nl.Remove(n)
+		if nl.Has(n) {
+			t.Fatal(n, "was Added multiple times")
+		}
+	}
+}
+
+func TestNickListAsync(t *testing.T) {
+	f, err := os.Open("nicklist_test.data")
+	checkErr(err)
+	defer f.Close()
+
+	nl := &nickList{}
+	all := []string{}
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	mu := &sync.Mutex{}
+	done := make(chan struct{})
+	for scanner.Scan() {
+		nicks := strings.Split(scanner.Text(), " ")
+		all = append(all, nicks...)
 		go func() {
-			mu.Lock()
-			defer mu.Unlock()
 			for _, n := range nicks {
+				mu.Lock()
 				nl.Add(n)
+				done <- struct{}{}
+				mu.Unlock()
 			}
 		}()
 	}
 
+	i := 0
+	for {
+		<-done
+		i++
+		if i == len(all) {
+			close(done)
+			break
+		}
+	}
 	for _, n := range all {
 		if !nl.Has(n) {
 			t.Fatal(n, "was not Added to nickList")
@@ -95,7 +135,7 @@ func TestNickList(t *testing.T) {
 	if !nl.Has("%velociraptor") {
 		t.Fatalf("has is broken")
 	}
-	expect := "&[%velociraptor walrus +xenyx @yak zebra]"
+	expect := "[%velociraptor walrus +xenyx @yak zebra]"
 	actual := fmt.Sprintf("%v", nl)
 	if expect != actual {
 		t.Fatal("expect:", expect, "actual:", actual)
