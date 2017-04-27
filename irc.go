@@ -8,15 +8,15 @@ import (
 	"time"
 
 	goirc "github.com/fluffle/goirc/client"
-	"github.com/lxn/walk"
 )
 
 type serverConnection struct {
-	cfg        *clientConfig
-	conn       *goirc.Conn
-	chatBoxes  map[string]*chatBox
-	newChats   chan string
-	closeChats chan *chatBox
+	cfg          *clientConfig
+	conn         *goirc.Conn
+	chatBoxes    []*chatBox
+	newChats     chan string
+	newChatBoxes chan *chatBox
+	closeChats   chan *chatBox
 }
 
 func (servConn *serverConnection) connect() {
@@ -24,36 +24,44 @@ func (servConn *serverConnection) connect() {
 }
 
 func (servConn *serverConnection) join(channel string) {
+	servConn.createChatBox(channel, CHATBOX_CHANNEL)
 	servConn.conn.Join(channel)
-	servConn.chatBoxes[channel] = newChatBox()
-	servConn.newChats <- channel
 }
 
 func (servConn *serverConnection) part(channel, reason string) {
 	if channel[0] == '#' {
 		servConn.conn.Part(channel, reason)
 	}
-	chat, ok := servConn.chatBoxes[channel]
-	if !ok {
+	cb := servConn.getChatBox(channel)
+	if cb == nil {
 		log.Panicln("user not on channel:", channel)
 	}
-	close(chat.messages)
-	servConn.closeChats <- chat
-	delete(servConn.chatBoxes, channel)
+	servConn.deleteChatBox(channel)
 }
 
-type chatBox struct {
-	printMessage   func(msg string)
-	sendMessage    func(msg string)
-	updateNickList func()
-	nickList       *nickList
-	nickListUpdate chan struct{}
-	messages       chan string
-	tabPage        *walk.TabPage
+func (servConn *serverConnection) getChatBox(id string) *chatBox {
+	for _, cb := range servConn.chatBoxes {
+		if cb.id == id {
+			return cb
+		}
+	}
+	return nil
 }
 
-func newChatBox() *chatBox {
-	return &chatBox{messages: make(chan string), nickList: &nickList{}, nickListUpdate: make(chan struct{})}
+func (servConn *serverConnection) createChatBox(id string, boxType int) *chatBox {
+	cb := newChatBox(servConn, id, boxType)
+	servConn.chatBoxes = append(servConn.chatBoxes, cb)
+	return cb
+}
+
+func (servConn *serverConnection) deleteChatBox(id string) {
+	for i, cb := range servConn.chatBoxes {
+		if cb.id == id {
+			cb.close()
+			servConn.chatBoxes = append(servConn.chatBoxes[0:i], servConn.chatBoxes[i+1:]...)
+			return
+		}
+	}
 }
 
 func newServerConnection(cfg *clientConfig) *serverConnection {
@@ -70,11 +78,9 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	conn := goirc.Client(goircCfg)
 
 	servConn := &serverConnection{
-		cfg:        cfg,
-		conn:       conn,
-		chatBoxes:  map[string]*chatBox{},
-		newChats:   make(chan string),
-		closeChats: make(chan *chatBox),
+		cfg:       cfg,
+		conn:      conn,
+		chatBoxes: []*chatBox{},
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
@@ -85,36 +91,38 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
+		boxType := CHATBOX_CHANNEL
 		if channel == servConn.cfg.Nick {
 			channel = l.Nick
+			boxType = CHATBOX_PRIVMSG
 		}
-		chat, ok := servConn.chatBoxes[channel]
-		if !ok {
-			servConn.chatBoxes[channel] = newChatBox()
-			servConn.newChats <- channel
-			chat = servConn.chatBoxes[channel]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
+			cb = servConn.createChatBox(channel, boxType)
 		}
-		chat.messages <- fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
+		cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
+		boxType := CHATBOX_CHANNEL
 		if channel == servConn.cfg.Nick {
 			channel = l.Nick
+			boxType = CHATBOX_PRIVMSG
 		}
-		chat, ok := servConn.chatBoxes[channel]
-		if !ok {
-			servConn.chatBoxes[channel] = newChatBox()
-			servConn.newChats <- channel
-			chat = servConn.chatBoxes[channel]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
+			cb = servConn.createChatBox(channel, boxType)
 		}
-		chat.messages <- fmt.Sprintf("%s * %s %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
+		cb.printMessage(fmt.Sprintf("%s * %s %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
+		boxType := CHATBOX_CHANNEL
 		if channel == servConn.cfg.Nick {
 			channel = l.Nick
+			boxType = CHATBOX_PRIVMSG
 		}
 		if (channel == "AUTH" || channel == "*") && servConn.cfg.Nick != channel {
 			// servers commonly send these NOTICEs when connecting:
@@ -125,13 +133,11 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			// dropping these messages for now...
 			return
 		}
-		chat, ok := servConn.chatBoxes[channel]
-		if !ok {
-			servConn.chatBoxes[channel] = newChatBox()
-			servConn.newChats <- channel
-			chat = servConn.chatBoxes[channel]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
+			cb = servConn.createChatBox(channel, boxType)
 		}
-		chat.messages <- fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), l.Nick, l.Args[1])
+		cb.printMessage(fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
 	})
 
 	type nickUpdate struct {
@@ -152,14 +158,15 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			for _, add := range u.Add {
 				u.chat.nickList.Add(add)
 			}
-			u.chat.nickListUpdate <- struct{}{}
+			u.chat.updateNickList()
 		}
 	}()
 
 	// NAMES
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
-		chat, ok := servConn.chatBoxes[l.Args[2]]
-		if !ok {
+		channel := l.Args[2]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
 			log.Println("got 353 but user not on channel:", l.Args[2])
 			return
 		}
@@ -169,36 +176,38 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 				nicks = append(nicks[0:i], nicks[i+1:]...)
 			}
 		}
-		nickUpdateCh <- &nickUpdate{chat: chat, Add: nicks}
+		nickUpdateCh <- &nickUpdate{chat: cb, Add: nicks}
 	})
 
 	conn.HandleFunc(goirc.JOIN, func(c *goirc.Conn, l *goirc.Line) {
-		chat, ok := servConn.chatBoxes[l.Args[0]]
-		if !ok {
+		channel := l.Args[0]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
 			log.Println("got JOIN but user not on channel:", l.Args[0])
 			return
 		}
-		if !chat.nickList.Has(l.Nick) {
-			nickUpdateCh <- &nickUpdate{chat: chat, Add: []string{l.Nick}}
-			chat.messages <- "* " + l.Nick + " has joined " + l.Args[0]
+		if !cb.nickList.Has(l.Nick) {
+			nickUpdateCh <- &nickUpdate{chat: cb, Add: []string{l.Nick}}
+			cb.printMessage("* " + l.Nick + " has joined " + l.Args[0])
 		}
 	})
 
 	conn.HandleFunc(goirc.PART, func(c *goirc.Conn, l *goirc.Line) {
-		chat, ok := servConn.chatBoxes[l.Args[0]]
-		if !ok {
+		channel := l.Args[0]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
 			log.Println("got PART but user not on channel:", l.Args[0])
 			return
 		}
-		nickUpdateCh <- &nickUpdate{chat: chat, Remove: []string{l.Nick}}
-		chat.messages <- "** " + l.Nick + " has left " + l.Args[0]
+		nickUpdateCh <- &nickUpdate{chat: cb, Remove: []string{l.Nick}}
+		cb.printMessage("** " + l.Nick + " has left " + l.Args[0])
 	})
 
 	conn.HandleFunc(goirc.QUIT, func(c *goirc.Conn, l *goirc.Line) {
-		for _, chat := range servConn.chatBoxes {
-			if chat.nickList.Has(l.Nick) {
-				nickUpdateCh <- &nickUpdate{chat: chat, Remove: []string{l.Nick}}
-				chat.messages <- "** " + l.Nick + " has quit: " + l.Args[0]
+		for _, cb := range servConn.chatBoxes {
+			if cb.nickList.Has(l.Nick) {
+				cb.printMessage("** " + l.Nick + " has quit: " + l.Args[0])
+				nickUpdateCh <- &nickUpdate{chat: cb, Remove: []string{l.Nick}}
 			}
 		}
 	})
@@ -207,62 +216,62 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if l.Nick == servConn.cfg.Nick {
 			servConn.cfg.Nick = l.Args[0]
 		}
-		for _, chat := range servConn.chatBoxes {
-			if chat.nickList.Has(l.Nick) {
-				chat.messages <- "** " + l.Nick + " is now known as " + l.Args[0]
-				nickUpdateCh <- &nickUpdate{chat: chat, Replace: [][]string{[]string{l.Nick, l.Args[0]}}}
+		for _, cb := range servConn.chatBoxes {
+			if cb.nickList.Has(l.Nick) {
+				cb.printMessage("** " + l.Nick + " is now known as " + l.Args[0])
+				nickUpdateCh <- &nickUpdate{chat: cb, Replace: [][]string{[]string{l.Nick, l.Args[0]}}}
 			}
 		}
 	})
 
 	conn.HandleFunc(goirc.MODE, func(c *goirc.Conn, l *goirc.Line) {
-		log.Printf("%#v", l)
-		// if l.Args[0][0] == '#' {
 		op := l.Nick
-		// channel := l.Args[0]
+		channel := l.Args[0]
 		mode := l.Args[1]
 		nicks := l.Args[2:]
 
-		// chat, ok := servConn.chatBoxes[channel]
-		// if !ok {
-		// 	log.Println("got MODE but user not on channel:", channel)
-		// 	return
-		// }
-		for n, chat := range servConn.chatBoxes {
-			log.Printf("%v %v", n, chat)
-			chat.messages <- fmt.Sprintf("** %s sets mode %s %s", op, mode, fmt.Sprintf("%v", nicks[1:len(nicks)-1]))
+		log.Printf("op: %#v channel: %#v mode: %#v nicks: %#v", op, channel, mode, nicks)
+
+		if channel[0] == '#' {
+			cb := servConn.getChatBox(channel)
+			if cb == nil {
+				log.Println("got MODE but user not on channel:", channel)
+				return
+			}
+			if len(nicks) == 0 {
+				cb.printMessage(fmt.Sprintf("** %s sets mode %s %s", op, mode, channel))
+				return
+			}
+			var add bool
+			var idx int
+			for _, b := range mode {
+				switch b {
+				case '+':
+					add = true
+				case '-':
+					add = false
+				case 'v':
+					n := nicks[idx]
+					p := cb.nickList.GetPrefix(n)
+					if add {
+						p += "+"
+					} else {
+						p = strings.Replace(p, "+", "", -1)
+					}
+					cb.nickList.SetPrefix(n, p)
+					cb.updateNickList()
+					idx++
+				}
+			}
+			cb.printMessage(fmt.Sprintf("** %s sets mode %s %s", op, mode, nicks))
+		} else if op == "" {
+			nick := channel
+			for _, cb := range servConn.chatBoxes {
+				if cb.nickList.Has(nick) {
+					cb.printMessage(fmt.Sprintf("** %s sets mode %s", nick, mode))
+				}
+			}
 		}
-
-		/*	var add bool
-				var idx int
-				for _, b := range mode {
-					switch b {
-					case '+':
-						add = true
-					case '-':
-						add = false
-					case 'v':
-						n := nicks[idx]
-						p := chat.nickList.GetPrefix(n)
-						if add {
-							p += "+"
-						} else {
-							p = strings.Replace(p, "+", "", -1)
-						}
-						chat.nickList.SetPrefix(n, p)
-						idx++
-					}
-				}
-			} else {
-				nick := l.Args[0]
-				mode := l.Args[1]
-				for _, chat := range servConn.chatBoxes {
-					if chat.nickList.Has(nick) {
-						chat.messages <- fmt.Sprintf("** %s sets mode %s", nick, mode)
-					}
-				}
-			}*/
-
 	})
 
 	return servConn

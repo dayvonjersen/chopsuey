@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"regexp"
 	"sort"
 )
@@ -132,10 +133,16 @@ func (nl *nickList) Remove(prefixed string) {
 }
 
 func (nl *nickList) Replace(old, new string) {
-	a, b := splitNick(old), splitNick(new)
-	b.prefix = a.prefix
-	nl.Remove(old)
-	nl.Add(b.String())
+	n := splitNick(old)
+	i := nl.FindIndex(n)
+	if i < len(*nl) && (*nl)[i].name == n.name {
+		a := (*nl)[i]
+		b := splitNick(new)
+		b.prefix = a.prefix
+		log.Println("old:", a, "new:", b)
+		nl.Remove(old)
+		nl.Add(b.String())
+	}
 }
 
 func (nl *nickList) GetPrefix(nick string) string {
