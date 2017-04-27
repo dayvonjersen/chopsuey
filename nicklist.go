@@ -81,6 +81,19 @@ func (nl nickList) Less(i, j int) bool { return nl[i].name < nl[j].name }
 func (nl nickList) Swap(i, j int)      { nl[i], nl[j] = nl[j], nl[i] }
 
 func (nl *nickList) FindIndex(n *nick) int {
+	return nl.FindIndexSelection(n)
+}
+
+func (nl *nickList) FindIndexSelection(n *nick) int {
+	for i, o := range *nl {
+		if o.name == n.name {
+			return i
+		}
+	}
+	return len(*nl)
+}
+
+func (nl *nickList) FindIndexBinary(n *nick) int {
 	i, j := 0, len(*nl)-1
 	for i <= j {
 		k := (i + j) / 2
