@@ -4,6 +4,6 @@
 	"ssl": false,
 	"nick": "tso|testing",
 	"autojoin": [
-        "#test"
+        "#modes"
     ]
 }

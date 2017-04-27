@@ -13,33 +13,63 @@ func (n *nick) String() string {
 	return n.prefix + n.name
 }
 
-var nickRegex = regexp.MustCompile("^([@%+]*)(.+)$")
+var nickRegex = regexp.MustCompile("^([~&@%+]*)(.+)$")
 
 func splitNick(prefixed string) *nick {
 	m := nickRegex.FindAllStringSubmatch(prefixed, -1)
 	return &nick{m[0][1], m[0][2]}
 }
 
+func sortPrefix(prefix string) string {
+	s := []byte(prefix)
+	sort.Slice(s, func(i, j int) bool {
+		a, b := s[i], s[j]
+		switch a {
+		case '~':
+			return true
+		case '&':
+			return b != '~'
+		case '@':
+			return b != '~' && b != '&'
+		case '%':
+			return b != '~' && b != '&' && b != '@'
+		case '+':
+			return false
+		}
+		panic("unhandled prefix: " + string(a))
+		return false
+	})
+	return string(s)
+}
+
 type nickListByPrefix []*nick
 
 func (nl nickListByPrefix) Len() int { return len(nl) }
 func (nl nickListByPrefix) Less(i, j int) bool {
-	a, b := nl[i].prefix, nl[j].prefix
-	if a == b {
+	if nl[i].prefix == nl[j].prefix {
 		return nl[i].name < nl[j].name
 	}
-	switch a {
-	case "@":
+	if len(nl[i].prefix) == 0 {
+		return false
+	}
+	if len(nl[j].prefix) == 0 {
 		return true
-	case "%":
-		return b != "@"
-	case "+":
-		return b == ""
-	case "":
+	}
+	a, b := nl[i].prefix[0], nl[j].prefix[0]
+	switch a {
+	case '~':
+		return true
+	case '&':
+		return b != '~'
+	case '@':
+		return b != '~' && b != '&'
+	case '%':
+		return b != '~' && b != '&' && b != '@'
+	case '+':
 		return false
 	}
 
-	panic("unhandled prefix: " + a)
+	panic("unhandled prefix: " + string(a))
 }
 func (nl nickListByPrefix) Swap(i, j int) { nl[i], nl[j] = nl[j], nl[i] }
 
@@ -77,6 +107,7 @@ func (nl *nickList) Has(prefixed string) bool {
 func (nl *nickList) Add(prefixed string) {
 	n := splitNick(prefixed)
 	i := nl.FindIndex(n)
+	n.prefix = sortPrefix(n.prefix)
 	if i < len(*nl) && (*nl)[i].name == n.name {
 		if (*nl)[i].prefix != n.prefix {
 			(*nl)[i].prefix = n.prefix
@@ -97,6 +128,30 @@ func (nl *nickList) Remove(prefixed string) {
 	}
 	if !sort.IsSorted(*nl) {
 		sort.Sort(*nl)
+	}
+}
+
+func (nl *nickList) Replace(old, new string) {
+	a, b := splitNick(old), splitNick(new)
+	b.prefix = a.prefix
+	nl.Remove(old)
+	nl.Add(b.String())
+}
+
+func (nl *nickList) GetPrefix(nick string) string {
+	n := splitNick(nick)
+	i := nl.FindIndex(n)
+	if i < len(*nl) && (*nl)[i].name == n.name {
+		return (*nl)[i].prefix
+	}
+	return ""
+}
+
+func (nl *nickList) SetPrefix(nick, prefix string) {
+	n := splitNick(nick)
+	i := nl.FindIndex(n)
+	if i < len(*nl) && (*nl)[i].name == n.name {
+		(*nl)[i].prefix = sortPrefix(prefix)
 	}
 }
 
