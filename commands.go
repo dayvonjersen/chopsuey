@@ -26,6 +26,7 @@ func init() {
 		"msg":    privmsgCmd,
 		"nick":   nickCmd,
 		"quit":   quitCmd,
+		"mode":   modeCmd,
 	}
 }
 
@@ -92,4 +93,12 @@ func nickCmd(ctx *clientContext, args ...string) {
 func quitCmd(ctx *clientContext, args ...string) {
 	ctx.servConn.conn.Quit(strings.Join(args, " "))
 	mw.Close()
+}
+
+func modeCmd(ctx *clientContext, args ...string) {
+	if len(args) < 2 {
+		ctx.cb.printMessage("usage: /mode [#channel or your nick] [mode] [nicks...]")
+		return
+	}
+	ctx.servConn.conn.Mode(args[0], args[1:]...)
 }

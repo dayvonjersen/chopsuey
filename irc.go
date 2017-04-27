@@ -244,23 +244,36 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			}
 			var add bool
 			var idx int
+			prefixUpdater := func(symbol string) {
+				n := nicks[idx]
+				p := cb.nickList.GetPrefix(n)
+				if add {
+					p += symbol
+				} else {
+					p = strings.Replace(p, symbol, "", -1)
+				}
+				cb.nickList.SetPrefix(n, p)
+				cb.updateNickList()
+				idx++
+			}
 			for _, b := range mode {
 				switch b {
 				case '+':
 					add = true
 				case '-':
 					add = false
+				case 'q':
+					prefixUpdater("~")
+				case 'a':
+					prefixUpdater("&")
+				case 'o':
+					prefixUpdater("@")
+				case 'h':
+					prefixUpdater("%")
 				case 'v':
-					n := nicks[idx]
-					p := cb.nickList.GetPrefix(n)
-					if add {
-						p += "+"
-					} else {
-						p = strings.Replace(p, "+", "", -1)
-					}
-					cb.nickList.SetPrefix(n, p)
-					cb.updateNickList()
-					idx++
+					prefixUpdater("+")
+				default:
+					panic("unhandled mode modifer:" + string(b))
 				}
 			}
 			cb.printMessage(fmt.Sprintf("** %s sets mode %s %s", op, mode, nicks))
