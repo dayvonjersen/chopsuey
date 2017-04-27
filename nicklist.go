@@ -127,11 +127,9 @@ func (nl *nickList) Add(prefixed string) {
 			(*nl)[i].prefix = n.prefix
 		}
 	} else {
-		(*nl) = append(*nl, n)
+		(*nl) = append((*nl)[:i], append([]*nick{n}, (*nl)[i:]...)...)
 	}
-	if !sort.IsSorted(*nl) {
-		sort.Sort(*nl)
-	}
+	sort.Sort(*nl)
 }
 
 func (nl *nickList) Remove(prefixed string) {
@@ -140,9 +138,7 @@ func (nl *nickList) Remove(prefixed string) {
 	if i < len(*nl) && (*nl)[i].name == n.name {
 		(*nl) = append((*nl)[0:i], (*nl)[i+1:]...)
 	}
-	if !sort.IsSorted(*nl) {
-		sort.Sort(*nl)
-	}
+	sort.Sort(*nl)
 }
 
 func (nl *nickList) Replace(old, new string) {
