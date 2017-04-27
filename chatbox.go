@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lxn/walk"
@@ -56,7 +57,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 	cb := &chatBox{
 		boxType:          boxType,
 		id:               id,
-		nickList:         &nickList{},
+		nickList:         &nickList{Mu: &sync.Mutex{}},
 		nickListBox:      &walk.ListBox{},
 		nickListBoxModel: &listBoxModel{},
 		servConn:         servConn,

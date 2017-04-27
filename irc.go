@@ -140,28 +140,6 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		cb.printMessage(fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
 	})
 
-	type nickUpdate struct {
-		chat        *chatBox
-		Add, Remove []string
-		Replace     [][]string
-	}
-	nickUpdateCh := make(chan *nickUpdate)
-	go func() {
-		for {
-			u := <-nickUpdateCh
-			for _, repl := range u.Replace {
-				u.chat.nickList.Replace(repl[0], repl[1])
-			}
-			for _, rm := range u.Remove {
-				u.chat.nickList.Remove(rm)
-			}
-			for _, add := range u.Add {
-				u.chat.nickList.Add(add)
-			}
-			u.chat.updateNickList()
-		}
-	}()
-
 	// NAMES
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[2]
@@ -170,13 +148,20 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			log.Println("got 353 but user not on channel:", l.Args[2])
 			return
 		}
+		cb.nickList.Mu.Lock()
+		defer cb.nickList.Mu.Unlock()
 		nicks := strings.Split(l.Args[3], " ")
-		for i, n := range nicks {
-			if n == "" || cb.nickList.Has(n) {
-				nicks = append(nicks[0:i], nicks[i+1:]...)
+		for _, n := range nicks {
+			if n != "" {
+				if cb.nickList.Has(n) {
+					split := splitNick(n)
+					cb.nickList.SetPrefix(n, split.prefix)
+				} else {
+					cb.nickList.Add(n)
+				}
 			}
 		}
-		nickUpdateCh <- &nickUpdate{chat: cb, Add: nicks}
+		cb.updateNickList()
 	})
 
 	conn.HandleFunc(goirc.JOIN, func(c *goirc.Conn, l *goirc.Line) {
@@ -186,8 +171,11 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			log.Println("got JOIN but user not on channel:", l.Args[0])
 			return
 		}
+		cb.nickList.Mu.Lock()
+		defer cb.nickList.Mu.Unlock()
 		if !cb.nickList.Has(l.Nick) {
-			nickUpdateCh <- &nickUpdate{chat: cb, Add: []string{l.Nick}}
+			cb.nickList.Add(l.Nick)
+			cb.updateNickList()
 			cb.printMessage("* " + l.Nick + " has joined " + l.Args[0])
 		}
 	})
@@ -199,16 +187,22 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			log.Println("got PART but user not on channel:", l.Args[0])
 			return
 		}
-		nickUpdateCh <- &nickUpdate{chat: cb, Remove: []string{l.Nick}}
+		cb.nickList.Mu.Lock()
+		defer cb.nickList.Mu.Unlock()
+		cb.nickList.Remove(l.Nick)
+		cb.updateNickList()
 		cb.printMessage("** " + l.Nick + " has left " + l.Args[0])
 	})
 
 	conn.HandleFunc(goirc.QUIT, func(c *goirc.Conn, l *goirc.Line) {
 		for _, cb := range servConn.chatBoxes {
+			cb.nickList.Mu.Lock()
 			if cb.nickList.Has(l.Nick) {
+				cb.nickList.Remove(l.Nick)
+				cb.updateNickList()
 				cb.printMessage("** " + l.Nick + " has quit: " + l.Args[0])
-				nickUpdateCh <- &nickUpdate{chat: cb, Remove: []string{l.Nick}}
 			}
+			cb.nickList.Mu.Unlock()
 		}
 	})
 
@@ -217,10 +211,13 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			servConn.cfg.Nick = l.Args[0]
 		}
 		for _, cb := range servConn.chatBoxes {
+			cb.nickList.Mu.Lock()
 			if cb.nickList.Has(l.Nick) {
+				cb.nickList.Replace(l.Nick, l.Args[0])
+				cb.updateNickList()
 				cb.printMessage("** " + l.Nick + " is now known as " + l.Args[0])
-				nickUpdateCh <- &nickUpdate{chat: cb, Replace: [][]string{[]string{l.Nick, l.Args[0]}}}
 			}
+			cb.nickList.Mu.Unlock()
 		}
 	})
 
@@ -245,6 +242,8 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			var add bool
 			var idx int
 			prefixUpdater := func(symbol string) {
+				cb.nickList.Mu.Lock()
+				defer cb.nickList.Mu.Lock()
 				n := nicks[idx]
 				p := cb.nickList.GetPrefix(n)
 				if add {

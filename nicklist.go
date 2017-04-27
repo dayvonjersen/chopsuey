@@ -5,6 +5,7 @@ import (
 	"log"
 	"regexp"
 	"sort"
+	"sync"
 )
 
 type nick struct {
@@ -57,7 +58,7 @@ func (nl nickListByPrefix) Len() int {
 func (nl nickListByPrefix) Less(i, j int) bool {
 	a, b := nl[i].prefix, nl[j].prefix
 	if a == b {
-		return a < b
+		return nl[i].name < nl[j].name
 	}
 	if len(a) == 0 {
 		return false
@@ -75,6 +76,7 @@ func (nl nickListByPrefix) Swap(i, j int) {
 
 type nickList struct {
 	slice []*nick
+	Mu    *sync.Mutex
 }
 
 func (nl *nickList) Len() int {
