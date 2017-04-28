@@ -41,7 +41,8 @@ func (cb *chatBox) printMessage(msg string) {
 
 func (cb *chatBox) sendMessage(msg string) {
 	cb.servConn.conn.Privmsg(cb.id, msg)
-	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), cb.servConn.cfg.Nick, msg))
+	prefix := cb.nickList.GetPrefix(cb.servConn.cfg.Nick)
+	cb.printMessage(fmt.Sprintf("%s <%s%s> %s", time.Now().Format("15:04"), prefix, cb.servConn.cfg.Nick, msg))
 }
 
 func (cb *chatBox) updateNickList() {

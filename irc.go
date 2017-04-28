@@ -105,7 +105,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if cb == nil {
 			cb = servConn.createChatBox(channel, boxType)
 		}
-		cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
+		cb.printMessage(fmt.Sprintf("%s <%s%s> %s", time.Now().Format("15:04"), cb.nickList.GetPrefix(l.Nick), l.Nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
