@@ -186,7 +186,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	})
 
 	conn.HandleFunc(goirc.PART, func(c *goirc.Conn, l *goirc.Line) {
-		printf(l)
+		debugPrint(l)
 		channel := l.Args[0]
 		cb := servConn.getChatBox(channel)
 		if cb == nil {

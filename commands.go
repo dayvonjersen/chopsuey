@@ -29,6 +29,7 @@ func init() {
 		"mode":   modeCmd,
 		"clear":  clearCmd,
 		"topic":  topicCmd,
+		"close":  closeCmd,
 	}
 }
 
@@ -115,4 +116,11 @@ func topicCmd(ctx *clientContext, args ...string) {
 		return
 	}
 	ctx.servConn.conn.Topic(ctx.channel, args...)
+}
+func closeCmd(ctx *clientContext, args ...string) {
+	if ctx.cb.boxType == CHATBOX_CHANNEL {
+		partCmd(ctx, args...)
+	} else {
+		ctx.cb.close()
+	}
 }

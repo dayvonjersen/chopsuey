@@ -53,6 +53,7 @@ func (cb *chatBox) updateNickList() {
 
 func (cb *chatBox) close() {
 	checkErr(tabWidget.Pages().Remove(cb.tabPage))
+	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
 	tabWidget.SaveState()
 }
 
