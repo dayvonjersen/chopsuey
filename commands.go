@@ -27,6 +27,7 @@ func init() {
 		"nick":   nickCmd,
 		"quit":   quitCmd,
 		"mode":   modeCmd,
+		"clear":  clearCmd,
 	}
 }
 
@@ -101,4 +102,8 @@ func modeCmd(ctx *clientContext, args ...string) {
 		return
 	}
 	ctx.servConn.conn.Mode(args[0], args[1:]...)
+}
+
+func clearCmd(ctx *clientContext, args ...string) {
+	ctx.cb.textBuffer.SetText("")
 }
