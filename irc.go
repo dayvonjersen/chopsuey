@@ -114,7 +114,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if cb == nil {
 			cb = servConn.createChatBox(channel, boxType)
 		}
-		cb.printMessage(fmt.Sprintf("%s * %s %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
+		cb.printMessage(fmt.Sprintf("%s *%s %s*", time.Now().Format("15:04"), l.Nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
@@ -176,11 +176,12 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if !cb.nickList.Has(l.Nick) {
 			cb.nickList.Add(l.Nick)
 			cb.updateNickList()
-			cb.printMessage("* " + l.Nick + " has joined " + l.Args[0])
+			cb.printMessage(time.Now().Format("15:04") + " -> " + l.Nick + " has joined " + l.Args[0])
 		}
 	})
 
 	conn.HandleFunc(goirc.PART, func(c *goirc.Conn, l *goirc.Line) {
+		printf(l)
 		channel := l.Args[0]
 		cb := servConn.getChatBox(channel)
 		if cb == nil {
@@ -191,16 +192,29 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		defer cb.nickList.Mu.Unlock()
 		cb.nickList.Remove(l.Nick)
 		cb.updateNickList()
-		cb.printMessage("** " + l.Nick + " has left " + l.Args[0])
+		msg := time.Now().Format("15:04") + " <- " + l.Nick + " has left " + l.Args[0]
+		if len(l.Args) > 1 {
+			msg += " (" + l.Args[1] + ")"
+		}
+		cb.printMessage(msg)
 	})
 
 	conn.HandleFunc(goirc.QUIT, func(c *goirc.Conn, l *goirc.Line) {
+		reason := l.Args[0]
+		if strings.HasPrefix(reason, "Quit:") {
+			reason = strings.TrimPrefix(reason, "Quit:")
+		}
+		reason = strings.TrimSpace(reason)
+		msg := time.Now().Format("15:04") + " <- " + l.Nick + " has quit"
+		if reason != "" {
+			msg += ": " + reason
+		}
 		for _, cb := range servConn.chatBoxes {
 			cb.nickList.Mu.Lock()
 			if cb.nickList.Has(l.Nick) {
 				cb.nickList.Remove(l.Nick)
 				cb.updateNickList()
-				cb.printMessage("** " + l.Nick + " has quit: " + l.Args[0])
+				cb.printMessage(msg)
 			}
 			cb.nickList.Mu.Unlock()
 		}
@@ -215,7 +229,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			if cb.nickList.Has(l.Nick) {
 				cb.nickList.Replace(l.Nick, l.Args[0])
 				cb.updateNickList()
-				cb.printMessage("** " + l.Nick + " is now known as " + l.Args[0])
+				cb.printMessage(time.Now().Format("15:04") + " ** " + l.Nick + " is now known as " + l.Args[0])
 			}
 			cb.nickList.Mu.Unlock()
 		}
@@ -236,7 +250,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 				return
 			}
 			if len(nicks) == 0 {
-				cb.printMessage(fmt.Sprintf("** %s sets mode %s %s", op, mode, channel))
+				cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, channel))
 				return
 			}
 			var add bool
@@ -275,12 +289,12 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 					panic("unhandled mode modifer:" + string(b))
 				}
 			}
-			cb.printMessage(fmt.Sprintf("** %s sets mode %s %s", op, mode, nicks))
+			cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, nicks))
 		} else if op == "" {
 			nick := channel
 			for _, cb := range servConn.chatBoxes {
 				if cb.nickList.Has(nick) {
-					cb.printMessage(fmt.Sprintf("** %s sets mode %s", nick, mode))
+					cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s", time.Now().Format("15:04"), nick, mode))
 				}
 			}
 		}

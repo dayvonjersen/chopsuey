@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/fluffle/goirc/logging"
+	"github.com/kr/pretty"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -68,4 +70,12 @@ func checkErr(err error) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func printf(args ...interface{}) {
+	s := ""
+	for _, x := range args {
+		s += fmt.Sprintf("%# v", pretty.Formatter(x))
+	}
+	log.Print(s)
 }
