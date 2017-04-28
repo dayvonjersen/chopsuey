@@ -102,6 +102,17 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 					Model:              cb.nickListBoxModel,
 					AlwaysConsumeSpace: true,
 					Persistent:         true,
+					OnItemActivated: func() {
+						n := splitNick(cb.nickListBoxModel.Items[cb.nickListBox.CurrentIndex()])
+						nick := n.name
+
+						box := cb.servConn.getChatBox(nick)
+						if box == nil {
+							cb.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
+						} else {
+							checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(box.tabPage)))
+						}
+					},
 				},
 			},
 		}.Create(builder)
