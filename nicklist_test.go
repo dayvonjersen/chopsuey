@@ -42,23 +42,31 @@ func TestNickListAsync(t *testing.T) {
 	checkErr(err)
 	defer f.Close()
 
-	nl := &nickList{}
+	nl := &nickList{Mu: &sync.Mutex{}}
 	all := []string{}
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
 
-	mu := &sync.Mutex{}
 	done := make(chan struct{})
+	count := 0
 	for scanner.Scan() {
+		count++
 		nicks := strings.Split(scanner.Text(), " ")
 		all = append(all, nicks...)
 		go func() {
+			nl.Mu.Lock()
+			defer nl.Mu.Unlock()
 			for _, n := range nicks {
-				mu.Lock()
-				nl.Add(n)
-				done <- struct{}{}
-				mu.Unlock()
+				if n != "" {
+					if nl.Has(n) {
+						split := splitNick(n)
+						nl.SetPrefix(n, split.prefix)
+					} else {
+						nl.Add(n)
+					}
+				}
 			}
+			done <- struct{}{}
 		}()
 	}
 
@@ -66,7 +74,7 @@ func TestNickListAsync(t *testing.T) {
 	for {
 		<-done
 		i++
-		if i == len(all) {
+		if i == count {
 			close(done)
 			break
 		}

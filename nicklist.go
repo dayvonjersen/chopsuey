@@ -196,5 +196,22 @@ func (nl *nickList) StringSlice() []string {
 	for _, n := range byprefix {
 		s = append(s, (*n).String())
 	}
-	return s
+	return unique(s)
+}
+
+// NOTE: this is not really a good solution...
+
+func unique(slice []string) []string {
+	for i := len(slice) - 1; i >= 0; i-- {
+		s := slice[i]
+		j := sort.SearchStrings(slice, s)
+		if i != j {
+			slice = remove(slice, j)
+		}
+	}
+	return slice
+}
+
+func remove(slice []string, i int) []string {
+	return append(slice[0:i], slice[i+1:]...)
 }
