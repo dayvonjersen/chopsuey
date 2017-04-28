@@ -28,6 +28,7 @@ func init() {
 		"quit":   quitCmd,
 		"mode":   modeCmd,
 		"clear":  clearCmd,
+		"topic":  topicCmd,
 	}
 }
 
@@ -106,4 +107,12 @@ func modeCmd(ctx *clientContext, args ...string) {
 
 func clearCmd(ctx *clientContext, args ...string) {
 	ctx.cb.textBuffer.SetText("")
+}
+
+func topicCmd(ctx *clientContext, args ...string) {
+	if len(args) < 1 {
+		ctx.cb.printMessage("usage: /topic [new topic...]")
+		return
+	}
+	ctx.servConn.conn.Topic(ctx.channel, args...)
 }

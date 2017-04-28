@@ -26,6 +26,7 @@ type chatBox struct {
 	servConn         *serverConnection
 	textBuffer       *walk.TextEdit
 	textInput        *walk.LineEdit
+	topicInput       *walk.LineEdit
 	title            string
 	tabPage          *walk.TabPage
 	msgHistory       []string
@@ -65,6 +66,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		servConn:         servConn,
 		textBuffer:       &walk.TextEdit{},
 		textInput:        &walk.LineEdit{},
+		topicInput:       &walk.LineEdit{},
 		title:            id,
 		msgHistory:       []string{},
 		msgHistoryIdx:    0,
@@ -77,18 +79,27 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		cb.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(cb.tabPage)
 
+		LineEdit{
+			AssignTo: &cb.topicInput,
+			ReadOnly: true,
+		}.Create(builder)
 		HSplitter{
 			Children: []Widget{
 				TextEdit{
-					MinSize:            Size{340, 560},
+					MaxSize:            Size{340, 460},
+					MinSize:            Size{340, 460},
 					AssignTo:           &cb.textBuffer,
 					ReadOnly:           true,
 					AlwaysConsumeSpace: true,
+					Persistent:         true,
 				},
 				ListBox{
-					MinSize:  Size{100, 560},
-					AssignTo: &cb.nickListBox,
-					Model:    cb.nickListBoxModel,
+					MaxSize:            Size{100, 460},
+					MinSize:            Size{100, 460},
+					AssignTo:           &cb.nickListBox,
+					Model:              cb.nickListBoxModel,
+					AlwaysConsumeSpace: true,
+					Persistent:         true,
 				},
 			},
 		}.Create(builder)

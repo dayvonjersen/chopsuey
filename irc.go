@@ -300,6 +300,34 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 	})
 
+	conn.HandleFunc("332", func(c *goirc.Conn, l *goirc.Line) {
+		channel := l.Args[1]
+		topic := l.Args[2]
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
+			log.Println("got TOPIC but user not on channel:", channel)
+			return
+		}
+		cb.topicInput.SetText(topic)
+		cb.printMessage(fmt.Sprintf("*** topic for %s is %s", channel, topic))
+	})
+
+	conn.HandleFunc(goirc.TOPIC, func(c *goirc.Conn, l *goirc.Line) {
+		channel := l.Args[0]
+		topic := l.Args[1]
+		who := l.Src
+		if i := strings.Index(who, "!"); i != -1 {
+			who = who[0:i]
+		}
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
+			log.Println("got TOPIC but user not on channel:", channel)
+			return
+		}
+		cb.topicInput.SetText(topic)
+		cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", time.Now().Format("15:04"), who, channel, topic))
+	})
+
 	return servConn
 }
 
@@ -315,3 +343,15 @@ func (l *tsoLogger) Debug(f string, a ...interface{}) {
 func (l *tsoLogger) Info(f string, a ...interface{})  {}
 func (l *tsoLogger) Warn(f string, a ...interface{})  {}
 func (l *tsoLogger) Error(f string, a ...interface{}) {}
+
+func debugPrint(l *goirc.Line) {
+	printf(&goirc.Line{
+		Nick:  l.Nick,
+		Ident: l.Ident,
+		Host:  l.Host,
+		Src:   l.Src,
+		Cmd:   l.Cmd,
+		Raw:   l.Raw,
+		Args:  l.Args,
+	})
+}

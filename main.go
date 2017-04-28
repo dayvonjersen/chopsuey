@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/fluffle/goirc/logging"
 	"github.com/kr/pretty"
@@ -32,6 +33,19 @@ func main() {
 	mw.WindowBase.SetFont(font)
 
 	tabWidget.SetPersistent(true)
+	tabWidget.CurrentIndexChanged().Attach(func() {
+		children := tabWidget.Pages().At(tabWidget.CurrentIndex()).Children()
+		for i := 0; i < children.Len(); i++ {
+			child := children.At(i)
+			if reflect.TypeOf(child).String() == "*walk.LineEdit" {
+				lineEdit := child.(*walk.LineEdit)
+				if lineEdit.ReadOnly() == false {
+					lineEdit.SetFocus()
+					break
+				}
+			}
+		}
+	})
 
 	cfg := getClientConfig()
 
