@@ -84,9 +84,14 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
+		statusBar.SetText(cfg.Nick + " connected to " + cfg.ServerString())
 		for _, channel := range cfg.Autojoin {
 			servConn.join(channel)
 		}
+	})
+
+	conn.HandleFunc(goirc.DISCONNECTED, func(c *goirc.Conn, l *goirc.Line) {
+		statusBar.SetText("disconnected x_x")
 	})
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
@@ -221,15 +226,18 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	})
 
 	conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
-		if l.Nick == servConn.cfg.Nick {
-			servConn.cfg.Nick = l.Args[0]
+		oldNick := l.Nick
+		newNick := l.Args[0]
+		if oldNick == servConn.cfg.Nick {
+			servConn.cfg.Nick = newNick
+			statusBar.SetText(newNick + " connected to " + cfg.ServerString())
 		}
 		for _, cb := range servConn.chatBoxes {
 			cb.nickList.Mu.Lock()
-			if cb.nickList.Has(l.Nick) {
-				cb.nickList.Replace(l.Nick, l.Args[0])
+			if cb.nickList.Has(oldNick) {
+				cb.nickList.Replace(oldNick, newNick)
 				cb.updateNickList()
-				cb.printMessage(time.Now().Format("15:04") + " ** " + l.Nick + " is now known as " + l.Args[0])
+				cb.printMessage(time.Now().Format("15:04") + " ** " + oldNick + " is now known as " + newNick)
 			}
 			cb.nickList.Mu.Unlock()
 		}

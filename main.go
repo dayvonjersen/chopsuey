@@ -11,18 +11,27 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-var tabWidget *walk.TabWidget
-var mw *walk.MainWindow
+var (
+	mw        *walk.MainWindow
+	tabWidget *walk.TabWidget
+	statusBar *walk.StatusBarItem
+)
 
 func main() {
 	MainWindow{
 		AssignTo: &mw,
 		Title:    "IRC",
-		MinSize:  Size{480, 640},
+		MinSize:  Size{480, 680},
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
 				AssignTo: &tabWidget,
+			},
+		},
+		StatusBarItems: []StatusBarItem{
+			StatusBarItem{
+				AssignTo: &statusBar,
+				Text:     "not connected to any networks...",
 			},
 		},
 	}.Create()
@@ -74,6 +83,7 @@ func main() {
 	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(p)))
 	tabWidget.SaveState()
 
+	statusBar.SetText("connecting to " + cfg.ServerString() + "...")
 	servConn := newServerConnection(cfg)
 	servConn.connect()
 

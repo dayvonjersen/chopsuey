@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -12,6 +13,13 @@ type clientConfig struct {
 	Ssl      bool     `json:"ssl"`
 	Nick     string   `json:"nick"`
 	Autojoin []string `json:"autojoin"`
+}
+
+func (cfg *clientConfig) ServerString() string {
+	if cfg.Ssl {
+		return fmt.Sprintf("%s:+%d", cfg.Host, cfg.Port)
+	}
+	return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 }
 
 func getClientConfig() *clientConfig {
