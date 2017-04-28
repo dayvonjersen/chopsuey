@@ -20,6 +20,7 @@ type serverConnection struct {
 }
 
 func (servConn *serverConnection) connect() {
+	servConn.createChatBox(servConn.cfg.ServerString(), CHATBOX_SERVER)
 	checkErr(servConn.conn.ConnectTo(servConn.cfg.Host))
 }
 

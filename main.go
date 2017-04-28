@@ -5,7 +5,6 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/fluffle/goirc/logging"
 	"github.com/kr/pretty"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -57,31 +56,6 @@ func main() {
 	})
 
 	cfg := getClientConfig()
-
-	var tb *walk.TextEdit
-
-	l := &tsoLogger{}
-	l.LogFn = func(str string) {
-		tb.AppendText(str + "\r\n")
-	}
-
-	logging.SetLogger(l)
-
-	p, err := walk.NewTabPage()
-	checkErr(err)
-	p.SetTitle(cfg.Host)
-	v := walk.NewVBoxLayout()
-	p.SetLayout(v)
-	b := NewBuilder(p)
-	TextEdit{
-		MinSize:    Size{480, 580},
-		AssignTo:   &tb,
-		ReadOnly:   true,
-		Persistent: true,
-	}.Create(b)
-	tabWidget.Pages().Add(p)
-	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(p)))
-	tabWidget.SaveState()
 
 	statusBar.SetText("connecting to " + cfg.ServerString() + "...")
 	servConn := newServerConnection(cfg)

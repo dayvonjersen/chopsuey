@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -41,7 +42,10 @@ func (cb *chatBox) printMessage(msg string) {
 
 func (cb *chatBox) sendMessage(msg string) {
 	cb.servConn.conn.Privmsg(cb.id, msg)
-	prefix := cb.nickList.GetPrefix(cb.servConn.cfg.Nick)
+	prefix := ""
+	if cb.boxType == CHATBOX_CHANNEL {
+		prefix = cb.nickList.GetPrefix(cb.servConn.cfg.Nick)
+	}
 	cb.printMessage(fmt.Sprintf("%s <%s%s> %s", time.Now().Format("15:04"), prefix, cb.servConn.cfg.Nick, msg))
 }
 
@@ -60,18 +64,25 @@ func (cb *chatBox) close() {
 
 func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 	cb := &chatBox{
-		boxType:          boxType,
-		id:               id,
-		nickList:         &nickList{Mu: &sync.Mutex{}},
-		nickListBox:      &walk.ListBox{},
-		nickListBoxModel: &listBoxModel{},
-		servConn:         servConn,
-		textBuffer:       &walk.TextEdit{},
-		textInput:        &walk.LineEdit{},
-		topicInput:       &walk.LineEdit{},
-		title:            id,
-		msgHistory:       []string{},
-		msgHistoryIdx:    0,
+		boxType:       boxType,
+		id:            id,
+		servConn:      servConn,
+		textBuffer:    &walk.TextEdit{},
+		textInput:     &walk.LineEdit{},
+		title:         id,
+		msgHistory:    []string{},
+		msgHistoryIdx: 0,
+	}
+	if cb.boxType == CHATBOX_SERVER {
+		l := &tsoLogger{}
+		l.LogFn = cb.printMessage
+		logging.SetLogger(l)
+	}
+	if cb.boxType == CHATBOX_CHANNEL {
+		cb.nickList = &nickList{Mu: &sync.Mutex{}}
+		cb.nickListBox = &walk.ListBox{}
+		cb.nickListBoxModel = &listBoxModel{}
+		cb.topicInput = &walk.LineEdit{}
 	}
 	mw.WindowBase.Synchronize(func() {
 		var err error
@@ -81,41 +92,56 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		cb.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(cb.tabPage)
 
-		LineEdit{
-			AssignTo: &cb.topicInput,
-			ReadOnly: true,
-		}.Create(builder)
-		HSplitter{
-			Children: []Widget{
-				TextEdit{
-					MaxSize:            Size{340, 460},
-					MinSize:            Size{340, 460},
-					AssignTo:           &cb.textBuffer,
-					ReadOnly:           true,
-					AlwaysConsumeSpace: true,
-					Persistent:         true,
-				},
-				ListBox{
-					MaxSize:            Size{100, 460},
-					MinSize:            Size{100, 460},
-					AssignTo:           &cb.nickListBox,
-					Model:              cb.nickListBoxModel,
-					AlwaysConsumeSpace: true,
-					Persistent:         true,
-					OnItemActivated: func() {
-						n := splitNick(cb.nickListBoxModel.Items[cb.nickListBox.CurrentIndex()])
-						nick := n.name
+		if cb.boxType == CHATBOX_CHANNEL {
+			LineEdit{
+				AssignTo: &cb.topicInput,
+				ReadOnly: true,
+			}.Create(builder)
+			HSplitter{
+				Children: []Widget{
+					TextEdit{
+						MaxSize:            Size{360, 460},
+						MinSize:            Size{360, 460},
+						AssignTo:           &cb.textBuffer,
+						ReadOnly:           true,
+						AlwaysConsumeSpace: true,
+						Persistent:         true,
+					},
+					ListBox{
+						MaxSize:            Size{100, 460},
+						MinSize:            Size{100, 460},
+						AssignTo:           &cb.nickListBox,
+						Model:              cb.nickListBoxModel,
+						AlwaysConsumeSpace: true,
+						Persistent:         true,
+						OnItemActivated: func() {
+							n := splitNick(cb.nickListBoxModel.Items[cb.nickListBox.CurrentIndex()])
+							nick := n.name
 
-						box := cb.servConn.getChatBox(nick)
-						if box == nil {
-							cb.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
-						} else {
-							checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(box.tabPage)))
-						}
+							box := cb.servConn.getChatBox(nick)
+							if box == nil {
+								cb.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
+							} else {
+								checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(box.tabPage)))
+							}
+						},
 					},
 				},
-			},
-		}.Create(builder)
+			}.Create(builder)
+		} else if cb.boxType == CHATBOX_SERVER || cb.boxType == CHATBOX_PRIVMSG {
+			HSplitter{
+				Children: []Widget{
+					TextEdit{
+						MaxSize:            Size{480, 460},
+						MinSize:            Size{480, 460},
+						AssignTo:           &cb.textBuffer,
+						ReadOnly:           true,
+						AlwaysConsumeSpace: true,
+						Persistent:         true,
+					},
+				},
+			}.Create(builder)
+		}
 		LineEdit{
 			AssignTo: &cb.textInput,
 			OnKeyDown: func(key walk.Key) {
