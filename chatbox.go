@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -79,7 +78,8 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		logging.SetLogger(l)
 	}
 	if cb.boxType == CHATBOX_CHANNEL {
-		cb.nickList = &nickList{Mu: &sync.Mutex{}}
+		cb.nickList = &nickList{}
+		cb.nickList.Init()
 		cb.nickListBox = &walk.ListBox{}
 		cb.nickListBoxModel = &listBoxModel{}
 		cb.topicInput = &walk.LineEdit{}

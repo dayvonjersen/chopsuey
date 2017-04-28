@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 )
 
@@ -15,6 +14,8 @@ func TestNickListSync(t *testing.T) {
 	defer f.Close()
 
 	nl := &nickList{}
+	nl.Init()
+
 	all := []string{}
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
@@ -22,7 +23,8 @@ func TestNickListSync(t *testing.T) {
 		nicks := strings.Split(scanner.Text(), " ")
 		all = append(all, nicks...)
 		for _, n := range nicks {
-			nl.Add(n)
+			nl.add <- n
+			<-nl.updateRequest
 		}
 	}
 
@@ -30,7 +32,8 @@ func TestNickListSync(t *testing.T) {
 		if !nl.Has(n) {
 			t.Fatal(n, "was not Added to nickList")
 		}
-		nl.Remove(n)
+		nl.remove <- n
+		<-nl.updateRequest
 		if nl.Has(n) {
 			t.Fatal(n, "was Added multiple times")
 		}
@@ -42,7 +45,9 @@ func TestNickListAsync(t *testing.T) {
 	checkErr(err)
 	defer f.Close()
 
-	nl := &nickList{Mu: &sync.Mutex{}}
+	nl := &nickList{}
+	nl.Init()
+
 	all := []string{}
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
@@ -54,16 +59,15 @@ func TestNickListAsync(t *testing.T) {
 		nicks := strings.Split(scanner.Text(), " ")
 		all = append(all, nicks...)
 		go func() {
-			nl.Mu.Lock()
-			defer nl.Mu.Unlock()
 			for _, n := range nicks {
 				if n != "" {
 					if nl.Has(n) {
 						split := splitNick(n)
-						nl.SetPrefix(n, split.prefix)
+						nl.setPrefix <- []string{n, split.prefix}
 					} else {
-						nl.Add(n)
+						nl.add <- n
 					}
+					<-nl.updateRequest
 				}
 			}
 			done <- struct{}{}
@@ -83,7 +87,8 @@ func TestNickListAsync(t *testing.T) {
 		if !nl.Has(n) {
 			t.Fatal(n, "was not Added to nickList")
 		}
-		nl.Remove(n)
+		nl.remove <- n
+		<-nl.updateRequest
 		if nl.Has(n) {
 			t.Fatal(n, "was Added multiple times")
 		}
@@ -92,7 +97,9 @@ func TestNickListAsync(t *testing.T) {
 
 func TestNickList(t *testing.T) {
 	nl := &nickList{}
-	nl.Add("something")
+	nl.Init()
+	nl.add <- "something"
+	<-nl.updateRequest
 	if !nl.Has("something") {
 		t.Fatalf("%#v", nl)
 	}
@@ -102,7 +109,8 @@ func TestNickList(t *testing.T) {
 	if !nl.Has("something") {
 		t.Fatal("nickList.Has is broken")
 	}
-	nl.Remove("something")
+	nl.remove <- "something"
+	<-nl.updateRequest
 	if nl.Has("something") {
 		t.Fatalf("%#v", nl)
 	}
@@ -110,47 +118,58 @@ func TestNickList(t *testing.T) {
 		t.Fatalf("nickList.Has is broken")
 	}
 
-	nl.Add("someone")
-	nl.Add("@someone")
+	nl.add <- "someone"
+	<-nl.updateRequest
+	nl.add <- "@someone"
+	<-nl.updateRequest
 	if nl.StringSlice()[0] != "@someone" {
-		t.Fatalf("%#v", nl)
+		printf(nl)
+		t.Fatalf("%#v", nl.StringSlice())
 	}
-	nl.Add("someone")
+	nl.add <- "someone"
+	<-nl.updateRequest
 	if nl.StringSlice()[0] != "someone" {
 		t.Fatalf("%#v", nl)
 	}
+	nl.Shutdown()
 
 	nl = &nickList{}
-	nl.Add("zebra")
+	nl.Init()
+	nl.add <- "zebra"
+	<-nl.updateRequest
 	if !nl.Has("zebra") {
 		t.Fatalf("has is broken")
 	}
-	nl.Add("@yak")
+	nl.add <- "@yak"
+	<-nl.updateRequest
 	if !nl.Has("@yak") {
 		n := splitNick("@yak")
 		fmt.Printf("%#v %#v %#v\n", nl, n, nl.FindIndex(n))
 		t.Fatalf("has is broken")
 	}
-	nl.Add("+xenyx")
+	nl.add <- "+xenyx"
+	<-nl.updateRequest
 	if !nl.Has("+xenyx") {
 		t.Fatalf("has is broken")
 	}
-	nl.Add("walrus")
+	nl.add <- "walrus"
+	<-nl.updateRequest
 	if !nl.Has("walrus") {
 		t.Fatalf("has is broken")
 	}
-	nl.Add("%velociraptor")
+	nl.add <- "%velociraptor"
+	<-nl.updateRequest
 	if !nl.Has("%velociraptor") {
 		t.Fatalf("has is broken")
 	}
 	expect := "[%velociraptor walrus +xenyx @yak zebra]"
 	actual := fmt.Sprintf("%v", nl)
 	if expect != actual {
-		t.Fatal("expect:", expect, "actual:", actual)
+		t.Fatal("\nexpect:", expect, "\nactual:", actual)
 	}
 	expect = "[@yak %velociraptor +xenyx walrus zebra]"
 	actual = fmt.Sprintf("%v", nl.StringSlice())
 	if expect != actual {
-		t.Fatal("expect:", expect, "actual:", actual)
+		t.Fatal("\nexpect:", expect, "\nactual:", actual)
 	}
 }
