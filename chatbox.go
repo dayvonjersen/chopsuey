@@ -28,6 +28,8 @@ type chatBox struct {
 	textInput        *walk.LineEdit
 	title            string
 	tabPage          *walk.TabPage
+	msgHistory       []string
+	msgHistoryIdx    int
 }
 
 func (cb *chatBox) printMessage(msg string) {
@@ -64,6 +66,8 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		textBuffer:       &walk.TextEdit{},
 		textInput:        &walk.LineEdit{},
 		title:            id,
+		msgHistory:       []string{},
+		msgHistoryIdx:    0,
 	}
 	mw.WindowBase.Synchronize(func() {
 		var err error
@@ -96,6 +100,8 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 					if len(text) < 1 {
 						return
 					}
+					cb.msgHistory = append(cb.msgHistory, text)
+					cb.msgHistoryIdx = len(cb.msgHistory) - 1
 					if text[0] == '/' {
 						parts := strings.Split(text[1:], " ")
 						cmd := parts[0]
@@ -118,6 +124,40 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 						cb.sendMessage(text)
 					}
 					cb.textInput.SetText("")
+				} else if key == walk.KeyUp {
+					if len(cb.msgHistory) > 0 {
+						text := cb.msgHistory[cb.msgHistoryIdx]
+						cb.textInput.SetText(text)
+						cb.textInput.SetTextSelection(len(text), len(text))
+						cb.msgHistoryIdx--
+						if cb.msgHistoryIdx < 0 {
+							cb.msgHistoryIdx = 0
+						}
+					}
+				} else if key == walk.KeyDown {
+					if len(cb.msgHistory) > 0 {
+						cb.msgHistoryIdx++
+						if cb.msgHistoryIdx <= len(cb.msgHistory)-1 {
+							text := cb.msgHistory[cb.msgHistoryIdx]
+							cb.textInput.SetText(text)
+							cb.textInput.SetTextSelection(len(text), len(text))
+						} else {
+							cb.textInput.SetText("")
+							cb.msgHistoryIdx = len(cb.msgHistory) - 1
+						}
+					}
+				}
+			},
+			OnKeyUp: func(key walk.Key) {
+				if key == walk.KeyUp || key == walk.KeyDown {
+					text := cb.textInput.Text()
+					cb.textInput.SetTextSelection(len(text), len(text))
+				}
+			},
+			OnKeyPress: func(key walk.Key) {
+				if key == walk.KeyUp || key == walk.KeyDown {
+					text := cb.textInput.Text()
+					cb.textInput.SetTextSelection(len(text), len(text))
 				}
 			},
 		}.Create(builder)
