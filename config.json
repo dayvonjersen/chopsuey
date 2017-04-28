@@ -5,5 +5,6 @@
 	"nick": "tso|testing",
 	"autojoin": [
         "#test"
-    ]
+    ],
+    "hidejoinparts": true
 }

@@ -182,7 +182,9 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if !cb.nickList.Has(l.Nick) {
 			cb.nickList.Add(l.Nick)
 			cb.updateNickList()
-			cb.printMessage(time.Now().Format("15:04") + " -> " + l.Nick + " has joined " + l.Args[0])
+			if !servConn.cfg.HideJoinParts {
+				cb.printMessage(time.Now().Format("15:04") + " -> " + l.Nick + " has joined " + l.Args[0])
+			}
 		}
 	})
 
@@ -198,11 +200,13 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		defer cb.nickList.Mu.Unlock()
 		cb.nickList.Remove(l.Nick)
 		cb.updateNickList()
-		msg := time.Now().Format("15:04") + " <- " + l.Nick + " has left " + l.Args[0]
-		if len(l.Args) > 1 {
-			msg += " (" + l.Args[1] + ")"
+		if !servConn.cfg.HideJoinParts {
+			msg := time.Now().Format("15:04") + " <- " + l.Nick + " has left " + l.Args[0]
+			if len(l.Args) > 1 {
+				msg += " (" + l.Args[1] + ")"
+			}
+			cb.printMessage(msg)
 		}
-		cb.printMessage(msg)
 	})
 
 	conn.HandleFunc(goirc.QUIT, func(c *goirc.Conn, l *goirc.Line) {
@@ -220,7 +224,9 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			if cb.nickList.Has(l.Nick) {
 				cb.nickList.Remove(l.Nick)
 				cb.updateNickList()
-				cb.printMessage(msg)
+				if !servConn.cfg.HideJoinParts {
+					cb.printMessage(msg)
+				}
 			}
 			cb.nickList.Mu.Unlock()
 		}

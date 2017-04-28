@@ -8,11 +8,12 @@ import (
 )
 
 type clientConfig struct {
-	Host     string   `json:"host"`
-	Port     int      `json:"port"`
-	Ssl      bool     `json:"ssl"`
-	Nick     string   `json:"nick"`
-	Autojoin []string `json:"autojoin"`
+	Host          string   `json:"host"`
+	Port          int      `json:"port"`
+	Ssl           bool     `json:"ssl"`
+	Nick          string   `json:"nick"`
+	Autojoin      []string `json:"autojoin"`
+	HideJoinParts bool     `json:"hidejoinparts"`
 }
 
 func (cfg *clientConfig) ServerString() string {
@@ -22,7 +23,7 @@ func (cfg *clientConfig) ServerString() string {
 	return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 }
 
-func getClientConfig() *clientConfig {
+func getClientConfig() (*clientConfig, error) {
 	f, err := os.Open("config.json")
 	checkErr(err)
 	defer f.Close()
@@ -31,7 +32,7 @@ func getClientConfig() *clientConfig {
 	checkErr(err)
 
 	var cfg *clientConfig
-	json.Unmarshal(b, &cfg)
+	err = json.Unmarshal(b, &cfg)
 
-	return cfg
+	return cfg, err
 }
