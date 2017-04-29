@@ -3,6 +3,7 @@ package main
 import (
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -97,6 +98,20 @@ func (nl *nickList) Set(n string, newNick *nick) {
 		nl.lookup[n] = newNick
 		nl.mu.Unlock()
 	}
+}
+
+func (nl *nickList) Search(search string) []string {
+	res := []string{}
+	s := nl.data[:]
+	for {
+		i := sort.SearchStrings(s, search)
+		if i == len(s) || !strings.HasPrefix(s[i], search) {
+			break
+		}
+		res = append(res, s[i])
+		s = s[i+1:]
+	}
+	return res
 }
 
 func (nl *nickList) StringSlice() []string {
