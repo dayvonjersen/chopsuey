@@ -13,8 +13,7 @@ func TestNickListSync(t *testing.T) {
 	checkErr(err)
 	defer f.Close()
 
-	nl := &nickList{}
-	nl.Init()
+	nl := newNickList()
 
 	all := []string{}
 	scanner := bufio.NewScanner(f)
@@ -23,8 +22,7 @@ func TestNickListSync(t *testing.T) {
 		nicks := strings.Split(scanner.Text(), " ")
 		all = append(all, nicks...)
 		for _, n := range nicks {
-			nl.add <- n
-			<-nl.updateRequest
+			nl.Add(n)
 		}
 	}
 
@@ -32,8 +30,7 @@ func TestNickListSync(t *testing.T) {
 		if !nl.Has(n) {
 			t.Fatal(n, "was not Added to nickList")
 		}
-		nl.remove <- n
-		<-nl.updateRequest
+		nl.Remove(n)
 		if nl.Has(n) {
 			t.Fatal(n, "was Added multiple times")
 		}
@@ -45,32 +42,27 @@ func TestNickListAsync(t *testing.T) {
 	checkErr(err)
 	defer f.Close()
 
-	nl := &nickList{}
-	nl.Init()
+	nl := newNickList()
 
 	all := []string{}
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
 
 	done := make(chan struct{})
-	count := 0
 	for scanner.Scan() {
-		count++
 		nicks := strings.Split(scanner.Text(), " ")
 		all = append(all, nicks...)
 		go func() {
 			for _, n := range nicks {
 				if n != "" {
 					if nl.Has(n) {
-						split := splitNick(n)
-						nl.setPrefix <- []string{n, split.prefix}
+						nl.Set(n, newNick(n))
 					} else {
-						nl.add <- n
+						nl.Add(n)
 					}
-					<-nl.updateRequest
 				}
+				done <- struct{}{}
 			}
-			done <- struct{}{}
 		}()
 	}
 
@@ -78,7 +70,7 @@ func TestNickListAsync(t *testing.T) {
 	for {
 		<-done
 		i++
-		if i == count {
+		if i == len(all) {
 			close(done)
 			break
 		}
@@ -87,8 +79,7 @@ func TestNickListAsync(t *testing.T) {
 		if !nl.Has(n) {
 			t.Fatal(n, "was not Added to nickList")
 		}
-		nl.remove <- n
-		<-nl.updateRequest
+		nl.Remove(n)
 		if nl.Has(n) {
 			t.Fatal(n, "was Added multiple times")
 		}
@@ -96,21 +87,21 @@ func TestNickListAsync(t *testing.T) {
 }
 
 func TestNickList(t *testing.T) {
-	nl := &nickList{}
-	nl.Init()
-	nl.add <- "something"
-	<-nl.updateRequest
+	nl := newNickList()
+	nl.Add("something")
+
 	if !nl.Has("something") {
 		t.Fatalf("%#v", nl)
 	}
-	if nl.FindIndex(&nick{name: "something"}) != 0 {
+	nick := nl.Get("something")
+	if nick.name != "something" {
 		t.Fatal("nickList.FindIndex is broken")
 	}
 	if !nl.Has("something") {
 		t.Fatal("nickList.Has is broken")
 	}
-	nl.remove <- "something"
-	<-nl.updateRequest
+	nl.Remove("something")
+
 	if nl.Has("something") {
 		t.Fatalf("%#v", nl)
 	}
@@ -118,57 +109,54 @@ func TestNickList(t *testing.T) {
 		t.Fatalf("nickList.Has is broken")
 	}
 
-	nl.add <- "someone"
-	<-nl.updateRequest
-	nl.add <- "@someone"
-	<-nl.updateRequest
+	nl.Add("someone")
+
+	nl.Add("@someone")
+
 	if nl.StringSlice()[0] != "@someone" {
-		printf(nl)
 		t.Fatalf("%#v", nl.StringSlice())
 	}
-	nl.add <- "someone"
-	<-nl.updateRequest
-	if nl.StringSlice()[0] != "someone" {
-		t.Fatalf("%#v", nl)
-	}
-	nl.Shutdown()
+	nl.Add("someone")
 
-	nl = &nickList{}
-	nl.Init()
-	nl.add <- "zebra"
-	<-nl.updateRequest
+	if nl.StringSlice()[0] != "someone" {
+		t.Fatalf("%#v", nl.StringSlice())
+	}
+
+	nl = newNickList()
+	nl.Add("zebra")
+
 	if !nl.Has("zebra") {
 		t.Fatalf("has is broken")
 	}
-	nl.add <- "@yak"
-	<-nl.updateRequest
+	nl.Add("@yak")
+
 	if !nl.Has("@yak") {
-		n := splitNick("@yak")
-		fmt.Printf("%#v %#v %#v\n", nl, n, nl.FindIndex(n))
+		n := newNick("@yak")
+		fmt.Printf("%#v %#v\n", nl.data, n)
 		t.Fatalf("has is broken")
 	}
-	nl.add <- "+xenyx"
-	<-nl.updateRequest
+	nl.Add("+xenyx")
+
 	if !nl.Has("+xenyx") {
 		t.Fatalf("has is broken")
 	}
-	nl.add <- "walrus"
-	<-nl.updateRequest
+	nl.Add("walrus")
+
 	if !nl.Has("walrus") {
 		t.Fatalf("has is broken")
 	}
-	nl.add <- "%velociraptor"
-	<-nl.updateRequest
+	nl.Add("%velociraptor")
+
 	if !nl.Has("%velociraptor") {
 		t.Fatalf("has is broken")
 	}
-	expect := "[%velociraptor walrus +xenyx @yak zebra]"
-	actual := fmt.Sprintf("%v", nl)
-	if expect != actual {
-		t.Fatal("\nexpect:", expect, "\nactual:", actual)
-	}
-	expect = "[@yak %velociraptor +xenyx walrus zebra]"
-	actual = fmt.Sprintf("%v", nl.StringSlice())
+	// expect := "[%velociraptor walrus +xenyx @yak zebra]"
+	// actual := fmt.Sprintf("%v", nl)
+	// if expect != actual {
+	// 	t.Fatal("\nexpect:", expect, "\nactual:", actual)
+	// }
+	expect := "[@yak %velociraptor +xenyx walrus zebra]"
+	actual := fmt.Sprintf("%v", nl.StringSlice())
 	if expect != actual {
 		t.Fatal("\nexpect:", expect, "\nactual:", actual)
 	}

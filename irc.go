@@ -106,7 +106,8 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if cb == nil {
 			cb = servConn.createChatBox(channel, boxType)
 		}
-		cb.printMessage(fmt.Sprintf("%s <%s%s> %s", time.Now().Format("15:04"), cb.nickList.GetPrefix(l.Nick), l.Nick, l.Args[1]))
+		nick := cb.nickList.Get(l.Nick)
+		cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
@@ -158,17 +159,13 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		for _, n := range nicks {
 			if n != "" {
 				if cb.nickList.Has(n) {
-					split := splitNick(n)
-					cb.nickList.setPrefix <- []string{n, split.prefix}
-					<-cb.nickList.updateRequest
-					cb.updateNickList()
+					cb.nickList.Set(n, newNick(n))
 				} else {
-					cb.nickList.add <- n
-					<-cb.nickList.updateRequest
-					cb.updateNickList()
+					cb.nickList.Add(n)
 				}
 			}
 		}
+		cb.updateNickList()
 	})
 
 	conn.HandleFunc(goirc.JOIN, func(c *goirc.Conn, l *goirc.Line) {
@@ -179,8 +176,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			return
 		}
 		if !cb.nickList.Has(l.Nick) {
-			cb.nickList.add <- l.Nick
-			<-cb.nickList.updateRequest
+			cb.nickList.Add(l.Nick)
 			cb.updateNickList()
 			if !servConn.cfg.HideJoinParts {
 				cb.printMessage(time.Now().Format("15:04") + " -> " + l.Nick + " has joined " + l.Args[0])
@@ -196,8 +192,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			log.Println("got PART but user not on channel:", l.Args[0])
 			return
 		}
-		cb.nickList.remove <- l.Nick
-		<-cb.nickList.updateRequest
+		cb.nickList.Remove(l.Nick)
 		cb.updateNickList()
 		if !servConn.cfg.HideJoinParts {
 			msg := time.Now().Format("15:04") + " <- " + l.Nick + " has left " + l.Args[0]
@@ -220,8 +215,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		for _, cb := range servConn.chatBoxes {
 			if cb.nickList.Has(l.Nick) {
-				cb.nickList.remove <- l.Nick
-				<-cb.nickList.updateRequest
+				cb.nickList.Remove(l.Nick)
 				cb.updateNickList()
 				if !servConn.cfg.HideJoinParts {
 					cb.printMessage(msg)
@@ -231,18 +225,18 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 	})
 
 	conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
-		oldNick := l.Nick
-		newNick := l.Args[0]
-		if oldNick == servConn.cfg.Nick {
-			servConn.cfg.Nick = newNick
-			statusBar.SetText(newNick + " connected to " + cfg.ServerString())
+		oldNick := newNick(l.Nick)
+		newNick := newNick(l.Args[0])
+		if oldNick.name == servConn.cfg.Nick {
+			servConn.cfg.Nick = newNick.name
+			statusBar.SetText(newNick.name + " connected to " + cfg.ServerString())
 		}
 		for _, cb := range servConn.chatBoxes {
-			if cb.nickList.Has(oldNick) {
-				cb.nickList.replace <- []string{oldNick, newNick}
-				<-cb.nickList.updateRequest
+			if cb.nickList.Has(oldNick.name) {
+				newNick.prefix = oldNick.prefix
+				cb.nickList.Set(oldNick.name, newNick)
 				cb.updateNickList()
-				cb.printMessage(time.Now().Format("15:04") + " ** " + oldNick + " is now known as " + newNick)
+				cb.printMessage(time.Now().Format("15:04") + " ** " + oldNick.name + " is now known as " + newNick.name)
 			}
 		}
 	})
@@ -269,14 +263,13 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			var idx int
 			prefixUpdater := func(symbol string) {
 				n := nicks[idx]
-				p := cb.nickList.GetPrefix(n)
+				nick := cb.nickList.Get(n)
 				if add {
-					p += symbol
+					nick.prefix += symbol
 				} else {
-					p = strings.Replace(p, symbol, "", -1)
+					nick.prefix = strings.Replace(nick.prefix, symbol, "", -1)
 				}
-				cb.nickList.setPrefix <- []string{n, p}
-				<-cb.nickList.updateRequest
+				cb.nickList.Set(n, nick)
 				cb.updateNickList()
 				idx++
 			}

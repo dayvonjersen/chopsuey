@@ -41,11 +41,11 @@ func (cb *chatBox) printMessage(msg string) {
 
 func (cb *chatBox) sendMessage(msg string) {
 	cb.servConn.conn.Privmsg(cb.id, msg)
-	prefix := ""
+	nick := newNick(cb.servConn.cfg.Nick)
 	if cb.boxType == CHATBOX_CHANNEL {
-		prefix = cb.nickList.GetPrefix(cb.servConn.cfg.Nick)
+		nick = cb.nickList.Get(cb.servConn.cfg.Nick)
 	}
-	cb.printMessage(fmt.Sprintf("%s <%s%s> %s", time.Now().Format("15:04"), prefix, cb.servConn.cfg.Nick, msg))
+	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), nick, msg))
 }
 
 func (cb *chatBox) updateNickList() {
@@ -78,8 +78,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		logging.SetLogger(l)
 	}
 	if cb.boxType == CHATBOX_CHANNEL {
-		cb.nickList = &nickList{}
-		cb.nickList.Init()
+		cb.nickList = newNickList()
 		cb.nickListBox = &walk.ListBox{}
 		cb.nickListBoxModel = &listBoxModel{}
 		cb.topicInput = &walk.LineEdit{}
@@ -115,12 +114,11 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 						AlwaysConsumeSpace: true,
 						Persistent:         true,
 						OnItemActivated: func() {
-							n := splitNick(cb.nickListBoxModel.Items[cb.nickListBox.CurrentIndex()])
-							nick := n.name
+							nick := newNick(cb.nickListBoxModel.Items[cb.nickListBox.CurrentIndex()])
 
-							box := cb.servConn.getChatBox(nick)
+							box := cb.servConn.getChatBox(nick.name)
 							if box == nil {
-								cb.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
+								cb.servConn.createChatBox(nick.name, CHATBOX_PRIVMSG)
 							} else {
 								checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(box.tabPage)))
 							}

@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"regexp"
 	"sort"
+	"sync"
 )
 
 type nick struct {
@@ -17,9 +16,102 @@ func (n *nick) String() string {
 
 var nickRegex = regexp.MustCompile("^([~&@%+]*)(.+)$")
 
-func splitNick(prefixed string) *nick {
+func newNick(prefixed string) *nick {
 	m := nickRegex.FindAllStringSubmatch(prefixed, -1)
 	return &nick{m[0][1], m[0][2]}
+}
+
+type nickList struct {
+	data   []string         // underlying sorted string array for searching
+	lookup map[string]*nick // lookup map for prefixes
+	mu     *sync.Mutex
+}
+
+func newNickList() *nickList {
+	nl := &nickList{
+		data:   []string{},
+		lookup: map[string]*nick{},
+		mu:     &sync.Mutex{},
+	}
+	return nl
+}
+
+func (nl *nickList) Add(n string) {
+	nl.mu.Lock()
+	defer nl.mu.Unlock()
+
+	nick := newNick(n)
+
+	i := sort.SearchStrings(nl.data, nick.name)
+	if i < len(nl.data) {
+		if nl.data[i] != nick.name {
+			nl.data = append(nl.data[:i], append([]string{nick.name}, nl.data[i:]...)...)
+		}
+	} else {
+		nl.data = append(nl.data, nick.name)
+	}
+
+	nl.lookup[nick.name] = nick
+}
+
+func (nl *nickList) Remove(n string) {
+	nl.mu.Lock()
+	defer nl.mu.Unlock()
+
+	if nl.Has(n) {
+		nick := newNick(n)
+		i := sort.SearchStrings(nl.data, nick.name)
+		nl.data = append(nl.data[0:i], nl.data[i+1:]...)
+		delete(nl.lookup, n)
+	}
+}
+
+func (nl *nickList) Has(n string) bool {
+	nick := newNick(n)
+	i := sort.SearchStrings(nl.data, nick.name)
+	return i < len(nl.data) && nl.data[i] == nick.name
+}
+
+func (nl *nickList) Get(n string) *nick {
+	nick, ok := nl.lookup[n]
+	if !ok {
+		panic("nick \"" + n + "\" not in lookup table")
+	}
+	return nick
+}
+
+func (nl *nickList) Set(n string, newNick *nick) {
+	nl.mu.Lock()
+	oldNick, ok := nl.lookup[n]
+	nl.mu.Unlock()
+	if !ok {
+		panic("nick \"" + n + "\" not in lookup table")
+	}
+	if oldNick.name != newNick.name {
+		nl.Remove(oldNick.name)
+		nl.Add(newNick.String())
+	} else if oldNick.prefix != newNick.prefix {
+		nl.mu.Lock()
+		nl.lookup[n] = newNick
+		nl.mu.Unlock()
+	}
+}
+
+func (nl *nickList) StringSlice() []string {
+	nl.mu.Lock()
+	defer nl.mu.Unlock()
+
+	n := nickListByPrefix{}
+	for _, nick := range nl.lookup {
+		nick.prefix = sortPrefix(nick.prefix)
+		n = append(n, nick)
+	}
+	sort.Sort(n)
+	s := []string{}
+	for _, nick := range n {
+		s = append(s, nick.String())
+	}
+	return s
 }
 
 func cmpPrefix(a, b byte) bool {
@@ -71,186 +163,4 @@ func (nl nickListByPrefix) Less(i, j int) bool {
 
 func (nl nickListByPrefix) Swap(i, j int) {
 	nl[i], nl[j] = nl[j], nl[i]
-}
-
-type nickList struct {
-	slice              []*nick
-	add, remove        chan string
-	replace, setPrefix chan []string
-	updateRequest      chan struct{}
-}
-
-func (nl *nickList) Init() {
-	nl.add, nl.remove = make(chan string), make(chan string)
-	nl.replace, nl.setPrefix = make(chan []string), make(chan []string)
-	nl.updateRequest = make(chan struct{})
-	go func() {
-		for {
-			select {
-			case n, ok := <-nl.add:
-				if !ok {
-					return
-				}
-				if !nl.Has(n) {
-					nl.Add(n)
-				} else {
-					nick := splitNick(n)
-					nl.SetPrefix(n, nick.prefix)
-				}
-				sort.Sort(nl)
-				nl.updateRequest <- struct{}{}
-			case n, ok := <-nl.remove:
-				if !ok {
-					return
-				}
-				if nl.Has(n) {
-					nl.Remove(n)
-					sort.Sort(nl)
-				}
-				nl.updateRequest <- struct{}{}
-			case args, ok := <-nl.replace:
-				if !ok {
-					return
-				}
-				if nl.Has(args[0]) {
-					nl.Replace(args[0], args[1])
-					sort.Sort(nl)
-				}
-				nl.updateRequest <- struct{}{}
-			case args, ok := <-nl.setPrefix:
-				if !ok {
-					return
-				}
-				if nl.Has(args[0]) {
-					nl.SetPrefix(args[0], args[1])
-				}
-				nl.updateRequest <- struct{}{}
-			}
-		}
-	}()
-}
-
-func (nl *nickList) Shutdown() {
-	close(nl.add)
-	close(nl.remove)
-	close(nl.replace)
-	close(nl.setPrefix)
-	close(nl.updateRequest)
-}
-
-func (nl *nickList) Len() int {
-	return len(nl.slice)
-}
-func (nl *nickList) Less(i, j int) bool {
-	return nl.slice[i].name < nl.slice[j].name
-}
-func (nl *nickList) Swap(i, j int) {
-	nl.slice[i], nl.slice[j] = nl.slice[j], nl.slice[i]
-}
-
-func (nl *nickList) FindIndex(n *nick) int {
-	return nl.FindIndexSelection(n)
-
-	// return sort.Search(nl.Len(), func(i int) bool { return nl.slice[i].name == n.name })
-}
-
-func (nl *nickList) FindIndexSelection(n *nick) int {
-	for i, o := range nl.slice {
-		if o.name == n.name {
-			return i
-		}
-	}
-	return nl.Len()
-}
-
-func (nl *nickList) FindIndexBinary(n *nick) int {
-	i, j := 0, nl.Len()-1
-	for i <= j {
-		k := (i + j) / 2
-		o := nl.slice[k].name
-		if o > n.name {
-			j = k - 1
-		} else if o < n.name {
-			i = k + 1
-		} else {
-			return k
-		}
-	}
-	return nl.Len()
-}
-
-func (nl *nickList) Has(prefixed string) bool {
-	n := splitNick(prefixed)
-	i := nl.FindIndex(n)
-	if i < nl.Len() {
-		return true
-	}
-	return false
-}
-
-func (nl *nickList) Add(prefixed string) {
-	n := splitNick(prefixed)
-	i := nl.FindIndex(n)
-	n.prefix = sortPrefix(n.prefix)
-	if i < nl.Len() && nl.slice[i].name == n.name {
-		if nl.slice[i].prefix != n.prefix {
-			nl.slice[i].prefix = n.prefix
-		}
-	} else if i < nl.Len() {
-		nl.slice = append(nl.slice[:i], append([]*nick{n}, nl.slice[i:]...)...)
-	} else {
-		nl.slice = append(nl.slice, n)
-	}
-}
-
-func (nl *nickList) Remove(prefixed string) {
-	n := splitNick(prefixed)
-	i := nl.FindIndex(n)
-	if i < nl.Len() && nl.slice[i].name == n.name {
-		nl.slice = append(nl.slice[0:i], nl.slice[i+1:]...)
-	}
-}
-
-func (nl *nickList) Replace(old, new string) {
-	n := splitNick(old)
-	i := nl.FindIndex(n)
-	if i < nl.Len() && nl.slice[i].name == n.name {
-		a := nl.slice[i]
-		b := splitNick(new)
-		b.prefix = a.prefix
-		log.Println("old:", a, "new:", b)
-		nl.Remove(old)
-		nl.Add(b.String())
-	}
-}
-
-func (nl *nickList) GetPrefix(nick string) string {
-	n := splitNick(nick)
-	i := nl.FindIndex(n)
-	if i < nl.Len() && nl.slice[i].name == n.name {
-		return nl.slice[i].prefix
-	}
-	return ""
-}
-
-func (nl *nickList) SetPrefix(nick, prefix string) {
-	n := splitNick(nick)
-	i := nl.FindIndex(n)
-	if i < nl.Len() && nl.slice[i].name == n.name {
-		nl.slice[i].prefix = sortPrefix(prefix)
-	}
-}
-
-func (nl *nickList) String() string {
-	return fmt.Sprintf("%s", nl.slice)
-}
-
-func (nl *nickList) StringSlice() []string {
-	s := []string{}
-	var byprefix nickListByPrefix = nl.slice[:]
-	sort.Sort(byprefix)
-	for _, n := range byprefix {
-		s = append(s, (*n).String())
-	}
-	return s
 }
