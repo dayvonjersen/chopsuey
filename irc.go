@@ -25,7 +25,10 @@ func (servConn *serverConnection) connect() {
 }
 
 func (servConn *serverConnection) join(channel string) {
-	servConn.createChatBox(channel, CHATBOX_CHANNEL)
+	cb := servConn.getChatBox(channel)
+	if cb == nil {
+		servConn.createChatBox(channel, CHATBOX_CHANNEL)
+	}
 	servConn.conn.Join(channel)
 }
 
@@ -217,6 +220,37 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 					cb.printMessage(msg)
 				}
 			}
+		}
+	})
+
+	conn.HandleFunc(goirc.KICK, func(c *goirc.Conn, l *goirc.Line) {
+		op := l.Nick
+		channel := l.Args[0]
+		who := l.Args[1]
+		reason := l.Args[2]
+
+		cb := servConn.getChatBox(channel)
+		if cb == nil {
+			log.Println("got KICK but user not on channel:", channel)
+			return
+		}
+
+		if who == servConn.cfg.Nick {
+			msg := fmt.Sprintf("%s *** You have been kicked by %s", time.Now().Format("15:04"), op)
+			if reason != op && reason != who {
+				msg += ": " + reason
+			}
+			cb.printMessage(msg)
+			cb.nickList = newNickList()
+			cb.updateNickList()
+		} else {
+			msg := fmt.Sprintf("%s *** %s has been kicked by %s", time.Now().Format("15:04"), who, op)
+			if reason != op && reason != who {
+				msg += ": " + reason
+			}
+			cb.printMessage(msg)
+			cb.nickList.Remove(who)
+			cb.updateNickList()
 		}
 	})
 

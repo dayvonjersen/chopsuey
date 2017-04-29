@@ -18,22 +18,20 @@ var clientCommands map[string]clientCommand
 
 func init() {
 	clientCommands = map[string]clientCommand{
-		"test":   testCmd,
-		"me":     meCmd,
+		"clear":  clearCmd,
+		"close":  closeCmd,
 		"join":   joinCmd,
-		"part":   partCmd,
-		"notice": noticeCmd,
+		"kick":   kickCmd,
+		"me":     meCmd,
+		"mode":   modeCmd,
 		"msg":    privmsgCmd,
 		"nick":   nickCmd,
+		"notice": noticeCmd,
+		"part":   partCmd,
 		"quit":   quitCmd,
-		"mode":   modeCmd,
-		"clear":  clearCmd,
+		"rejoin": rejoinCmd,
 		"topic":  topicCmd,
-		"close":  closeCmd,
 	}
-}
-
-func testCmd(ctx *clientContext, args ...string) {
 }
 
 func meCmd(ctx *clientContext, args ...string) {
@@ -117,10 +115,31 @@ func topicCmd(ctx *clientContext, args ...string) {
 	}
 	ctx.servConn.conn.Topic(ctx.channel, args...)
 }
+
 func closeCmd(ctx *clientContext, args ...string) {
 	if ctx.cb.boxType == CHATBOX_CHANNEL {
 		partCmd(ctx, args...)
 	} else {
 		ctx.cb.close()
+	}
+}
+
+func rejoinCmd(ctx *clientContext, args ...string) {
+	if ctx.cb.boxType == CHATBOX_CHANNEL {
+		ctx.servConn.join(ctx.cb.id)
+	} else {
+		ctx.cb.printMessage("ERROR: /rejoin only works for channels.")
+	}
+}
+
+func kickCmd(ctx *clientContext, args ...string) {
+	if len(args) < 1 {
+		ctx.cb.printMessage("usage: /kick [nick] [(optional) reason...]")
+		return
+	}
+	if ctx.cb.boxType == CHATBOX_CHANNEL {
+		ctx.servConn.conn.Kick(ctx.cb.id, args[0], args[1:]...)
+	} else {
+		ctx.cb.printMessage("ERROR: /kick only works for channels.")
 	}
 }
