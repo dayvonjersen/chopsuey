@@ -158,11 +158,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		nicks := strings.Split(l.Args[3], " ")
 		for _, n := range nicks {
 			if n != "" {
-				if cb.nickList.Has(n) {
-					cb.nickList.Set(n, newNick(n))
-				} else {
-					cb.nickList.Add(n)
-				}
+				cb.nickList.Add(n)
 			}
 		}
 		cb.updateNickList()

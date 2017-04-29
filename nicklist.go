@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"regexp"
 	"sort"
 	"sync"
@@ -46,12 +47,14 @@ func (nl *nickList) Add(n string) {
 	if i < len(nl.data) {
 		if nl.data[i] != nick.name {
 			nl.data = append(nl.data[:i], append([]string{nick.name}, nl.data[i:]...)...)
+			nl.lookup[nick.name] = nick
+		} else if nick.prefix != "" && nl.lookup[nick.name].prefix != nick.prefix {
+			nl.lookup[nick.name] = nick
 		}
 	} else {
 		nl.data = append(nl.data, nick.name)
+		nl.lookup[nick.name] = nick
 	}
-
-	nl.lookup[nick.name] = nick
 }
 
 func (nl *nickList) Remove(n string) {
