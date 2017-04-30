@@ -25,7 +25,7 @@ type chatBox struct {
 	nickListBoxModel *listBoxModel
 	servConn         *serverConnection
 	textBuffer       *walk.TextEdit
-	textInput        *walk.LineEdit
+	textInput        *MyLineEdit
 	topicInput       *walk.LineEdit
 	title            string
 	tabPage          *walk.TabPage
@@ -67,7 +67,6 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		id:            id,
 		servConn:      servConn,
 		textBuffer:    &walk.TextEdit{},
-		textInput:     &walk.LineEdit{},
 		title:         id,
 		msgHistory:    []string{},
 		msgHistoryIdx: 0,
@@ -140,76 +139,78 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 				},
 			}.Create(builder)
 		}
-		LineEdit{
-			AssignTo: &cb.textInput,
-			OnKeyDown: func(key walk.Key) {
-				if key == walk.KeyReturn {
-					text := cb.textInput.Text()
-					if len(text) < 1 {
-						return
-					}
-					cb.msgHistory = append(cb.msgHistory, text)
-					cb.msgHistoryIdx = len(cb.msgHistory) - 1
-					if text[0] == '/' {
-						parts := strings.Split(text[1:], " ")
-						cmd := parts[0]
-						if cmd[0] == '/' {
-							cb.sendMessage(cmd)
-						} else {
-							var args []string
-							if len(parts) > 1 {
-								args = parts[1:]
-							} else {
-								args = []string{}
-							}
-							if cmdFn, ok := clientCommands[cmd]; ok {
-								cmdFn(&clientContext{servConn: cb.servConn, channel: cb.id, cb: cb}, args...)
-							} else {
-								cb.printMessage("unrecognized command: " + cmd)
-							}
-						}
+
+		cb.textInput = newMyLineEdit(cb.tabPage)
+		cb.textInput.KeyDown().Attach(func(key walk.Key) {
+			if key == walk.KeyReturn {
+				text := cb.textInput.Text()
+				if len(text) < 1 {
+					return
+				}
+				cb.msgHistory = append(cb.msgHistory, text)
+				cb.msgHistoryIdx = len(cb.msgHistory) - 1
+				if text[0] == '/' {
+					parts := strings.Split(text[1:], " ")
+					cmd := parts[0]
+					if cmd[0] == '/' {
+						cb.sendMessage(cmd)
 					} else {
-						cb.sendMessage(text)
+						var args []string
+						if len(parts) > 1 {
+							args = parts[1:]
+						} else {
+							args = []string{}
+						}
+						if cmdFn, ok := clientCommands[cmd]; ok {
+							cmdFn(&clientContext{servConn: cb.servConn, channel: cb.id, cb: cb}, args...)
+						} else {
+							cb.printMessage("unrecognized command: " + cmd)
+						}
 					}
-					cb.textInput.SetText("")
-				} else if key == walk.KeyUp {
-					if len(cb.msgHistory) > 0 {
+				} else {
+					cb.sendMessage(text)
+				}
+				cb.textInput.SetText("")
+			} else if key == walk.KeyUp {
+				if len(cb.msgHistory) > 0 {
+					text := cb.msgHistory[cb.msgHistoryIdx]
+					cb.textInput.SetText(text)
+					cb.textInput.SetTextSelection(len(text), len(text))
+					cb.msgHistoryIdx--
+					if cb.msgHistoryIdx < 0 {
+						cb.msgHistoryIdx = 0
+					}
+				}
+			} else if key == walk.KeyDown {
+				if len(cb.msgHistory) > 0 {
+					cb.msgHistoryIdx++
+					if cb.msgHistoryIdx <= len(cb.msgHistory)-1 {
 						text := cb.msgHistory[cb.msgHistoryIdx]
 						cb.textInput.SetText(text)
 						cb.textInput.SetTextSelection(len(text), len(text))
-						cb.msgHistoryIdx--
-						if cb.msgHistoryIdx < 0 {
-							cb.msgHistoryIdx = 0
-						}
-					}
-				} else if key == walk.KeyDown {
-					if len(cb.msgHistory) > 0 {
-						cb.msgHistoryIdx++
-						if cb.msgHistoryIdx <= len(cb.msgHistory)-1 {
-							text := cb.msgHistory[cb.msgHistoryIdx]
-							cb.textInput.SetText(text)
-							cb.textInput.SetTextSelection(len(text), len(text))
-						} else {
-							cb.textInput.SetText("")
-							cb.msgHistoryIdx = len(cb.msgHistory) - 1
-						}
+					} else {
+						cb.textInput.SetText("")
+						cb.msgHistoryIdx = len(cb.msgHistory) - 1
 					}
 				}
-			},
-			OnKeyUp: func(key walk.Key) {
-				if key == walk.KeyUp || key == walk.KeyDown {
-					text := cb.textInput.Text()
-					cb.textInput.SetTextSelection(len(text), len(text))
-				}
-			},
-			OnKeyPress: func(key walk.Key) {
-				if key == walk.KeyUp || key == walk.KeyDown {
-					text := cb.textInput.Text()
-					cb.textInput.SetTextSelection(len(text), len(text))
-				}
-			},
-		}.Create(builder)
+			}
+		})
 
+		cb.textInput.KeyUp().Attach(func(key walk.Key) {
+			if key == walk.KeyUp || key == walk.KeyDown {
+				text := cb.textInput.Text()
+				cb.textInput.SetTextSelection(len(text), len(text))
+			}
+		})
+
+		cb.textInput.KeyPress().Attach(func(key walk.Key) {
+			if key == walk.KeyUp || key == walk.KeyDown {
+				text := cb.textInput.Text()
+				cb.textInput.SetTextSelection(len(text), len(text))
+			}
+		})
+
+		checkErr(cb.tabPage.Children().Add(cb.textInput))
 		checkErr(tabWidget.Pages().Add(cb.tabPage))
 		checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(cb.tabPage)))
 		tabWidget.SaveState()
