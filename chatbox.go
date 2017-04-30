@@ -71,6 +71,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		title:         id,
 		msgHistory:    []string{},
 		msgHistoryIdx: 0,
+		nickList:      newNickList(),
 	}
 	if cb.boxType == CHATBOX_SERVER {
 		l := &tsoLogger{}
@@ -78,7 +79,6 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		logging.SetLogger(l)
 	}
 	if cb.boxType == CHATBOX_CHANNEL {
-		cb.nickList = newNickList()
 		cb.nickListBox = &walk.ListBox{}
 		cb.nickListBoxModel = &listBoxModel{}
 		cb.topicInput = &walk.LineEdit{}
