@@ -23,6 +23,7 @@ func init() {
 		"close":  closeCmd,
 		"join":   joinCmd,
 		"kick":   kickCmd,
+		"list":   listCmd,
 		"me":     meCmd,
 		"mode":   modeCmd,
 		"msg":    privmsgCmd,
@@ -182,4 +183,11 @@ func serverCmd(ctx *clientContext, args ...string) {
 	}
 	servConn := newServerConnection(cfg)
 	servConn.connect()
+}
+
+func listCmd(ctx *clientContext, args ...string) {
+	if ctx.servConn.channelList == nil {
+		ctx.servConn.channelList = newChannelList(ctx.servConn)
+	}
+	ctx.servConn.conn.Raw("LIST")
 }

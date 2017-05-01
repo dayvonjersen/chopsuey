@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ type serverConnection struct {
 	newChats     chan string
 	newChatBoxes chan *chatBox
 	closeChats   chan *chatBox
+	channelList  *channelList
 }
 
 func (servConn *serverConnection) connect() {
@@ -371,6 +373,22 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		cb.topicInput.SetText(topic)
 		cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", time.Now().Format("15:04"), who, channel, topic))
+	})
+
+	// LIST
+	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
+		channel := l.Args[1]
+		users, err := strconv.Atoi(l.Args[2])
+		checkErr(err)
+		topic := strings.TrimSpace(l.Args[3])
+
+		if servConn.channelList == nil {
+			servConn.channelList = newChannelList(servConn)
+		}
+
+		servConn.channelList.mu.Lock()
+		defer servConn.channelList.mu.Unlock()
+		servConn.channelList.Add(channel, users, topic)
 	})
 
 	return servConn
