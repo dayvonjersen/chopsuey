@@ -375,6 +375,15 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", time.Now().Format("15:04"), who, channel, topic))
 	})
 
+	// START OF /LIST
+	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
+		if servConn.channelList == nil {
+			log.Println("got 321 but servConn.channeList is nil")
+			return
+		}
+		servConn.channelList.inProgress = true
+	})
+
 	// LIST
 	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[1]
@@ -389,6 +398,16 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		servConn.channelList.mu.Lock()
 		defer servConn.channelList.mu.Unlock()
 		servConn.channelList.Add(channel, users, topic)
+	})
+
+	// END OF /LIST
+	conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
+		if servConn.channelList == nil {
+			log.Println("got 323 but servConn.channeList is nil")
+			return
+		}
+		servConn.channelList.inProgress = false
+		servConn.channelList.complete = true
 	})
 
 	return servConn

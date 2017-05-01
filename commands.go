@@ -189,5 +189,10 @@ func listCmd(ctx *clientContext, args ...string) {
 	if ctx.servConn.channelList == nil {
 		ctx.servConn.channelList = newChannelList(ctx.servConn)
 	}
-	ctx.servConn.conn.Raw("LIST")
+	if ctx.servConn.channelList.complete {
+		ctx.servConn.channelList.Clear()
+	}
+	if !ctx.servConn.channelList.inProgress {
+		ctx.servConn.conn.Raw("LIST")
+	}
 }

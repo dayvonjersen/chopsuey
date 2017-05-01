@@ -13,6 +13,8 @@ type channelList struct {
 	mu      *sync.Mutex
 	mdl     *channelListModel
 	tabPage *walk.TabPage
+
+	complete, inProgress bool
 }
 
 func (cl *channelList) Add(channel string, users int, topic string) {
@@ -26,10 +28,18 @@ func (cl *channelList) Add(channel string, users int, topic string) {
 	cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
 }
 
+func (cl *channelList) Clear() {
+	cl.mdl.items = []*channelListItem{}
+	cl.mdl.PublishRowsReset()
+	cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
+}
+
 func newChannelList(servConn *serverConnection) *channelList {
 	cl := &channelList{
-		mu:  &sync.Mutex{},
-		mdl: new(channelListModel),
+		mu:         &sync.Mutex{},
+		mdl:        new(channelListModel),
+		complete:   false,
+		inProgress: false,
 	}
 
 	var tbl *walk.TableView
