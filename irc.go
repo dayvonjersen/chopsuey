@@ -289,6 +289,11 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 				cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, channel))
 				return
 			}
+
+			nickStr := fmt.Sprintf("%s", nicks)
+			nickStr = nickStr[1 : len(nickStr)-1]
+			cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, nickStr))
+
 			var add bool
 			var idx int
 			prefixUpdater := func(symbol string) {
@@ -319,15 +324,16 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 					prefixUpdater("%")
 				case 'v':
 					prefixUpdater("+")
+				case 'b':
+					idx++
 				default:
 					panic("unhandled mode modifer:" + string(b))
 				}
 			}
-			cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, nicks))
 		} else if op == "" {
 			nick := channel
 			for _, cb := range servConn.chatBoxes {
-				if cb.nickList.Has(nick) {
+				if cb.nickList.Has(nick) || nick == servConn.cfg.Nick {
 					cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s", time.Now().Format("15:04"), nick, mode))
 				}
 			}
