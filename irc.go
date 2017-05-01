@@ -109,7 +109,12 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if cb == nil {
 			cb = servConn.createChatBox(channel, boxType)
 		}
-		nick := cb.nickList.Get(l.Nick)
+		var nick string
+		if boxType == CHATBOX_CHANNEL {
+			nick = cb.nickList.Get(l.Nick).String()
+		} else {
+			nick = channel
+		}
 		cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), nick, l.Args[1]))
 	})
 

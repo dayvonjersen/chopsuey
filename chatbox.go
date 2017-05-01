@@ -41,6 +41,9 @@ func (cb *chatBox) printMessage(msg string) {
 }
 
 func (cb *chatBox) sendMessage(msg string) {
+	if !(cb.boxType == CHATBOX_CHANNEL || cb.boxType == CHATBOX_PRIVMSG) {
+		return
+	}
 	cb.servConn.conn.Privmsg(cb.id, msg)
 	nick := newNick(cb.servConn.cfg.Nick)
 	if cb.boxType == CHATBOX_CHANNEL {
