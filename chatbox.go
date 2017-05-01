@@ -31,6 +31,7 @@ type chatBox struct {
 	tabPage          *walk.TabPage
 	msgHistory       []string
 	msgHistoryIdx    int
+	tabComplete      *tabComplete
 }
 
 func (cb *chatBox) printMessage(msg string) {
@@ -61,6 +62,12 @@ func (cb *chatBox) close() {
 	tabWidget.SaveState()
 }
 
+type tabComplete struct {
+	Active  bool
+	Entries []string
+	Index   int
+}
+
 func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 	cb := &chatBox{
 		boxType:       boxType,
@@ -71,6 +78,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		msgHistory:    []string{},
 		msgHistoryIdx: 0,
 		nickList:      newNickList(),
+		tabComplete:   &tabComplete{},
 	}
 	if cb.boxType == CHATBOX_SERVER {
 		l := &tsoLogger{}
@@ -207,6 +215,31 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 			if key == walk.KeyUp || key == walk.KeyDown {
 				text := cb.textInput.Text()
 				cb.textInput.SetTextSelection(len(text), len(text))
+			} else if key == walk.KeyTab && cb.boxType == CHATBOX_CHANNEL {
+				text := strings.Split(cb.textInput.Text(), " ")
+				if cb.tabComplete.Active {
+					cb.tabComplete.Index++
+					if cb.tabComplete.Index >= len(cb.tabComplete.Entries) {
+						cb.tabComplete.Index = 0
+					}
+				} else {
+					term := text[len(text)-1]
+					res := cb.nickList.Search(term)
+					res = append(res, term)
+					cb.tabComplete = &tabComplete{
+						Active:  true,
+						Entries: res,
+						Index:   0,
+					}
+				}
+				text = append(text[:len(text)-1], cb.tabComplete.Entries[cb.tabComplete.Index])
+				t := strings.Join(text, " ")
+				cb.textInput.SetText(t)
+				cb.textInput.SetTextSelection(len(t), len(t))
+			} else {
+				if cb.tabComplete.Active {
+					cb.tabComplete = &tabComplete{}
+				}
 			}
 		})
 
