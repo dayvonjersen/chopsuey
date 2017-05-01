@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,6 +31,7 @@ func init() {
 		"part":   partCmd,
 		"quit":   quitCmd,
 		"rejoin": rejoinCmd,
+		"server": serverCmd,
 		"topic":  topicCmd,
 	}
 }
@@ -142,4 +144,35 @@ func kickCmd(ctx *clientContext, args ...string) {
 	} else {
 		ctx.cb.printMessage("ERROR: /kick only works for channels.")
 	}
+}
+
+func serverCmd(ctx *clientContext, args ...string) {
+	if len(args) < 1 {
+		ctx.cb.printMessage("usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
+		return
+	}
+	host := args[0]
+	port := 6667
+	ssl := false
+	if len(args) > 1 {
+		portStr := args[1]
+		if portStr[0] == '+' {
+			ssl = true
+			port = 6697
+			portStr = portStr[1:]
+		}
+		if p, err := strconv.Atoi(portStr); err == nil {
+			port = p
+		}
+	}
+	cfg := &clientConfig{
+		Host:          host,
+		Port:          port,
+		Ssl:           ssl,
+		Nick:          ctx.servConn.cfg.Nick,
+		Autojoin:      []string{},
+		HideJoinParts: ctx.servConn.cfg.HideJoinParts,
+	}
+	servConn := newServerConnection(cfg)
+	servConn.connect()
 }
