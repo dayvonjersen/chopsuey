@@ -33,7 +33,14 @@ func init() {
 		"rejoin": rejoinCmd,
 		"server": serverCmd,
 		"topic":  topicCmd,
+
+		"raw": rawCmd,
 	}
+}
+
+// for debug purposes only
+func rawCmd(ctx *clientContext, args ...string) {
+	ctx.servConn.conn.Raw(strings.Join(args, " "))
 }
 
 func meCmd(ctx *clientContext, args ...string) {
