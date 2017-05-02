@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -84,9 +83,6 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 		tabComplete:   &tabComplete{},
 	}
 	if cb.boxType == CHATBOX_SERVER {
-		l := &tsoLogger{}
-		l.LogFn = cb.printMessage
-		logging.SetLogger(l)
 	}
 	if cb.boxType == CHATBOX_CHANNEL {
 		cb.nickListBox = &walk.ListBox{}

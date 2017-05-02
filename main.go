@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/fluffle/goirc/logging"
 	"github.com/kr/pretty"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -36,13 +37,34 @@ func main() {
 			},
 		},
 	}.Create()
+	tabWidget.SetPersistent(true)
 
 	font, err := walk.NewFont("ProFontWindows", 9, 0)
 	checkErr(err)
 
 	mw.WindowBase.SetFont(font)
 
-	tabWidget.SetPersistent(true)
+	var loggerTextBuffer *walk.TextEdit
+	l := &tsoLogger{}
+	l.LogFn = func(msg string) {
+		mw.WindowBase.Synchronize(func() {
+			loggerTextBuffer.AppendText(msg + "\r\n")
+		})
+	}
+	logging.SetLogger(l)
+	tabPage, err := walk.NewTabPage()
+	checkErr(err)
+	tabPage.SetTitle("Debug Log")
+	tabPage.SetLayout(walk.NewVBoxLayout())
+	builder := NewBuilder(tabPage)
+	TextEdit{
+		AssignTo: &loggerTextBuffer,
+		ReadOnly: true,
+	}.Create(builder)
+	checkErr(tabWidget.Pages().Add(tabPage))
+	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(tabPage)))
+	tabWidget.SaveState()
+
 	tabWidget.CurrentIndexChanged().Attach(func() {
 		children := tabWidget.Pages().At(tabWidget.CurrentIndex()).Children()
 		for i := 0; i < children.Len(); i++ {
