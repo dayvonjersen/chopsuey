@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/fluffle/goirc/logging"
 	"github.com/kr/pretty"
@@ -113,6 +114,10 @@ func checkErr(err error) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func now() string {
+	return time.Now().Format(clientCfg.TimeFormat)
 }
 
 func printf(args ...interface{}) {

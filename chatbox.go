@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -54,7 +53,7 @@ func (cb *chatBox) sendMessage(msg string) {
 	if cb.boxType == CHATBOX_CHANNEL {
 		nick = cb.nickList.Get(cb.servConn.Nick)
 	}
-	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format(clientCfg.TimeFormat), nick, msg))
+	cb.printMessage(fmt.Sprintf("%s <%s> %s", now(), nick, msg))
 }
 
 func (cb *chatBox) updateNickList() {
