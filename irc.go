@@ -532,17 +532,6 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	return servConn
 }
 
-// temporary until we handle all unhandled server response codes
-
-type tsoLogger struct {
-	LogFn func(string)
-}
-
-func (l *tsoLogger) Debug(f string, a ...interface{}) { l.LogFn(fmt.Sprintf(f, a...)) }
-func (l *tsoLogger) Info(f string, a ...interface{})  { l.LogFn(fmt.Sprintf(f, a...)) }
-func (l *tsoLogger) Warn(f string, a ...interface{})  { l.LogFn(fmt.Sprintf(f, a...)) }
-func (l *tsoLogger) Error(f string, a ...interface{}) { log.Panicln(fmt.Sprintf(f, a...)) }
-
 func debugPrint(l *goirc.Line) {
 	printf(&goirc.Line{
 		Nick:  l.Nick,
