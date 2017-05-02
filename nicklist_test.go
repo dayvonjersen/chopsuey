@@ -118,7 +118,7 @@ func TestNickList(t *testing.T) {
 	}
 	nl.Add("someone")
 
-	if nl.StringSlice()[0] != "someone" {
+	if nl.StringSlice()[0] != "@someone" {
 		t.Fatalf("%#v", nl.StringSlice())
 	}
 
