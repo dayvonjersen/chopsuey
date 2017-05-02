@@ -22,6 +22,8 @@ type serverConnection struct {
 	newChatBoxes chan *chatBox
 	closeChats   chan *chatBox
 	channelList  *channelList
+
+	retryConnectEnabled bool
 }
 
 func (servConn *serverConnection) connect() {
@@ -37,6 +39,9 @@ func (servConn *serverConnection) retryConnect(cb *chatBox) {
 		if err != nil {
 			cb.printMessage(now() + " " + err.Error())
 			statusBar.SetText("couldn't connect to " + servConn.cfg.ServerString())
+			if !servConn.retryConnectEnabled {
+				return
+			}
 		} else {
 			statusBar.SetText(servConn.Nick + " connected to " + servConn.networkName)
 			break
@@ -102,11 +107,12 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	conn := goirc.Client(goircCfg)
 
 	servConn := &serverConnection{
-		Nick:        cfg.Nick,
-		networkName: cfg.ServerString(),
-		cfg:         cfg,
-		conn:        conn,
-		chatBoxes:   []*chatBox{},
+		Nick:                cfg.Nick,
+		networkName:         cfg.ServerString(),
+		cfg:                 cfg,
+		conn:                conn,
+		chatBoxes:           []*chatBox{},
+		retryConnectEnabled: true,
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
@@ -124,7 +130,10 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 		cb.printMessage(now() + " disconnected x_x")
 
 		statusBar.SetText("disconnected x_x")
-		go servConn.retryConnect(cb)
+
+		if servConn.retryConnectEnabled {
+			go servConn.retryConnect(cb)
+		}
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
@@ -148,9 +157,10 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 		}
 		servConn.networkName = l.Args[1]
 		cb.id = servConn.networkName
-		cb.tabPage.SetTitle(servConn.networkName)
-		statusBar.SetText(cfg.Nick + " connected to " + servConn.networkName)
-
+		mw.WindowBase.Synchronize(func() {
+			cb.tabPage.SetTitle(servConn.networkName)
+			statusBar.SetText(cfg.Nick + " connected to " + servConn.networkName)
+		})
 		printServerMessage(c, l)
 	})
 	// BOUNCE

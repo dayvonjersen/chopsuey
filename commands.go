@@ -101,8 +101,11 @@ func nickCmd(ctx *clientContext, args ...string) {
 }
 
 func quitCmd(ctx *clientContext, args ...string) {
+	ctx.servConn.retryConnectEnabled = false
 	ctx.servConn.conn.Quit(strings.Join(args, " "))
-	mw.Close()
+	for _, cb := range ctx.servConn.chatBoxes {
+		cb.close()
+	}
 }
 
 func modeCmd(ctx *clientContext, args ...string) {
