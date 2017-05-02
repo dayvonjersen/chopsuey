@@ -7,16 +7,22 @@ import (
 	"os"
 )
 
-type clientConfig struct {
-	Host          string   `json:"host"`
-	Port          int      `json:"port"`
-	Ssl           bool     `json:"ssl"`
-	Nick          string   `json:"nick"`
-	Autojoin      []string `json:"autojoin"`
-	HideJoinParts bool     `json:"hidejoinparts"`
+type connectionConfig struct {
+	Host     string   `json:"host"`
+	Port     int      `json:"port"`
+	Ssl      bool     `json:"ssl"`
+	Nick     string   `json:"nick"`
+	AutoJoin []string `json:"autojoin"`
 }
 
-func (cfg *clientConfig) ServerString() string {
+type clientConfig struct {
+	AutoConnect     []*connectionConfig `json:"autoconnect"`
+	HideJoinParts   bool                `json:"hidejoinparts"`
+	ChatLogsEnabled bool                `json:"chatlogs"`
+	TimeFormat      string              `json:"timeformat"`
+}
+
+func (cfg *connectionConfig) ServerString() string {
 	if cfg.Ssl {
 		return fmt.Sprintf("%s:+%d", cfg.Host, cfg.Port)
 	}

@@ -49,7 +49,7 @@ func (cb *chatBox) sendMessage(msg string) {
 	if cb.boxType == CHATBOX_CHANNEL {
 		nick = cb.nickList.Get(cb.servConn.cfg.Nick)
 	}
-	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), nick, msg))
+	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format(clientCfg.TimeFormat), nick, msg))
 }
 
 func (cb *chatBox) updateNickList() {

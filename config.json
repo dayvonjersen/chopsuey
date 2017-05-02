@@ -1,10 +1,16 @@
 {
-    "host": "192.168.1.5",
-	"port": 6667,
-	"ssl": false,
-	"nick": "tso|testing",
-	"autojoin": [
-        "#test"
+    "autoconnect": [
+        {
+            "host": "192.168.1.5",
+            "port": 6667,
+            "ssl": false,
+            "nick": "tso|testing",
+            "autojoin": [
+                "#test"
+            ]
+        }
     ],
-    "hidejoinparts": true
+    "hidejoinparts": true,
+    "chatlogs": false,
+    "timeformat": "15:04"
 }

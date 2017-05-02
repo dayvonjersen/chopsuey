@@ -14,6 +14,8 @@ var (
 	mw        *walk.MainWindow
 	tabWidget *walk.TabWidget
 	statusBar *walk.StatusBarItem
+
+	clientCfg *clientConfig
 )
 
 func main() {
@@ -53,15 +55,17 @@ func main() {
 		}
 	})
 
-	cfg, err := getClientConfig()
+	clientCfg, err = getClientConfig()
 	if err != nil {
 		log.Println("error parsing config.json", err)
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
 		statusBar.SetText("error parsing config.json")
 	} else {
-		statusBar.SetText("connecting to " + cfg.ServerString() + "...")
-		servConn := newServerConnection(cfg)
-		servConn.connect()
+		for _, cfg := range clientCfg.AutoConnect {
+			statusBar.SetText("connecting to " + cfg.ServerString() + "...")
+			servConn := newServerConnection(cfg)
+			servConn.connect()
+		}
 	}
 
 	mw.Run()

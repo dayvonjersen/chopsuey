@@ -51,7 +51,7 @@ func meCmd(ctx *clientContext, args ...string) {
 		return
 	}
 	ctx.servConn.conn.Action(ctx.channel, msg)
-	ctx.cb.printMessage(fmt.Sprintf("%s * %s %s", time.Now().Format("15:04"), ctx.servConn.cfg.Nick, msg))
+	ctx.cb.printMessage(fmt.Sprintf("%s * %s %s", time.Now().Format(clientCfg.TimeFormat), ctx.servConn.cfg.Nick, msg))
 }
 
 func joinCmd(ctx *clientContext, args ...string) {
@@ -73,7 +73,7 @@ func noticeCmd(ctx *clientContext, args ...string) {
 	}
 	msg := strings.Join(args[1:], " ")
 	ctx.servConn.conn.Notice(args[0], msg)
-	ctx.cb.printMessage(fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), ctx.servConn.cfg.Nick, msg))
+	ctx.cb.printMessage(fmt.Sprintf("%s *** %s: %s", time.Now().Format(clientCfg.TimeFormat), ctx.servConn.cfg.Nick, msg))
 }
 
 func privmsgCmd(ctx *clientContext, args ...string) {
@@ -90,7 +90,7 @@ func privmsgCmd(ctx *clientContext, args ...string) {
 	if cb == nil {
 		cb = ctx.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
 	}
-	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), ctx.servConn.cfg.Nick, msg))
+	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format(clientCfg.TimeFormat), ctx.servConn.cfg.Nick, msg))
 }
 
 func nickCmd(ctx *clientContext, args ...string) {
@@ -173,13 +173,12 @@ func serverCmd(ctx *clientContext, args ...string) {
 			port = p
 		}
 	}
-	cfg := &clientConfig{
-		Host:          host,
-		Port:          port,
-		Ssl:           ssl,
-		Nick:          ctx.servConn.cfg.Nick,
-		Autojoin:      []string{},
-		HideJoinParts: ctx.servConn.cfg.HideJoinParts,
+	cfg := &connectionConfig{
+		Host:     host,
+		Port:     port,
+		Ssl:      ssl,
+		Nick:     ctx.servConn.cfg.Nick,
+		AutoJoin: []string{},
 	}
 	servConn := newServerConnection(cfg)
 	servConn.connect()

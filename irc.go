@@ -12,7 +12,7 @@ import (
 )
 
 type serverConnection struct {
-	cfg          *clientConfig
+	cfg          *connectionConfig
 	conn         *goirc.Conn
 	chatBoxes    []*chatBox
 	newChats     chan string
@@ -70,7 +70,7 @@ func (servConn *serverConnection) deleteChatBox(id string) {
 	}
 }
 
-func newServerConnection(cfg *clientConfig) *serverConnection {
+func newServerConnection(cfg *connectionConfig) *serverConnection {
 	goircCfg := goirc.NewConfig(cfg.Nick)
 	if cfg.Ssl {
 		goircCfg.SSL = true
@@ -91,7 +91,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		statusBar.SetText(cfg.Nick + " connected to " + cfg.ServerString())
-		for _, channel := range cfg.Autojoin {
+		for _, channel := range cfg.AutoJoin {
 			servConn.join(channel)
 		}
 	})
@@ -124,7 +124,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		} else {
 			nick = channel
 		}
-		cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format("15:04"), nick, l.Args[1]))
+		cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format(clientCfg.TimeFormat), nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
@@ -138,7 +138,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if cb == nil {
 			cb = servConn.createChatBox(channel, boxType)
 		}
-		cb.printMessage(fmt.Sprintf("%s *%s %s*", time.Now().Format("15:04"), l.Nick, l.Args[1]))
+		cb.printMessage(fmt.Sprintf("%s *%s %s*", time.Now().Format(clientCfg.TimeFormat), l.Nick, l.Args[1]))
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
@@ -161,7 +161,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if cb == nil {
 			cb = servConn.createChatBox(channel, boxType)
 		}
-		cb.printMessage(fmt.Sprintf("%s *** %s: %s", time.Now().Format("15:04"), l.Nick, l.Args[1]))
+		cb.printMessage(fmt.Sprintf("%s *** %s: %s", time.Now().Format(clientCfg.TimeFormat), l.Nick, l.Args[1]))
 	})
 
 	// NAMES
@@ -191,8 +191,8 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		if !cb.nickList.Has(l.Nick) {
 			cb.nickList.Add(l.Nick)
 			cb.updateNickList()
-			if !servConn.cfg.HideJoinParts {
-				cb.printMessage(time.Now().Format("15:04") + " -> " + l.Nick + " has joined " + l.Args[0])
+			if !clientCfg.HideJoinParts {
+				cb.printMessage(time.Now().Format(clientCfg.TimeFormat) + " -> " + l.Nick + " has joined " + l.Args[0])
 			}
 		}
 	})
@@ -207,8 +207,8 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 		cb.nickList.Remove(l.Nick)
 		cb.updateNickList()
-		if !servConn.cfg.HideJoinParts {
-			msg := time.Now().Format("15:04") + " <- " + l.Nick + " has left " + l.Args[0]
+		if !clientCfg.HideJoinParts {
+			msg := time.Now().Format(clientCfg.TimeFormat) + " <- " + l.Nick + " has left " + l.Args[0]
 			if len(l.Args) > 1 {
 				msg += " (" + l.Args[1] + ")"
 			}
@@ -222,7 +222,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			reason = strings.TrimPrefix(reason, "Quit:")
 		}
 		reason = strings.TrimSpace(reason)
-		msg := time.Now().Format("15:04") + " <- " + l.Nick + " has quit"
+		msg := time.Now().Format(clientCfg.TimeFormat) + " <- " + l.Nick + " has quit"
 		if reason != "" {
 			msg += ": " + reason
 		}
@@ -230,7 +230,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			if cb.nickList.Has(l.Nick) {
 				cb.nickList.Remove(l.Nick)
 				cb.updateNickList()
-				if !servConn.cfg.HideJoinParts {
+				if !clientCfg.HideJoinParts {
 					cb.printMessage(msg)
 				}
 			}
@@ -250,7 +250,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		}
 
 		if who == servConn.cfg.Nick {
-			msg := fmt.Sprintf("%s *** You have been kicked by %s", time.Now().Format("15:04"), op)
+			msg := fmt.Sprintf("%s *** You have been kicked by %s", time.Now().Format(clientCfg.TimeFormat), op)
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
@@ -258,7 +258,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			cb.nickList = newNickList()
 			cb.updateNickList()
 		} else {
-			msg := fmt.Sprintf("%s *** %s has been kicked by %s", time.Now().Format("15:04"), who, op)
+			msg := fmt.Sprintf("%s *** %s has been kicked by %s", time.Now().Format(clientCfg.TimeFormat), who, op)
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
@@ -280,7 +280,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 				newNick.prefix = oldNick.prefix
 				cb.nickList.Set(oldNick.name, newNick)
 				cb.updateNickList()
-				cb.printMessage(time.Now().Format("15:04") + " ** " + oldNick.name + " is now known as " + newNick.name)
+				cb.printMessage(time.Now().Format(clientCfg.TimeFormat) + " ** " + oldNick.name + " is now known as " + newNick.name)
 			}
 		}
 	})
@@ -300,13 +300,13 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 				return
 			}
 			if len(nicks) == 0 {
-				cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, channel))
+				cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format(clientCfg.TimeFormat), op, mode, channel))
 				return
 			}
 
 			nickStr := fmt.Sprintf("%s", nicks)
 			nickStr = nickStr[1 : len(nickStr)-1]
-			cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format("15:04"), op, mode, nickStr))
+			cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", time.Now().Format(clientCfg.TimeFormat), op, mode, nickStr))
 
 			var add bool
 			var idx int
@@ -348,7 +348,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			nick := channel
 			for _, cb := range servConn.chatBoxes {
 				if cb.nickList.Has(nick) || nick == servConn.cfg.Nick {
-					cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s", time.Now().Format("15:04"), nick, mode))
+					cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s", time.Now().Format(clientCfg.TimeFormat), nick, mode))
 				}
 			}
 		}
@@ -379,7 +379,7 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 			return
 		}
 		cb.topicInput.SetText(topic)
-		cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", time.Now().Format("15:04"), who, channel, topic))
+		cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", time.Now().Format(clientCfg.TimeFormat), who, channel, topic))
 	})
 
 	// START OF /LIST
