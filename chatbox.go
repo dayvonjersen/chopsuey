@@ -36,6 +36,7 @@ type chatBox struct {
 func (cb *chatBox) printMessage(msg string) {
 	mw.WindowBase.Synchronize(func() {
 		cb.textBuffer.AppendText(msg + "\r\n")
+		cb.logMessage(msg)
 		if cb.tabPage != getCurrentTab() {
 			if !strings.HasPrefix(cb.tabPage.Title(), "* ") {
 				cb.tabPage.SetTitle("* " + cb.tabPage.Title())

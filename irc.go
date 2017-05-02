@@ -110,7 +110,7 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 			log.Println("chatbox for server tab not found:", servConn.networkName)
 			return
 		}
-		cb.printMessage(strings.Join(l.Args[1:], " "))
+		cb.printMessage(time.Now().Format(clientCfg.TimeFormat) + " " + strings.Join(l.Args[1:], " "))
 	}
 
 	// WELCOME
@@ -154,7 +154,7 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 			log.Println("chatbox for server tab not found:", servConn.networkName)
 			return
 		}
-		cb.printMessage("ERROR: " + strings.Join(l.Args[1:], " "))
+		cb.printMessage(time.Now().Format(clientCfg.TimeFormat) + " ERROR: " + strings.Join(l.Args[1:], " "))
 	}
 
 	conn.HandleFunc("401", printErrorMessage)

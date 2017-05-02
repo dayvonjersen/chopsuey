@@ -2,3 +2,5 @@
 *.sw*
 rfc2812.txt
 test/
+*.exe~
+chatlogs/

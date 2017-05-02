@@ -11,6 +11,6 @@
         }
     ],
     "hidejoinparts": true,
-    "chatlogs": false,
+    "chatlogs": true,
     "timeformat": "15:04"
 }
