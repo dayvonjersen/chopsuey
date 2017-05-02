@@ -100,7 +100,14 @@ func newServerConnection(cfg *clientConfig) *serverConnection {
 		statusBar.SetText("disconnected x_x")
 	})
 
+	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
+		debugPrint(l)
+		if l.Args[0] == "DCC" {
+			dccHandler(servConn, l.Nick, l.Args[2])
+		}
+	})
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
+		debugPrint(l)
 		channel := l.Args[0]
 		boxType := CHATBOX_CHANNEL
 		if channel == servConn.cfg.Nick {
