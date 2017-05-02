@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 
 	"github.com/fluffle/goirc/logging"
 	"github.com/kr/pretty"
@@ -66,7 +67,9 @@ func main() {
 	tabWidget.SaveState()
 
 	tabWidget.CurrentIndexChanged().Attach(func() {
-		children := tabWidget.Pages().At(tabWidget.CurrentIndex()).Children()
+		currentTab := getCurrentTab()
+		currentTab.SetTitle(strings.TrimPrefix(currentTab.Title(), "* "))
+		children := currentTab.Children()
 		for i := 0; i < children.Len(); i++ {
 			child := children.At(i)
 			typeStr := reflect.TypeOf(child).String()
@@ -91,6 +94,10 @@ func main() {
 	}
 
 	mw.Run()
+}
+
+func getCurrentTab() *walk.TabPage {
+	return tabWidget.Pages().At(tabWidget.CurrentIndex())
 }
 
 func checkErr(err error) {

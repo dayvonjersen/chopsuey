@@ -36,6 +36,11 @@ type chatBox struct {
 func (cb *chatBox) printMessage(msg string) {
 	mw.WindowBase.Synchronize(func() {
 		cb.textBuffer.AppendText(msg + "\r\n")
+		if cb.tabPage != getCurrentTab() {
+			if !strings.HasPrefix(cb.tabPage.Title(), "* ") {
+				cb.tabPage.SetTitle("* " + cb.tabPage.Title())
+			}
+		}
 	})
 }
 
@@ -44,9 +49,9 @@ func (cb *chatBox) sendMessage(msg string) {
 		return
 	}
 	cb.servConn.conn.Privmsg(cb.id, msg)
-	nick := newNick(cb.servConn.cfg.Nick)
+	nick := newNick(cb.servConn.Nick)
 	if cb.boxType == CHATBOX_CHANNEL {
-		nick = cb.nickList.Get(cb.servConn.cfg.Nick)
+		nick = cb.nickList.Get(cb.servConn.Nick)
 	}
 	cb.printMessage(fmt.Sprintf("%s <%s> %s", time.Now().Format(clientCfg.TimeFormat), nick, msg))
 }
