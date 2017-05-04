@@ -34,8 +34,15 @@ func init() {
 		"server": serverCmd,
 		"topic":  topicCmd,
 
-		"raw": rawCmd,
+		"raw":  rawCmd,
+		"send": sendCmd,
 	}
+}
+
+func sendCmd(ctx *clientContext, args ...string) {
+	who := args[0]
+	file := "rfc2812.txt"
+	fileTransfer(ctx.servConn, who, file)
 }
 
 // for debug purposes only

@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,7 @@ const MAX_CONNECT_RETRIES = 100
 
 type serverConnection struct {
 	networkName, Nick string
+	IP                net.IP
 
 	cfg          *connectionConfig
 	conn         *goirc.Conn
@@ -180,6 +182,31 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	conn.HandleFunc("257", printServerMessage)
 	conn.HandleFunc("258", printServerMessage)
 	conn.HandleFunc("259", printServerMessage)
+	// WHOIS
+	conn.HandleFunc("311", printServerMessage)
+	conn.HandleFunc("312", printServerMessage)
+	conn.HandleFunc("313", printServerMessage)
+	conn.HandleFunc("317", printServerMessage)
+	conn.HandleFunc("318", printServerMessage)
+	conn.HandleFunc("319", printServerMessage)
+	// WHOWAS
+	conn.HandleFunc("314", printServerMessage)
+	conn.HandleFunc("369", printServerMessage)
+
+	// "is connecting from"
+	conn.HandleFunc("378", func(c *goirc.Conn, l *goirc.Line) {
+		if len(l.Args) == 3 && l.Args[1] == servConn.Nick {
+			s := strings.Split(l.Args[2], " ")
+			ipStr := s[len(s)-1]
+			ip := net.ParseIP(ipStr)
+			if ip != nil {
+				if ip4 := ip.To4(); ip4 != nil {
+					servConn.IP = ip4
+				}
+			}
+		}
+		printServerMessage(c, l)
+	})
 	// TODO: there are more...
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
