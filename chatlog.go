@@ -4,9 +4,12 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 )
 
 const CHATLOG_DIR = "./chatlogs/"
+
+var re = regexp.MustCompile("[/<>:\"\\|?*]")
 
 func (cb *chatBox) logMessage(msg string) {
 	if !clientCfg.ChatLogsEnabled {
@@ -26,6 +29,7 @@ func (cb *chatBox) logMessage(msg string) {
 		log.Println("message not logged:", msg)
 		return
 	}
+	fname = re.ReplaceAllString(fname, "_")
 	f, err := os.OpenFile(CHATLOG_DIR+fname, os.O_CREATE|os.O_APPEND, os.ModePerm)
 	checkErr(err)
 	defer f.Close()
