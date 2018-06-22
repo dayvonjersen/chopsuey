@@ -116,6 +116,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 						ReadOnly:           true,
 						AlwaysConsumeSpace: true,
 						Persistent:         true,
+						VScroll:            true,
 					},
 					ListBox{
 						MaxSize:            Size{100, 460},
@@ -147,6 +148,7 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 						ReadOnly:           true,
 						AlwaysConsumeSpace: true,
 						Persistent:         true,
+						VScroll:            true,
 					},
 				},
 			}.Create(builder)

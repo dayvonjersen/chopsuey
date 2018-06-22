@@ -62,6 +62,7 @@ func main() {
 	TextEdit{
 		AssignTo: &loggerTextBuffer,
 		ReadOnly: true,
+		VScroll:  true,
 	}.Create(builder)
 	checkErr(tabWidget.Pages().Add(tabPage))
 	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(tabPage)))
