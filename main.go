@@ -44,7 +44,7 @@ func main() {
 		X:      1536,
 		Y:      0,
 		Width:  384,
-		Height: 1048,
+		Height: 1050,
 	})
 	ico, err := walk.NewIconFromFile("chopsuey.ico")
 	checkErr(err)

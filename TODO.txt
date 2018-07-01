@@ -1,31 +1,16 @@
-some way to open a new server tab when you close all the tabs
-fix sorting on channellist
-/ctcp command
-/whois command (write to current tab)
-set version string (configurable)
-limit message history (configurable)
-settings panel which writes to config.json
-hot-loadable config.json
-autogen default config.json
-don't log messages if offline
+--------------------------------------1------------------------------------------
 fix reconnect on connection lost
+
     2018/06/22 17:52:15 irc.recv(): read tcp 192.168.1.6:64724->104.196.111.255:6697: wsarecv: An existing connection was forcibly closed by the remote host.
     panic: irc.recv(): read tcp 192.168.1.6:64724->104.196.111.255:6697: wsarecv: An existing connection was forcibly closed by the remote host.
     [Created by client.(*Conn).postConnect @ connection.go:376]
     client  connection.go:421 (*Conn).recv(*Conn(0xc0420680e0))
 
-nickflash
-count(nicklist)
-hide/show nicklist
-inline NOTICEs
-system tray
-RICHEDIT BOYS :O :O :O GET HYPE
+--------------------------------------2------------------------------------------
 investigate crash when >1 server and start closing tabs (mock connections
     maybe?)
+
     panic: runtime error: index out of range
-
-
-To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
 
 1: running [locked]
     walk    tabpagelist.go:36      (*TabPageList).At(...)
@@ -52,12 +37,22 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
 
     main    main.go:99             main()
 
+---------------------------------------3-----------------------------------------
+RICHEDIT BOYS :O :O :O GET HYPE
 
+
+---------------------------------------4-----------------------------------------
+some way to open a new server tab when you close all the tabs
+
+---------------------------------------5-----------------------------------------
 nick doesn't update in statusbar if you're user1 on server1 and user2 on
     server2
+
+---------------------------------------6-----------------------------------------
 middle-click to close tabs
 scroll to cycle through tabs
-nicklist resize to hide or collapse or make it an option or something
+
+---------------------------------------7-----------------------------------------
 /script external scripts:
     """
     /script script_name.py everything after /script passed as an argument
@@ -71,6 +66,40 @@ nicklist resize to hide or collapse or make it an option or something
     print("Hello, world.")
     """
     <user> Hello, world.
+
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+
 SEND COLORS (todo) ideas:
     \{red}
     ^red{text here}
@@ -81,3 +110,16 @@ tab: (bold/colors/icons might not be possible) but add:
     something for connection closed
 /search or /find or CTRL+F
     reduce text buffer to matches, then restore
+fix sorting on channellist
+/whois command (write to current tab)
+settings panel which writes to config.json
+hot-loadable config.json
+autogen default config.json
+limit message history (configurable)
+don't log messages if offline
+nickflash
+count(nicklist)
+hide/show nicklist
+inline NOTICEs
+system tray
+topic widget should allow input and send /topic or whatever
