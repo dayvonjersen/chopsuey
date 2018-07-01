@@ -20,6 +20,7 @@ func init() {
 	clientCommands = map[string]clientCommand{
 		"clear":  clearCmd,
 		"close":  closeCmd,
+		"ctcp":   ctcpCmd,
 		"join":   joinCmd,
 		"kick":   kickCmd,
 		"list":   listCmd,
@@ -48,6 +49,14 @@ func sendCmd(ctx *clientContext, args ...string) {
 // for debug purposes only
 func rawCmd(ctx *clientContext, args ...string) {
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
+}
+
+func ctcpCmd(ctx *clientContext, args ...string) {
+	if len(args) < 2 {
+		ctx.cb.printMessage("usage: /ctcp [nick] [message] [args...]")
+		return
+	}
+	ctx.servConn.conn.Ctcp(args[0], args[1], args[2:]...)
 }
 
 func meCmd(ctx *clientContext, args ...string) {

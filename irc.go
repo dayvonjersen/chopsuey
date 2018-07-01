@@ -275,9 +275,13 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	// I think that's all of them... -_-'
 
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
+		debugPrint(l)
 		if l.Args[0] == "DCC" {
 			dccHandler(servConn, l.Nick, l.Args[2])
 		}
+	})
+	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
+		debugPrint(l)
 	})
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
@@ -314,6 +318,7 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
+		debugPrint(l)
 		channel := strings.TrimSpace(l.Args[0])
 		boxType := CHATBOX_CHANNEL
 		if channel == servConn.Nick {
