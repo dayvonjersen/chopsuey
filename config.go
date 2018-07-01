@@ -20,6 +20,7 @@ type clientConfig struct {
 	HideJoinParts   bool                `json:"hidejoinparts"`
 	ChatLogsEnabled bool                `json:"chatlogs"`
 	TimeFormat      string              `json:"timeformat"`
+	Version         string              `json:"version"`
 }
 
 func (cfg *connectionConfig) ServerString() string {

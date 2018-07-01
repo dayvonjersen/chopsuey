@@ -97,6 +97,7 @@ func (servConn *serverConnection) deleteChatBox(id string) {
 
 func newServerConnection(cfg *connectionConfig) *serverConnection {
 	goircCfg := goirc.NewConfig(cfg.Nick)
+	goircCfg.Version = clientCfg.Version
 	if cfg.Ssl {
 		goircCfg.SSL = true
 		goircCfg.SSLConfig = &tls.Config{

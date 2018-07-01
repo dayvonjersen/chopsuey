@@ -17,12 +17,9 @@ fix reconnect on connection lost
 nickflash
 count(nicklist)
 hide/show nicklist
-unlimited text buffers
 inline NOTICEs
 system tray
 RICHEDIT BOYS :O :O :O GET HYPE
-log to debug.log instead of console; console windows get lost hard to search
-the other debug log i.e. the raw irc messages needs that SETLIMIT or whatever
 investigate crash when >1 server and start closing tabs (mock connections
     maybe?)
     panic: runtime error: index out of range
