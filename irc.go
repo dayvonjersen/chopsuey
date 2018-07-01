@@ -274,7 +274,6 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	// I think that's all of them... -_-'
 
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
-		debugPrint(l)
 		if l.Args[0] == "DCC" {
 			dccHandler(servConn, l.Nick, l.Args[2])
 		}
@@ -371,7 +370,6 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	})
 
 	conn.HandleFunc(goirc.PART, func(c *goirc.Conn, l *goirc.Line) {
-		debugPrint(l)
 		channel := l.Args[0]
 		cb := servConn.getChatBox(channel)
 		if cb == nil {
@@ -444,7 +442,6 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
 		oldNick := newNick(l.Nick)
 		newNick := newNick(l.Args[0])
-		log.Println(oldNick, newNick, servConn.Nick)
 		if oldNick.name == servConn.Nick {
 			servConn.Nick = newNick.name
 			statusBar.SetText(newNick.name + " connected to " + cfg.ServerString())
@@ -464,8 +461,6 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 		channel := l.Args[0]
 		mode := l.Args[1]
 		nicks := l.Args[2:]
-
-		log.Printf("op: %#v channel: %#v mode: %#v nicks: %#v", op, channel, mode, nicks)
 
 		if channel[0] == '#' {
 			cb := servConn.getChatBox(channel)
