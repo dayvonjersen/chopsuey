@@ -107,27 +107,25 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 				AssignTo: &cb.topicInput,
 				ReadOnly: true,
 			}.Create(builder)
+			var hsplit *walk.Splitter
 			HSplitter{
+				AssignTo: &hsplit,
 				Children: []Widget{
 					TextEdit{
-						MaxSize:            Size{360, 460},
-						MinSize:            Size{360, 460},
 						AssignTo:           &cb.textBuffer,
 						ReadOnly:           true,
 						AlwaysConsumeSpace: true,
-						Persistent:         true,
 						VScroll:            true,
+						MaxLength:          0x7FFFFFFE,
+						StretchFactor:      3,
 					},
 					ListBox{
-						MaxSize:            Size{100, 460},
-						MinSize:            Size{100, 460},
+						StretchFactor:      1,
 						AssignTo:           &cb.nickListBox,
 						Model:              cb.nickListBoxModel,
-						AlwaysConsumeSpace: true,
-						Persistent:         true,
+						AlwaysConsumeSpace: false,
 						OnItemActivated: func() {
 							nick := newNick(cb.nickListBoxModel.Items[cb.nickListBox.CurrentIndex()])
-
 							box := cb.servConn.getChatBox(nick.name)
 							if box == nil {
 								cb.servConn.createChatBox(nick.name, CHATBOX_PRIVMSG)
@@ -137,20 +135,17 @@ func newChatBox(servConn *serverConnection, id string, boxType int) *chatBox {
 						},
 					},
 				},
+				AlwaysConsumeSpace: true,
 			}.Create(builder)
+			checkErr(hsplit.SetHandleWidth(1))
 		} else if cb.boxType == CHATBOX_SERVER || cb.boxType == CHATBOX_PRIVMSG {
-			HSplitter{
-				Children: []Widget{
-					TextEdit{
-						MaxSize:            Size{480, 460},
-						MinSize:            Size{480, 460},
-						AssignTo:           &cb.textBuffer,
-						ReadOnly:           true,
-						AlwaysConsumeSpace: true,
-						Persistent:         true,
-						VScroll:            true,
-					},
-				},
+			TextEdit{
+				AssignTo:           &cb.textBuffer,
+				ReadOnly:           true,
+				AlwaysConsumeSpace: true,
+				Persistent:         true,
+				VScroll:            true,
+				MaxLength:          0x7FFFFFFE,
 			}.Create(builder)
 		}
 

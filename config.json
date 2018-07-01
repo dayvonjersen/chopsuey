@@ -1,16 +1,16 @@
 {
     "autoconnect": [
         {
-            "host": "192.168.1.5",
+            "host": "chopstick",
             "port": 6667,
             "ssl": false,
-            "nick": "tso|testing",
+            "nick": "tso|chopsuey",
             "autojoin": [
                 "#test"
             ]
         }
     ],
-    "hidejoinparts": true,
+    "hidejoinparts": false,
     "chatlogs": true,
     "timeformat": "15:04"
 }

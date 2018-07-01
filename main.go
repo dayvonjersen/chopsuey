@@ -24,8 +24,7 @@ var (
 func main() {
 	MainWindow{
 		AssignTo: &mw,
-		Title:    "IRC",
-		MinSize:  Size{480, 680},
+		Title:    "chopsuey IRC v0.2",
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
@@ -39,6 +38,16 @@ func main() {
 			},
 		},
 	}.Create()
+	mw.SetBounds(walk.Rectangle{
+		X:      1536,
+		Y:      0,
+		Width:  384,
+		Height: 1048,
+	})
+	ico, err := walk.NewIconFromFile("chopsuey.ico")
+	checkErr(err)
+	mw.SetIcon(ico)
+
 	tabWidget.SetPersistent(true)
 
 	font, err := walk.NewFont("ProFontWindows", 9, 0)
@@ -60,9 +69,10 @@ func main() {
 	tabPage.SetLayout(walk.NewVBoxLayout())
 	builder := NewBuilder(tabPage)
 	TextEdit{
-		AssignTo: &loggerTextBuffer,
-		ReadOnly: true,
-		VScroll:  true,
+		AssignTo:  &loggerTextBuffer,
+		ReadOnly:  true,
+		VScroll:   true,
+		MaxLength: 0x7FFFFFFE,
 	}.Create(builder)
 	checkErr(tabWidget.Pages().Add(tabPage))
 	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(tabPage)))

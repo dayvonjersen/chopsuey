@@ -1,0 +1,87 @@
+set window icon
+some way to open a new server tab when you close all the tabs
+fix sorting on channellist
+/ctcp command
+/whois command (write to current tab)
+set version string (configurable)
+limit message history (configurable)
+settings panel which writes to config.json
+hot-loadable config.json
+autogen default config.json
+don't log messages if offline
+fix reconnect on connection lost
+    2018/06/22 17:52:15 irc.recv(): read tcp 192.168.1.6:64724->104.196.111.255:6697: wsarecv: An existing connection was forcibly closed by the remote host.
+    panic: irc.recv(): read tcp 192.168.1.6:64724->104.196.111.255:6697: wsarecv: An existing connection was forcibly closed by the remote host.
+    [Created by client.(*Conn).postConnect @ connection.go:376]
+    client  connection.go:421 (*Conn).recv(*Conn(0xc0420680e0))
+
+nickflash
+count(nicklist)
+hide/show nicklist
+unlimited text buffers
+inline NOTICEs
+system tray
+RICHEDIT BOYS :O :O :O GET HYPE
+log to debug.log instead of console; console windows get lost hard to search
+the other debug log i.e. the raw irc messages needs that SETLIMIT or whatever
+investigate crash when >1 server and start closing tabs (mock connections
+    maybe?)
+    panic: runtime error: index out of range
+
+
+To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
+
+1: running [locked]
+    walk    tabpagelist.go:36      (*TabPageList).At(...)
+    walk    tabwidget.go:413       tabWidgetTabWndProc(HWND(0xf80782), 0, uintptr(0x0))
+    syscall syscall_windows.go:184 Syscall6(uintptr(0x772b3b60), uintptr(#6), uintptr(0x1308), uintptr(0x0), uintptr(0x0), ...)
+    win     user32.go:1844         CallWindowProc(uintptr(#6), HWND(#1), 0, uintptr(0x0))
+    walk    tabwidget.go:480       tabWidgetTabWndProc(HWND(0xf80782), 5, uintptr(0x0))
+    syscall syscall_windows.go:184 Syscall6(uintptr(0x772b6b50), uintptr(0xf80782), uintptr(0x5), uintptr(0x0), uintptr(0x0), ...)
+    win     user32.go:2653         SendMessage(HWND(0xf80782), 5, uintptr(0x0))
+    walk    tabwidget.go:571       (*TabWidget).onRemovedPage(*TabWidget(0xc0420ba300), 5, *TabPage(#4), 0x3, 0xc04210dbf0)
+    walk    tabpagelist.go:139     (*TabPageList).RemoveAt(*TabPageList(#2), 5, 0x5, 0x40a9fb)
+    walk    tabpagelist.go:124     (*TabPageList).Remove(*TabPageList(#2), *TabPage(#4), 0xf00000000000005, 0x7adb28)
+    main    chatbox.go:67          (*chatBox).close(*chatBox(0xc04214e510))
+    main    commands.go:142        closeCmd(*clientContext(0xc042057460), string(0x9efce0, len=0), string(0x0, len=0))
+    main    chatbox.go:176         newChatBox.func1.2(*serverConnection(0xd))
+    walk    keyevent.go:42         (*KeyEventPublisher).Publish(*KeyEventPublisher(0xc042157b90), Key(0x45000d))
+    walk    window.go:1519         (*WindowBase).handleKeyDown(*WindowBase(#5), uintptr(0xd))
+    walk    window.go:1778         (*WindowBase).WndProc(*WindowBase(#5), HWND(0xaa03a2), 13, uintptr(0x1c0001))
+    main    lineedit.go:31         (*MyLineEdit).WndProc(*MyLineEdit(#5), HWND(0xaa03a2), 13, uintptr(0x1c0001))
+    walk    window.go:1492         defaultWndProc(HWND(0xaa03a2), 13, uintptr(0x1c0001))
+    syscall syscall_windows.go:171 Syscall(uintptr(0x772b66c0), uintptr(0x3a0a0c), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(0x3a0a0c), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(0xc0420bc700), 0x0)
+
+    main    main.go:99             main()
+
+
+nick doesn't update in statusbar if you're user1 on server1 and user2 on
+    server2
+middle-click to close tabs
+scroll to cycle through tabs
+nicklist resize to hide or collapse or make it an option or something
+/script external scripts:
+    """
+    /script script_name.py everything after /script passed as an argument
+
+    /register script_name python script_name.py
+    /script_name everything after /script passed as an argument
+
+    python script_name.py "everything after /script passed as an argument"
+    """
+
+    print("Hello, world.")
+    """
+    <user> Hello, world.
+SEND COLORS (todo) ideas:
+    \{red}
+    ^red{text here}
+PARSE COLORS
+COLORS FOR NICKS
+tab: (bold/colors/icons might not be possible) but add:
+    something for nickflash
+    something for connection closed
+/search or /find or CTRL+F
+    reduce text buffer to matches, then restore
