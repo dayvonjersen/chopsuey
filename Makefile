@@ -1,6 +1,6 @@
 all:
 	# goimports -w *.go
-	go build && ./client.exe |& pp
+	go build && ./chopsuey.exe |& pp
 test:
 	# goimports -w *.go
 	go test |& pp

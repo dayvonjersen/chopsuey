@@ -1,4 +1,3 @@
-set window icon
 some way to open a new server tab when you close all the tabs
 fix sorting on channellist
 /ctcp command
