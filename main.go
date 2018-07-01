@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -55,28 +57,15 @@ func main() {
 
 	mw.WindowBase.SetFont(font)
 
-	var loggerTextBuffer *walk.TextEdit
+	logfilename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"
+	logfile, err := os.Create(logfilename)
+	checkErr(err)
+	defer logfile.Close()
 	l := &tsoLogger{}
 	l.LogFn = func(msg string) {
-		mw.WindowBase.Synchronize(func() {
-			loggerTextBuffer.AppendText(msg + "\r\n")
-		})
+		io.WriteString(logfile, msg+"\n")
 	}
 	logging.SetLogger(l)
-	tabPage, err := walk.NewTabPage()
-	checkErr(err)
-	tabPage.SetTitle("Debug Log")
-	tabPage.SetLayout(walk.NewVBoxLayout())
-	builder := NewBuilder(tabPage)
-	TextEdit{
-		AssignTo:  &loggerTextBuffer,
-		ReadOnly:  true,
-		VScroll:   true,
-		MaxLength: 0x7FFFFFFE,
-	}.Create(builder)
-	checkErr(tabWidget.Pages().Add(tabPage))
-	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(tabPage)))
-	tabWidget.SaveState()
 
 	tabWidget.CurrentIndexChanged().Attach(func() {
 		currentTab := getCurrentTab()
@@ -119,7 +108,10 @@ type tsoLogger struct {
 func (l *tsoLogger) Debug(f string, a ...interface{}) { l.LogFn(fmt.Sprintf(f, a...)) }
 func (l *tsoLogger) Info(f string, a ...interface{})  { l.LogFn(fmt.Sprintf(f, a...)) }
 func (l *tsoLogger) Warn(f string, a ...interface{})  { l.LogFn(fmt.Sprintf(f, a...)) }
-func (l *tsoLogger) Error(f string, a ...interface{}) { log.Panicln(fmt.Sprintf(f, a...)) }
+func (l *tsoLogger) Error(f string, a ...interface{}) {
+	l.LogFn(fmt.Sprintf(f, a...))
+	log.Panicln(fmt.Sprintf(f, a...))
+}
 
 func checkErr(err error) {
 	if err != nil {

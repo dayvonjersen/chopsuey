@@ -5,3 +5,4 @@ test/
 *.exe~
 chatlogs/
 lib/
+log/
