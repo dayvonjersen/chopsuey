@@ -6,26 +6,40 @@ fix reconnect on connection lost
     [Created by client.(*Conn).postConnect @ connection.go:376]
     client  connection.go:421 (*Conn).recv(*Conn(0xc0420680e0))
 
+
+    1) try: 
+        HandleFunc(goirc.DISCONNECTED, ...
+    2) use:
+        goirc.Conn.Connected()
+        or something to determine if we should actually panic when we get an
+        Error from the logger
+
+    aside) set Timeout, Name, QuitMessage, etc...
+
 --------------------------------------2------------------------------------------
 prevent closing the last tab 
     - allow servConn.conn to be nil
+    - /server doesn't open a new tab if current tab is a nil CHATBOX_SERVER
+
+    also: CTRL+T for a new nil CHATBOX_SERVER unless one exists then just
+    switch to it
+    /exit to close application
+
 
 ---------------------------------------3-----------------------------------------
 RICHEDIT BOYS :O :O :O GET HYPE
 
-
 ---------------------------------------4-----------------------------------------
-some way to open a new server tab when you close all the tabs
-
----------------------------------------5-----------------------------------------
 nick doesn't update in statusbar if you're user1 on server1 and user2 on
     server2
 
----------------------------------------6-----------------------------------------
+---------------------------------------5-----------------------------------------
 middle-click to close tabs
 scroll to cycle through tabs
+context menu (close)
+network name instead of hostname in tab
 
----------------------------------------7-----------------------------------------
+---------------------------------------6-----------------------------------------
 /script external scripts:
     """
     /script script_name.py everything after /script passed as an argument

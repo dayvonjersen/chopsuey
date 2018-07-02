@@ -108,10 +108,7 @@ type tsoLogger struct {
 func (l *tsoLogger) Debug(f string, a ...interface{}) { l.LogFn(fmt.Sprintf(f, a...)) }
 func (l *tsoLogger) Info(f string, a ...interface{})  { l.LogFn(fmt.Sprintf(f, a...)) }
 func (l *tsoLogger) Warn(f string, a ...interface{})  { l.LogFn(fmt.Sprintf(f, a...)) }
-func (l *tsoLogger) Error(f string, a ...interface{}) {
-	l.LogFn(fmt.Sprintf(f, a...))
-	log.Panicln(fmt.Sprintf(f, a...))
-}
+func (l *tsoLogger) Error(f string, a ...interface{}) { l.LogFn(fmt.Sprintf(f, a...)) }
 
 func checkErr(err error) {
 	if err != nil {
