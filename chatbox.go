@@ -64,6 +64,8 @@ func (cb *chatBox) updateNickList() {
 }
 
 func (cb *chatBox) close() {
+	mw.WindowBase.SetSuspended(true)
+	defer mw.WindowBase.SetSuspended(false)
 	checkErr(tabWidget.Pages().Remove(cb.tabPage))
 	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
 	tabWidget.SaveState()
