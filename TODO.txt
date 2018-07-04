@@ -31,6 +31,32 @@ and the state shouldn't have anything about widgets
 
 but this isn't a perfect world 
 
+
+
+serverConnection is a state
+but so are channels and private messages
+
+server, channel, privmsg {
+    *chatBox
+}
+
+
+and doing that the global []chatBox can have the same indices as the
+tabwidget
+
+
+
+
+serverConnection {
+    user {
+        nick
+    }
+    []channels{
+        []users
+    }
+    []privmsg{
+    }
+}
 ---------------------------------------------------------------------------------
 
 
