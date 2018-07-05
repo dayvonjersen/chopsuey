@@ -13,12 +13,14 @@ type tabView interface {
 	StatusText() string
 	HasFocus() bool
 	Focus()
-	// Close()
+	Close()
 }
 
 type tabViewWithInput interface {
+	tabView
 	Send(string)
 	Println(string)
+	Clear()
 }
 
 type tabViewCommon struct {
@@ -35,6 +37,9 @@ func (t *tabViewCommon) StatusText() string { return t.statusText }
 func (t *tabViewCommon) HasFocus() bool {
 	return t.tabIndex == tabWidget.CurrentIndex()
 }
+func (t *tabViewCommon) Close() {
+	// NOTE(tso): TODO
+}
 
 type tabViewChatbox struct {
 	tabViewCommon
@@ -42,6 +47,10 @@ type tabViewChatbox struct {
 	disconnected bool
 	textBuffer   *walk.TextEdit
 	textInput    *MyLineEdit
+}
+
+func (t *tabViewChatbox) Clear() {
+	t.textBuffer.SetText("")
 }
 
 func (t *tabViewChatbox) Title() string {
@@ -122,12 +131,12 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
 		t.textInput = NewTextInput(t, &clientContext{
-			servConn:     servConn,
-			channel:      servState.networkName,
-			cb:           t,
-			serverState:  servState,
-			channelState: nil,
-			privmsgState: nil,
+			servConn:  servConn,
+			channel:   servState.networkName,
+			cb:        t,
+			servState: servState,
+			chanState: nil,
+			pmState:   nil,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
@@ -245,12 +254,12 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(hsplit.SetHandleWidth(1))
 
 		t.textInput = NewTextInput(t, &clientContext{
-			servConn:     servConn,
-			channel:      chanState.channel,
-			cb:           t,
-			serverState:  servState,
-			channelState: chanState,
-			privmsgState: nil,
+			servConn:  servConn,
+			channel:   chanState.channel,
+			cb:        t,
+			servState: servState,
+			chanState: chanState,
+			pmState:   nil,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
@@ -305,12 +314,12 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
 		t.textInput = NewTextInput(t, &clientContext{
-			servConn:     servConn,
-			channel:      pmState.nick,
-			cb:           t,
-			serverState:  servState,
-			channelState: nil,
-			privmsgState: pmState,
+			servConn:  servConn,
+			channel:   pmState.nick,
+			cb:        t,
+			servState: servState,
+			chanState: nil,
+			pmState:   pmState,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))

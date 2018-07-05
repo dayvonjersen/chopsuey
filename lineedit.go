@@ -135,8 +135,8 @@ func NewTextInput(t tabViewWithInput, ctx *clientContext) *MyLineEdit {
 			} else {
 				term := text[len(text)-1]
 				res := []string{}
-				if ctx.channelState != nil {
-					res = ctx.channelState.nickList.Search(term)
+				if ctx.chanState != nil {
+					res = ctx.chanState.nickList.Search(term)
 				}
 				res = append(res, term)
 				textInput.tabComplete = &tabComplete{

@@ -1,13 +1,19 @@
 package main
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 type clientContext struct {
 	servConn *serverConnection
 	channel  string
 	cb       tabViewWithInput
 
-	serverState  *serverState
-	channelState *channelState
-	privmsgState *privmsgState
+	servState *serverState
+	chanState *channelState
+	pmState   *privmsgState
 }
 
 type clientCommand func(ctx *clientContext, args ...string)
@@ -15,16 +21,13 @@ type clientCommand func(ctx *clientContext, args ...string)
 var clientCommands map[string]clientCommand
 
 func init() {
-	clientCommands = map[string]clientCommand{}
-}
-
-/*
-		"clear":  clearCmd,
-		"close":  closeCmd,
-		"ctcp":   ctcpCmd,
-		"join":   joinCmd,
-		"kick":   kickCmd,
-		"list":   listCmd,
+	clientCommands = map[string]clientCommand{
+		"clear": clearCmd,
+		"close": closeCmd,
+		"ctcp":  ctcpCmd,
+		"join":  joinCmd,
+		"kick":  kickCmd,
+		// "list":   listCmd,
 		"me":     meCmd,
 		"mode":   modeCmd,
 		"msg":    privmsgCmd,
@@ -67,7 +70,7 @@ func meCmd(ctx *clientContext, args ...string) {
 		return
 	}
 	ctx.servConn.conn.Action(ctx.channel, msg)
-	ctx.cb.Println(fmt.Sprintf("%s * %s %s", now(), ctx.servConn.Nick, msg))
+	ctx.cb.Println(fmt.Sprintf("%s * %s %s", now(), ctx.servState.user.nick, msg))
 }
 
 func joinCmd(ctx *clientContext, args ...string) {
@@ -75,11 +78,17 @@ func joinCmd(ctx *clientContext, args ...string) {
 		ctx.cb.Println("usage: /join [#channel]")
 		return
 	}
-	ctx.servConn.join(args[0])
+	ctx.servConn.Join(args[0], ctx.servState)
 }
 
 func partCmd(ctx *clientContext, args ...string) {
-	ctx.servConn.part(ctx.channel, strings.Join(args, " "))
+	// NOTE(tso): should only allow on channels or default to doing /close
+
+	if ctx.chanState != nil {
+		ctx.servConn.Part(ctx.channel, strings.Join(args, " "), ctx.servState)
+	} else {
+		ctx.cb.Println("ERROR: /part only works for channels. Try /close")
+	}
 }
 
 func noticeCmd(ctx *clientContext, args ...string) {
@@ -89,7 +98,7 @@ func noticeCmd(ctx *clientContext, args ...string) {
 	}
 	msg := strings.Join(args[1:], " ")
 	ctx.servConn.conn.Notice(args[0], msg)
-	ctx.cb.Println(fmt.Sprintf("%s *** %s: %s", now(), ctx.servConn.Nick, msg))
+	ctx.cb.Println(fmt.Sprintf("%s *** %s: %s", now(), ctx.servState.user.nick, msg))
 }
 
 func privmsgCmd(ctx *clientContext, args ...string) {
@@ -100,13 +109,20 @@ func privmsgCmd(ctx *clientContext, args ...string) {
 	nick := args[0]
 	msg := strings.Join(args[1:], " ")
 
-	ctx.servConn.conn.Privmsg(nick, msg)
-
-	cb := ctx.servConn.getChatBox(nick)
-	if cb == nil {
-		cb = ctx.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
+	pmState, ok := ctx.servState.privmsgs[nick]
+	if !ok {
+		pmState = &privmsgState{
+			nick: nick,
+		}
+		pmState.tab = NewPrivmsgTab(ctx.servConn, ctx.servState, pmState)
+		ctx.servState.privmsgs[nick] = pmState
 	}
-	cb.Println(fmt.Sprintf("%s <%s> %s", now(), ctx.servConn.Nick, msg))
+
+	ctx.servConn.conn.Privmsg(nick, msg)
+	pmState.tab.Println(fmt.Sprintf("%s <%s> %s", now(), ctx.servState.user.nick, msg))
+	mw.WindowBase.Synchronize(func() {
+		checkErr(tabWidget.SetCurrentIndex(pmState.tab.Id()))
+	})
 }
 
 func nickCmd(ctx *clientContext, args ...string) {
@@ -120,8 +136,11 @@ func nickCmd(ctx *clientContext, args ...string) {
 func quitCmd(ctx *clientContext, args ...string) {
 	ctx.servConn.retryConnectEnabled = false
 	ctx.servConn.conn.Quit(strings.Join(args, " "))
-	for _, cb := range ctx.servConn.chatBoxes {
-		cb.close()
+	for _, chanState := range ctx.servState.channels {
+		chanState.tab.Close()
+	}
+	for _, pmState := range ctx.servState.privmsgs {
+		pmState.tab.Close()
 	}
 }
 
@@ -134,7 +153,7 @@ func modeCmd(ctx *clientContext, args ...string) {
 }
 
 func clearCmd(ctx *clientContext, args ...string) {
-	ctx.cb.textBuffer.SetText("")
+	ctx.cb.Clear()
 }
 
 func topicCmd(ctx *clientContext, args ...string) {
@@ -146,16 +165,15 @@ func topicCmd(ctx *clientContext, args ...string) {
 }
 
 func closeCmd(ctx *clientContext, args ...string) {
-	if ctx.cb.boxType == CHATBOX_CHANNEL {
+	if ctx.chanState != nil {
 		partCmd(ctx, args...)
-	} else {
-		ctx.cb.close()
 	}
+	ctx.cb.Close()
 }
 
 func rejoinCmd(ctx *clientContext, args ...string) {
-	if ctx.cb.boxType == CHATBOX_CHANNEL {
-		ctx.servConn.join(ctx.cb.id)
+	if ctx.chanState != nil {
+		ctx.servConn.Join(ctx.chanState.channel, ctx.servState)
 	} else {
 		ctx.cb.Println("ERROR: /rejoin only works for channels.")
 	}
@@ -166,8 +184,8 @@ func kickCmd(ctx *clientContext, args ...string) {
 		ctx.cb.Println("usage: /kick [nick] [(optional) reason...]")
 		return
 	}
-	if ctx.cb.boxType == CHATBOX_CHANNEL {
-		ctx.servConn.conn.Kick(ctx.cb.id, args[0], args[1:]...)
+	if ctx.chanState != nil {
+		ctx.servConn.conn.Kick(ctx.chanState.channel, args[0], args[1:]...)
 	} else {
 		ctx.cb.Println("ERROR: /kick only works for channels.")
 	}
@@ -192,17 +210,22 @@ func serverCmd(ctx *clientContext, args ...string) {
 			port = p
 		}
 	}
-	cfg := &connectionConfig{
-		Host:     host,
-		Port:     port,
-		Ssl:      ssl,
-		Nick:     ctx.servConn.Nick,
-		AutoJoin: []string{},
+	servState := &serverState{
+		connected: false,
+		hostname:  host,
+		port:      port,
+		ssl:       ssl,
+		user: &userState{
+			nick: ctx.servState.user.nick,
+		},
+		channels: map[string]*channelState{},
+		privmsgs: map[string]*privmsgState{},
 	}
-	servConn := newServerConnection(cfg)
-	servConn.connect()
+	servConn := NewServerConnection(servState, func() {})
+	servConn.Connect()
 }
 
+/*
 func listCmd(ctx *clientContext, args ...string) {
 	if ctx.servConn.channelList == nil {
 		ctx.servConn.channelList = newChannelList(ctx.servConn)

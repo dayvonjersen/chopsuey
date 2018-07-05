@@ -69,18 +69,18 @@ func (servConn *serverConnection) Join(channel string, servState *serverState) {
 	servConn.conn.Join(channel)
 }
 
-/*
-func (servConn *serverConnection) part(channel, reason string) {
+func (servConn *serverConnection) Part(channel, reason string, servState *serverState) {
 	if channel[0] == '#' {
 		servConn.conn.Part(channel, reason)
 	}
-	cb := servConn.getChatBox(channel)
-	if cb == nil {
+	chanState, ok := servState.channels[channel]
+	if !ok {
 		log.Panicln("user not on channel:", channel)
 	}
-	servConn.deleteChatBox(channel)
+	chanState.tab.Close()
 }
 
+/*
 func (servConn *serverConnection) getChatBox(id string) *chatBox {
 	for _, cb := range servConn.chatBoxes {
 		if cb.id == id {
