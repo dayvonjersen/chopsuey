@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 
 	goirc "github.com/fluffle/goirc/client"
@@ -580,42 +581,44 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.tab.topicInput.SetText(topic)
 		chanState.tab.Println(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", now(), who, channel, topic))
 	})
-	/*
-		// START OF /LIST
-		conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
-			if servConn.channelList == nil {
-				log.Println("got 321 but servConn.channeList is nil")
-				return
-			}
-			servConn.channelList.inProgress = true
-		})
+	// START OF /LIST
+	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
+		if servState.channelList == nil {
+			log.Println("got 321 but servState.channelList is nil")
+			return
+		}
+		servState.channelList.inProgress = true
+	})
 
-		// LIST
-		conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
-			channel := l.Args[1]
-			users, err := strconv.Atoi(l.Args[2])
+	// LIST
+	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
+		channel := l.Args[1]
+		users, err := strconv.Atoi(l.Args[2])
+		if err != nil {
 			checkErr(err)
-			topic := strings.TrimSpace(l.Args[3])
+			debugPrint(l)
+		}
+		topic := strings.TrimSpace(l.Args[3])
 
-			if servConn.channelList == nil {
-				servConn.channelList = newChannelList(servConn)
-			}
+		if servState.channelList == nil {
+			servState.channelList = NewChannelList(servConn, servState)
+		}
 
-			servConn.channelList.mu.Lock()
-			defer servConn.channelList.mu.Unlock()
-			servConn.channelList.Add(channel, users, topic)
-		})
+		servState.channelList.mu.Lock()
+		defer servState.channelList.mu.Unlock()
+		servState.channelList.Add(channel, users, topic)
+	})
 
-		// END OF /LIST
-		conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
-			if servConn.channelList == nil {
-				log.Println("got 323 but servConn.channeList is nil")
-				return
-			}
-			servConn.channelList.inProgress = false
-			servConn.channelList.complete = true
-		})
-	*/
+	// END OF /LIST
+	conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
+		if servState.channelList == nil {
+			log.Println("got 323 but servState.channelList is nil")
+			return
+		}
+		servState.channelList.inProgress = false
+		servState.channelList.complete = true
+	})
+
 	return servConn
 }
 

@@ -129,3 +129,66 @@ topic widget should allow input and send /topic or whatever
 chatbox scroll to bottom automatically
 split extra long text input, allow ctrl+enter, split on \n
 automatic NickServ stuff
+
+channel list parsing don't rely on goirc.Client Args array...
+
+2018/07/05 04:19:13 strconv.Atoi: parsing "is": invalid syntax
+2018/07/05 04:19:13 &client.Line{
+    Tags:  {},
+    Nick:  "",
+    Ident: "",
+    Host:  "magnet.rizon.net",
+    Src:   "magnet.rizon.net",
+    Cmd:   "322",
+    Raw:   ":magnet.rizon.net 322 tso|chopsuey #this\u3000is\u3000the\u3000greatest\u3000channel 3 :[+ntz] this\u3000is\u3000the\u3000greatest\u3000channel ",
+    Args:  {"tso|chopsuey", "#this", "is", "the", "greatest", "channel", "3", "[+ntz] this\u3000is\u3000the\u3000greatest\u3000channel "},
+    Time:  time.Time{},
+}
+2018/07/05 04:19:13 strconv.Atoi: parsing "has": invalid syntax
+2018/07/05 04:19:13 &client.Line{
+    Tags:  {},
+    Nick:  "",
+    Ident: "",
+    Host:  "magnet.rizon.net",
+    Src:   "magnet.rizon.net",
+    Cmd:   "322",
+    Raw:   ":magnet.rizon.net 322 tso|chopsuey #Glaceon\u2005has\u2005the\u2005best\u2005paws.\u2005:3 1 :[+nt] ",
+    Args:  {"tso|chopsuey", "#Glaceon", "has", "the", "best", "paws.", ":3", "1", "[+nt] "},
+    Time:  time.Time{},
+}
+2018/07/05 04:19:14 strconv.Atoi: parsing "≖‿≖）": invalid syntax
+2018/07/05 04:19:14 &client.Line{
+    Tags:  {},
+    Nick:  "",
+    Ident: "",
+    Host:  "magnet.rizon.net",
+    Src:   "magnet.rizon.net",
+    Cmd:   "322",
+    Raw:   ":magnet.rizon.net 322 tso|chopsuey #（\u3000≖‿≖） 2 :[+nt] Technology （≖‿≖ (≖‿≖ （≖‿≖ （≖‿≖ （≖‿≖） ≖‿≖） ≖‿≖）\u3000≖‿≖）\u3000≖‿≖）",
+    Args:  {"tso|chopsuey", "#（", "≖‿≖）", "2", "[+nt] Technology （≖‿≖ (≖‿≖ （≖‿≖ （≖‿≖ （≖‿≖） ≖‿≖） ≖‿≖）\u3000≖‿≖）\u3000≖‿≖）"},
+    Time:  time.Time{},
+}
+2018/07/05 04:19:16 strconv.Atoi: parsing "◡": invalid syntax
+2018/07/05 04:19:16 &client.Line{
+    Tags:  {},
+    Nick:  "",
+    Ident: "",
+    Host:  "magnet.rizon.net",
+    Src:   "magnet.rizon.net",
+    Cmd:   "322",
+    Raw:   ":magnet.rizon.net 322 tso|chopsuey #◔\u2008◡\u2008◔ 1 :[+nt] ",
+    Args:  {"tso|chopsuey", "#◔", "◡", "◔", "1", "[+nt] "},
+    Time:  time.Time{},
+}
+2018/07/05 04:19:18 strconv.Atoi: parsing "ｃｈａｎｎｅｌ": invalid syntax
+2018/07/05 04:19:18 &client.Line{
+    Tags:  {},
+    Nick:  "",
+    Ident: "",
+    Host:  "magnet.rizon.net",
+    Src:   "magnet.rizon.net",
+    Cmd:   "322",
+    Raw:   ":magnet.rizon.net 322 tso|chopsuey #ｓｅｃｒｅｔ\u2007ｃｈａｎｎｅｌ 1 :[+nt] ",
+    Args:  {"tso|chopsuey", "#ｓｅｃｒｅｔ", "ｃｈａｎｎｅｌ", "1", "[+nt] "},
+    Time:  time.Time{},
+}

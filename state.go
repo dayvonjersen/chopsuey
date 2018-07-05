@@ -15,6 +15,7 @@ type serverState struct {
 	channels    map[string]*channelState
 	privmsgs    map[string]*privmsgState
 	tab         *tabViewServer
+	channelList *tabViewChannelList
 }
 
 type channelState struct {

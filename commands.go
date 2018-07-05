@@ -22,12 +22,12 @@ var clientCommands map[string]clientCommand
 
 func init() {
 	clientCommands = map[string]clientCommand{
-		"clear": clearCmd,
-		"close": closeCmd,
-		"ctcp":  ctcpCmd,
-		"join":  joinCmd,
-		"kick":  kickCmd,
-		// "list":   listCmd,
+		"clear":  clearCmd,
+		"close":  closeCmd,
+		"ctcp":   ctcpCmd,
+		"join":   joinCmd,
+		"kick":   kickCmd,
+		"list":   listCmd,
 		"me":     meCmd,
 		"mode":   modeCmd,
 		"msg":    privmsgCmd,
@@ -238,16 +238,14 @@ func serverCmd(ctx *commandContext, args ...string) {
 	servConn.Connect()
 }
 
-/*
 func listCmd(ctx *commandContext, args ...string) {
-	if ctx.servConn.channelList == nil {
-		ctx.servConn.channelList = newChannelList(ctx.servConn)
+	if ctx.servState.channelList == nil {
+		ctx.servState.channelList = NewChannelList(ctx.servConn, ctx.servState)
 	}
-	if ctx.servConn.channelList.complete {
-		ctx.servConn.channelList.Clear()
+	if ctx.servState.channelList.complete {
+		ctx.servState.channelList.Clear()
 	}
-	if !ctx.servConn.channelList.inProgress {
+	if !ctx.servState.channelList.inProgress {
 		ctx.servConn.conn.Raw("LIST")
 	}
 }
-*/
