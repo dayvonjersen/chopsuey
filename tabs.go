@@ -131,10 +131,9 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		t.textInput = NewTextInput(t, &clientContext{
+		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
-			channel:   servState.networkName,
-			cb:        t,
+			tab:       t,
 			servState: servState,
 			chanState: nil,
 			pmState:   nil,
@@ -254,10 +253,9 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 
 		checkErr(hsplit.SetHandleWidth(1))
 
-		t.textInput = NewTextInput(t, &clientContext{
+		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
-			channel:   chanState.channel,
-			cb:        t,
+			tab:       t,
 			servState: servState,
 			chanState: chanState,
 			pmState:   nil,
@@ -314,10 +312,9 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		t.textInput = NewTextInput(t, &clientContext{
+		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
-			channel:   pmState.nick,
-			cb:        t,
+			tab:       t,
 			servState: servState,
 			chanState: nil,
 			pmState:   pmState,

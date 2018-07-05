@@ -45,7 +45,7 @@ func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func NewTextInput(t tabViewWithInput, ctx *clientContext) *MyLineEdit {
+func NewTextInput(t tabViewWithInput, ctx *commandContext) *MyLineEdit {
 	var tabPage *walk.TabPage
 	switch t.(type) {
 	case *tabViewServer:
