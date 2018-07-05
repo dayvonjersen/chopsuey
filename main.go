@@ -93,9 +93,28 @@ func main() {
 		statusBar.SetText("error parsing config.json")
 	} else {
 		for _, cfg := range clientCfg.AutoConnect {
-			statusBar.SetText("connecting to " + cfg.ServerString() + "...")
-			servConn := newServerConnection(cfg)
-			servConn.connect()
+			//			statusBar.SetText("connecting to " + cfg.ServerString() + "...")
+
+			servState := &serverState{
+				connected:   false,
+				hostname:    cfg.Host,
+				port:        cfg.Port,
+				ssl:         cfg.Ssl,
+				networkName: cfg.ServerString(),
+				user: &userState{
+					nick: cfg.Nick,
+				},
+				channels: map[string]*channelState{},
+				privmsgs: map[string]*privmsgState{},
+			}
+			servConn := NewServerConnection(servState)
+			servView := NewServerTab(servConn, servState)
+			servState.tab = servView
+			servConn.Connect(func() {
+				for _, channel := range cfg.AutoJoin {
+					servConn.Join(channel)
+				}
+			})
 		}
 	}
 

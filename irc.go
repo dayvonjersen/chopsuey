@@ -17,13 +17,9 @@ type serverConnection struct {
 	networkName, serverName, Nick string
 	IP                            net.IP
 
-	cfg          *connectionConfig
-	conn         *goirc.Conn
-	chatBoxes    []*chatBox
-	newChats     chan string
-	newChatBoxes chan *chatBox
-	closeChats   chan *chatBox
-	channelList  *channelList
+	cfg         *connectionConfig
+	conn        *goirc.Conn
+	channelList *channelList
 
 	retryConnectEnabled bool
 
@@ -97,47 +93,33 @@ func (servConn *serverConnection) deleteChatBox(id string) {
 	}
 }
 
-func newServerConnection(cfg *connectionConfig) *serverConnection {
-	goircCfg := goirc.NewConfig(cfg.Nick)
+func NewServerConnection(servState *serverState) *serverConnection {
+	goircCfg := goirc.NewConfig(servState.user.nick)
 	goircCfg.Version = clientCfg.Version
-	if cfg.Ssl {
+	if servState.ssl {
 		goircCfg.SSL = true
 		goircCfg.SSLConfig = &tls.Config{
-			ServerName:         cfg.Host,
+			ServerName:         servState.hostname,
 			InsecureSkipVerify: true,
 		}
 		goircCfg.NewNick = func(n string) string { return n + "^" }
 	}
-	goircCfg.Server = fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	goircCfg.Server = fmt.Sprintf("%s:%d", servState.hostname, servState.port)
 	conn := goirc.Client(goircCfg)
 
 	servConn := &serverConnection{
-		Nick:                cfg.Nick,
-		serverName:          cfg.ServerString(),
-		networkName:         cfg.ServerString(),
-		cfg:                 cfg,
 		conn:                conn,
-		chatBoxes:           []*chatBox{},
 		retryConnectEnabled: true,
-		isupport:            map[string]string{},
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
-		for _, channel := range cfg.AutoJoin {
-			servConn.join(channel)
-		}
+		servState.connected = true
+		servState.tab.Update(servState)
 	})
 
 	conn.HandleFunc(goirc.DISCONNECTED, func(c *goirc.Conn, l *goirc.Line) {
-		cb := servConn.getChatBox(servConn.serverName)
-		if cb == nil {
-			log.Println("chatbox for server tab not found:", servConn.serverName)
-			printf("DISCONNECTED: ")
-			return
-		}
-		cb.printMessage(now() + " disconnected x_x")
-
-		statusBar.SetText("disconnected x_x")
+		servState.connected = false
+		servState.tab.Update(servState)
 
 		if servConn.retryConnectEnabled {
 			go servConn.retryConnect(cb)
@@ -145,42 +127,24 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		cb := servConn.getChatBox(servConn.serverName)
-		if cb == nil {
-			log.Println("chatbox for server tab not found:", servConn.serverName)
-			printf("printServerMessage: ")
-			for i, cb := range servConn.chatBoxes {
-				log.Println(i, cb.id)
-			}
-			return
-		}
-		cb.printMessage(now() + " " + l.Cmd + ": " + strings.Join(l.Args[1:], " "))
+		servState.tab.Println(now() + " " + l.Cmd + ": " + strings.Join(l.Args[1:], " "))
 	}
 
 	// WELCOME
 	conn.HandleFunc("001", func(c *goirc.Conn, l *goirc.Line) {
 		// if nickname is already in use (433) server
 		// will tell us what they renamed us to in welcome message (001)
-		if l.Args[0] != servConn.Nick {
-			servConn.Nick = l.Args[0]
-			statusBar.SetText(servConn.Nick + " connected to " + servConn.networkName)
+		if l.Args[0] != servState.user.nick {
+			servState.user.nick = l.Args[0]
+			servState.tab.Update(servState)
 		}
 		printServerMessage(c, l)
 	})
 	conn.HandleFunc("002", printServerMessage)
 	conn.HandleFunc("003", printServerMessage)
 	conn.HandleFunc("004", func(c *goirc.Conn, l *goirc.Line) {
-		cb := servConn.getChatBox(servConn.serverName)
-		if cb == nil {
-			log.Println("chatbox for server tab not found:", servConn.serverName)
-			printf("004: ")
-			return
-		}
-		servConn.networkName = l.Args[1]
-		mw.WindowBase.Synchronize(func() {
-			cb.tabPage.SetTitle(servConn.networkName)
-			statusBar.SetText(servConn.Nick + " connected to " + servConn.networkName)
-		})
+		servState.networkName = l.Args[1]
+		servState.tab.Update(servState)
 		printServerMessage(c, l)
 	})
 
@@ -199,18 +163,12 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 			servConn.isupport[k] = v
 		}
 		if name, ok := servConn.isupport["NETWORK"]; ok {
-			if servConn.networkName != name {
-				servConn.networkName = name
-				mw.WindowBase.Synchronize(func() {
-					cb := servConn.getChatBox(servConn.serverName)
-					if cb == nil {
-						return
-					}
-					cb.tabPage.SetTitle(servConn.networkName)
-					statusBar.SetText(servConn.Nick + " connected to " + servConn.networkName)
-				})
+			if servState.networkName != name {
+				servState.networkName = name
+				servState.tab.Update(servState)
 			}
 		}
+		printServerMessage(c, l)
 	})
 
 	// LUSERS
@@ -241,7 +199,7 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 
 	// "is connecting from"
 	conn.HandleFunc("378", func(c *goirc.Conn, l *goirc.Line) {
-		if len(l.Args) == 3 && l.Args[1] == servConn.Nick {
+		if len(l.Args) == 3 && l.Args[1] == servState.user.nick {
 			s := strings.Split(l.Args[2], " ")
 			ipStr := s[len(s)-1]
 			ip := net.ParseIP(ipStr)
@@ -256,13 +214,7 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	// TODO: there are more...
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		cb := servConn.getChatBox(servConn.serverName)
-		if cb == nil {
-			log.Println("chatbox for server tab not found:", servConn.serverName)
-			printf("printErrorMessage: ")
-			return
-		}
-		cb.printMessage(now() + " " + l.Cmd + " ERROR: " + strings.Join(l.Args[1:], " "))
+		servState.Println(now() + " " + l.Cmd + " ERROR: " + strings.Join(l.Args[1:], " "))
 	}
 
 	conn.HandleFunc("401", printErrorMessage)
@@ -331,8 +283,8 @@ func newServerConnection(cfg *connectionConfig) *serverConnection {
 	})
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
-		boxType := CHATBOX_CHANNEL
-		if channel == servConn.Nick {
+
+		if channel == servState.user.nick {
 			channel = l.Nick
 			boxType = CHATBOX_PRIVMSG
 		}

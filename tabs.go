@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/lxn/walk"
 )
@@ -11,20 +10,36 @@ type tabView interface {
 	Id() int
 	Title() string
 	StatusText() string
+	HasFocus() bool
 	Focus()
 	Close()
 }
 
 type tabViewCommon struct {
-	tabPage    *walk.TabPage
-	tabIndex   int
-	tabTitle   string
-	statusText string
+	tabPage      *walk.TabPage
+	tabIndex     int
+	tabTitle     string
+	statusText   string
+	unread       int
+	disconnected bool
 }
 
 func (t *tabViewCommon) Id() int            { return t.tabIndex }
 func (t *tabViewCommon) StatusText() string { return t.statusText }
-func (t *tabViewCommon) Title() string      { return t.tabTitle }
+func (t *tabViewCommon) Title() string {
+	title := t.tabTitle
+	// add nickflash here
+	if unread > 0 && !t.HasFocus() {
+		title = fmt.Sprintf("%d [%d]", title, unread)
+	}
+	if t.isDisconnected {
+		title = "(" + title + ")"
+	}
+	return title
+}
+func (t *tabViewCommon) HasFocus() bool {
+	return t.tabIndex == tabWidget.CurrentIndex()
+}
 
 type tabViewWithInput interface {
 	Send(string)
@@ -39,16 +54,18 @@ type tabViewChatbox struct {
 }
 
 func (cb *tabViewChatbox) Focus() {
-	cb.tabPage.SetTitle(strings.TrimPrefix(cb.Title(), "* "))
+	cb.unread = 0
+	cb.tabPage.SetTitle(cb.Title())
 }
+
+// func Errorln() ???
 
 func (cb *tabViewChatbox) Println(msg string) {
 	mw.WindowBase.Synchronize(func() {
 		cb.textBuffer.AppendText(msg + "\r\n")
-		if cb.tabIndex != tabWidget.CurrentIndex() {
-			if !strings.HasPrefix(cb.Title(), "* ") {
-				cb.tabPage.SetTitle("* " + cb.Title())
-			}
+		if !cb.HasFocus() {
+			cb.unread++
+			cb.tabPage.SetTitle(cb.Title())
 		}
 	})
 }
@@ -60,6 +77,34 @@ type tabViewServer struct {
 func (t *tabViewServer) Send(search string) {}
 func (t *tabViewServer) TabComplete(search string) []string {
 	return []string{}
+}
+
+func (cb *tabViewServer) Println(msg string) {
+	mw.WindowBase.Synchronize(func() {
+		cb.textBuffer.AppendText(msg + "\r\n")
+	})
+}
+
+func (t *tabViewServer) Update(servState *serverState) {
+	if t.tabTitle != serv.networkName {
+		t.tabTitle = serv.networkName
+	}
+	t.tabPage.SetTitle(t.Title())
+
+	if servState.connected {
+		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servConn.networkName)
+	} else {
+		t.statusText = "disconnected x_x"
+	}
+	for _, chanState := range servState.channels {
+		chanState.tab.Update(servState, chanState)
+	}
+	for _, pmState := range servState.privmsgs {
+		pmState.tab.Update(servState, pmState)
+	}
+	if t.HasFocus() {
+		statusBar.SetText(t.statusText)
+	}
 }
 
 func NewServerTab(conn *serverConnection, serv *serverState) *tabViewServer {
@@ -110,6 +155,13 @@ func (t *tabViewChannel) TabComplete(search string) []string {
 	return t.nickList.Search(search)
 }
 
+func (t *tabViewChannel) Update(servState *serverState, chanState *channelState) {
+	t.statusText = servState.tab.statusText
+	if t.HasFocus() {
+		statusBar.SetText(t.statusText)
+	}
+}
+
 func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelState) *tabViewChannel {
 	t := &tabViewChannel{
 		tabTitle:   channel.Channel,
@@ -156,6 +208,12 @@ func (t *tabViewPrivmsg) Send(message string) {
 }
 func (t *tabViewPrivmsg) TabComplete(search string) []string {
 	return []string{}
+}
+func (t *tabViewPrivmsg) Update(servState *serverState, pmState *privmsgState) {
+	t.statusText = servState.tab.statusText
+	if t.HasFocus() {
+		statusBar.SetText(t.statusText)
+	}
 }
 
 func NewPrivmsgTab(conn *serverConnection, serv *serverState, privmsg *privmsgState) *tabViewPrivmsg {
