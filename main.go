@@ -111,7 +111,7 @@ func main() {
 			})
 			servView := NewServerTab(servConn, servState)
 			servState.tab = servView
-			servConn.Connect()
+			servConn.Connect(servState)
 		}
 	}
 

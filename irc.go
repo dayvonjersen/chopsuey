@@ -9,57 +9,62 @@ import (
 	"strings"
 
 	goirc "github.com/fluffle/goirc/client"
+	"github.com/lxn/walk"
 )
 
 const MAX_CONNECT_RETRIES = 100
 
 type serverConnection struct {
-	IP       net.IP
-	hostname string
+	IP net.IP
 
 	goircCfg *goirc.Config
 	conn     *goirc.Conn
-	// channelList *channelList
 
 	retryConnectEnabled bool
 
 	isupport map[string]string
 }
 
-func (servConn *serverConnection) Connect() {
-	servConn.conn.ConnectTo(servConn.hostname)
-	// go servConn.retryConnect()
-}
+func (servConn *serverConnection) Connect(servState *serverState) chan struct{} {
+	if servConn.retryConnectEnabled {
+		cancel := make(chan struct{})
+		go func() {
+			for i := 0; i < MAX_CONNECT_RETRIES; i++ {
+				select {
+				case <-cancel:
+					return
+				default:
+					msg := "connecting to " + servState.networkName + "..."
+					servState.tab.Println(now() + msg)
+					statusBar.SetText(msg)
 
-/*
-	cb := servConn.createChatBox(servConn.serverName, CHATBOX_SERVER)
-}
-*/
-func (servConn *serverConnection) retryConnect() {
-}
-
-/*
-	for i := 0; i < MAX_CONNECT_RETRIES; i++ {
-		cb.printMessage(now() + " connecting to " + servConn.cfg.ServerString() + "...")
-		statusBar.SetText("connecting to " + servConn.cfg.ServerString() + "...")
-		err := servConn.conn.ConnectTo(servConn.cfg.Host)
-		if err != nil {
-			cb.printMessage(now() + " " + err.Error())
-			statusBar.SetText("couldn't connect to " + servConn.cfg.ServerString())
-			if !servConn.retryConnectEnabled {
-				return
+					err := servConn.conn.ConnectTo(servState.hostname)
+					if err != nil {
+						servState.tab.Println(now() + " " + err.Error())
+						statusBar.SetText("couldn't connect to " + servState.networkName)
+					} else {
+						statusBar.SetText(servState.user.nick + " connected to " + servState.networkName)
+						return
+					}
+				}
 			}
-		} else {
-			statusBar.SetText(servConn.Nick + " connected to " + servConn.networkName)
-			break
+		}()
+		return cancel
+	} else {
+
+		err := servConn.conn.ConnectTo(servState.hostname)
+		if err != nil {
+			msg := "couldn't connect: " + err.Error()
+			walk.MsgBox(mw, "connection error", msg, walk.MsgBoxIconError)
+			servState.tab.Println(now() + msg)
 		}
+		return nil
 	}
 }
-*/
+
 func (servConn *serverConnection) Join(channel string, servState *serverState) {
 	chanState, ok := servState.channels[channel]
 	if !ok {
-		// open a new tab
 		chanState = &channelState{
 			channel:  channel,
 			nickList: newNickList(),
@@ -83,21 +88,6 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 }
 
 /*
-func (servConn *serverConnection) getChatBox(id string) *chatBox {
-	for _, cb := range servConn.chatBoxes {
-		if cb.id == id {
-			return cb
-		}
-	}
-	return nil
-}
-
-func (servConn *serverConnection) createChatBox(id string, boxType int) *chatBox {
-	cb := newChatBox(servConn, id, boxType)
-	servConn.chatBoxes = append(servConn.chatBoxes, cb)
-	return cb
-}
-
 func (servConn *serverConnection) deleteChatBox(id string) {
 	for i, cb := range servConn.chatBoxes {
 		if cb.id == id {
@@ -108,6 +98,7 @@ func (servConn *serverConnection) deleteChatBox(id string) {
 	}
 }
 */
+
 func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
 	goircCfg := goirc.NewConfig(servState.user.nick)
 	goircCfg.Version = clientCfg.Version
@@ -123,7 +114,6 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	conn := goirc.Client(goircCfg)
 
 	servConn := &serverConnection{
-		hostname:            servState.hostname,
 		conn:                conn,
 		retryConnectEnabled: true,
 		goircCfg:            goircCfg,
@@ -140,7 +130,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		servState.tab.Update(servState)
 
 		if servConn.retryConnectEnabled {
-			go servConn.retryConnect()
+			servConn.Connect(servState)
 		}
 	})
 
@@ -582,6 +572,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.tab.topicInput.SetText(topic)
 		chanState.tab.Println(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", now(), who, channel, topic))
 	})
+
 	// START OF /LIST
 	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {

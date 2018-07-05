@@ -235,7 +235,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 	servConn := NewServerConnection(servState, func() {})
 	servView := NewServerTab(servConn, servState)
 	servState.tab = servView
-	servConn.Connect()
+	servConn.Connect(servState)
 }
 
 func listCmd(ctx *commandContext, args ...string) {
