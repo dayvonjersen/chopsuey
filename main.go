@@ -60,15 +60,18 @@ func main() {
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 
-	logfilename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"
-	logfile, err := os.Create(logfilename)
-	checkErr(err)
-	defer logfile.Close()
-	l := &tsoLogger{}
-	l.LogFn = func(msg string) {
-		io.WriteString(logfile, msg+"\n")
+	// debug log, writes all the messages across the wire to a file (hopefully)
+	{
+		filename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"
+		f, err := os.Create(filename)
+		checkErr(err)
+		defer f.Close()
+		l := &tsoLogger{}
+		l.LogFn = func(msg string) {
+			io.WriteString(f, msg+"\n")
+		}
+		logging.SetLogger(l)
 	}
-	logging.SetLogger(l)
 
 	tabWidget.CurrentIndexChanged().Attach(func() {
 		index := tabWidget.CurrentIndex()
@@ -113,10 +116,6 @@ func main() {
 	}
 
 	mw.Run()
-}
-
-func getCurrentTab() *walk.TabPage {
-	return tabWidget.Pages().At(tabWidget.CurrentIndex())
 }
 
 type tsoLogger struct {
