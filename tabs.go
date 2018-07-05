@@ -38,7 +38,7 @@ func (t *tabViewServer) Title() string {
 	title := t.tabTitle
 	// add nickflash here
 	if t.unread > 0 && !t.HasFocus() {
-		title = fmt.Sprintf("%d [%d]", title, t.unread)
+		title = fmt.Sprintf("%s [%d]", title, t.unread)
 	}
 	if t.disconnected {
 		title = "(" + title + ")"
@@ -164,7 +164,7 @@ func (t *tabViewChannel) Title() string {
 	title := t.tabTitle
 	// add nickflash here
 	if t.unread > 0 && !t.HasFocus() {
-		title = fmt.Sprintf("%d [%d]", title, t.unread)
+		title = fmt.Sprintf("%s [%d]", title, t.unread)
 	}
 	if t.disconnected {
 		title = "(" + title + ")"
@@ -212,8 +212,11 @@ func (t *tabViewChannel) updateNickList(chanState *channelState) {
 
 func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelState) *tabViewChannel {
 	t := &tabViewChannel{
-		tabTitle:   channel.channel,
-		textBuffer: &walk.TextEdit{},
+		tabTitle:         channel.channel,
+		textBuffer:       &walk.TextEdit{},
+		nickListBox:      &walk.ListBox{},
+		nickListBoxModel: &listBoxModel{},
+		topicInput:       &walk.LineEdit{},
 	}
 	channel.nickList = newNickList()
 	t.send = func(msg string) {
@@ -228,14 +231,45 @@ func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelSt
 		t.tabPage.SetTitle(t.tabTitle)
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(t.tabPage)
-		TextEdit{
-			AssignTo:           &t.textBuffer,
-			ReadOnly:           true,
-			AlwaysConsumeSpace: true,
-			Persistent:         true,
-			VScroll:            true,
-			MaxLength:          0x7FFFFFFE,
+
+		LineEdit{
+			AssignTo: &t.topicInput,
+			ReadOnly: true,
 		}.Create(builder)
+		var hsplit *walk.Splitter
+		HSplitter{
+			AssignTo: &hsplit,
+			Children: []Widget{
+				TextEdit{
+					AssignTo:           &t.textBuffer,
+					ReadOnly:           true,
+					AlwaysConsumeSpace: true,
+					VScroll:            true,
+					MaxLength:          0x7FFFFFFE,
+					StretchFactor:      3,
+				},
+				ListBox{
+					StretchFactor:      1,
+					AssignTo:           &t.nickListBox,
+					Model:              t.nickListBoxModel,
+					AlwaysConsumeSpace: false,
+					/*
+						OnItemActivated: func() {
+							nick := newNick(t.nickListBoxModel.Items[t.nickListBox.CurrentIndex()])
+							box := conn.getChatBox(nick.name)
+							if box == nil {
+								cb.servConn.createChatBox(nick.name, CHATBOX_PRIVMSG)
+							} else {
+								checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(box.tabPage)))
+							}
+						},
+					*/
+				},
+			},
+			AlwaysConsumeSpace: true,
+		}.Create(builder)
+		checkErr(hsplit.SetHandleWidth(1))
+
 		textInput := NewTextInput(t, &clientContext{
 			servConn:     conn,
 			channel:      channel.channel,
@@ -272,7 +306,7 @@ func (t *tabViewPrivmsg) Title() string {
 	title := t.tabTitle
 	// add nickflash here
 	if t.unread > 0 && !t.HasFocus() {
-		title = fmt.Sprintf("%d [%d]", title, t.unread)
+		title = fmt.Sprintf("%s [%d]", title, t.unread)
 	}
 	if t.disconnected {
 		title = "(" + title + ")"

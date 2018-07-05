@@ -17,6 +17,7 @@ func newMyLineEdit(parent walk.Container) *MyLineEdit {
 		win.WS_CHILD|win.WS_TABSTOP|win.WS_VISIBLE|win.ES_AUTOHSCROLL,
 		win.WS_EX_CLIENTEDGE,
 	))
+	le.tabComplete = &tabComplete{}
 	return le
 }
 

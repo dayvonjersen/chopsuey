@@ -26,7 +26,8 @@ type serverConnection struct {
 }
 
 func (servConn *serverConnection) Connect() {
-	go servConn.retryConnect()
+	servConn.conn.ConnectTo(servConn.cfg.Host)
+	// go servConn.retryConnect()
 }
 
 /*
