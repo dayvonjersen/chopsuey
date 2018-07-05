@@ -8,7 +8,6 @@ import (
 
 type commandContext struct {
 	servConn *serverConnection
-	channel  string
 	tab      tabViewWithInput
 
 	servState *serverState
@@ -92,7 +91,7 @@ func joinCmd(ctx *commandContext, args ...string) {
 
 func partCmd(ctx *commandContext, args ...string) {
 	if ctx.chanState != nil {
-		ctx.servConn.Part(ctx.channel, strings.Join(args, " "), ctx.servState)
+		ctx.servConn.Part(ctx.chanState.channel, strings.Join(args, " "), ctx.servState)
 	} else {
 		ctx.tab.Println("ERROR: /part only works for channels. Try /close")
 	}
@@ -178,8 +177,9 @@ func topicCmd(ctx *commandContext, args ...string) {
 func closeCmd(ctx *commandContext, args ...string) {
 	if ctx.chanState != nil {
 		partCmd(ctx, args...)
+	} else {
+		ctx.tab.Close()
 	}
-	ctx.tab.Close()
 }
 
 func rejoinCmd(ctx *commandContext, args ...string) {

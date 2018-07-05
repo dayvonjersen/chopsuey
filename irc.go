@@ -79,6 +79,7 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 		log.Panicln("user not on channel:", channel)
 	}
 	chanState.tab.Close()
+	delete(servState.channels, chanState.channel)
 }
 
 /*

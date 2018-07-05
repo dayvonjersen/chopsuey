@@ -41,7 +41,11 @@ func (t *tabViewCommon) HasFocus() bool {
 	return t.tabIndex == tabWidget.CurrentIndex()
 }
 func (t *tabViewCommon) Close() {
-	// NOTE(tso): TODO
+	mw.WindowBase.SetSuspended(true)
+	defer mw.WindowBase.SetSuspended(false)
+	checkErr(tabWidget.Pages().Remove(t.tabPage))
+	// checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
+	tabWidget.SaveState()
 }
 
 type tabViewChatbox struct {
