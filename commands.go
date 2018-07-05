@@ -222,6 +222,8 @@ func serverCmd(ctx *clientContext, args ...string) {
 		privmsgs: map[string]*privmsgState{},
 	}
 	servConn := NewServerConnection(servState, func() {})
+	servView := NewServerTab(servConn, servState)
+	servState.tab = servView
 	servConn.Connect()
 }
 

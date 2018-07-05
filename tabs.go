@@ -67,6 +67,7 @@ func (t *tabViewChatbox) Title() string {
 func (t *tabViewChatbox) Focus() {
 	t.unread = 0
 	t.tabPage.SetTitle(t.Title())
+	statusBar.SetText(t.statusText)
 	t.textInput.SetFocus()
 }
 
