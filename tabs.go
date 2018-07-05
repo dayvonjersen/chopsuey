@@ -27,7 +27,6 @@ type tabViewWithInput interface {
 }
 
 type tabViewCommon struct {
-	tabIndex   int
 	tabTitle   string
 	tabPage    *walk.TabPage
 	statusText string
@@ -38,7 +37,7 @@ func (t *tabViewCommon) Id() int {
 }
 func (t *tabViewCommon) StatusText() string { return t.statusText }
 func (t *tabViewCommon) HasFocus() bool {
-	return t.tabIndex == tabWidget.CurrentIndex()
+	return t.Id() == tabWidget.CurrentIndex()
 }
 func (t *tabViewCommon) Close() {
 	mw.WindowBase.SetSuspended(true)
@@ -151,10 +150,9 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
-		t.tabIndex = index
+		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		tabs = append(tabs, t)
-		checkErr(tabWidget.SetCurrentIndex(index))
 	})
 	return t
 }
@@ -273,10 +271,9 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
-		t.tabIndex = index
+		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		tabs = append(tabs, t)
-		checkErr(tabWidget.SetCurrentIndex(index))
 	})
 	return t
 }
@@ -331,12 +328,11 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
-		index := tabWidget.Pages().Index(t.tabPage)
-		t.tabIndex = index
-		tabs = append(tabs, t)
-		tabWidget.SaveState()
 		// NOTE(tso): don't steal focus
+		// index := tabWidget.Pages().Index(t.tabPage)
 		// checkErr(tabWidget.SetCurrentIndex(index))
+		tabWidget.SaveState()
+		tabs = append(tabs, t)
 	})
 	return t
 }
