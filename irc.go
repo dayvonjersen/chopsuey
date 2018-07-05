@@ -13,11 +13,11 @@ import (
 const MAX_CONNECT_RETRIES = 100
 
 type serverConnection struct {
-	networkName, serverName, Nick string
-	IP                            net.IP
+	IP       net.IP
+	hostname string
 
-	cfg  *connectionConfig
-	conn *goirc.Conn
+	goircCfg *goirc.Config
+	conn     *goirc.Conn
 	// channelList *channelList
 
 	retryConnectEnabled bool
@@ -26,7 +26,7 @@ type serverConnection struct {
 }
 
 func (servConn *serverConnection) Connect() {
-	servConn.conn.ConnectTo(servConn.cfg.Host)
+	servConn.conn.ConnectTo(servConn.hostname)
 	// go servConn.retryConnect()
 }
 
@@ -121,8 +121,10 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	conn := goirc.Client(goircCfg)
 
 	servConn := &serverConnection{
+		hostname:            servState.hostname,
 		conn:                conn,
 		retryConnectEnabled: true,
+		goircCfg:            goircCfg,
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {

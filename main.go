@@ -5,8 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"reflect"
-	"strings"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -24,7 +22,7 @@ var (
 
 	connections []*serverConnection
 	servers     []*serverState
-	tabs        []*tabView
+	tabs        []tabView
 )
 
 func main() {
@@ -73,16 +71,31 @@ func main() {
 	logging.SetLogger(l)
 
 	tabWidget.CurrentIndexChanged().Attach(func() {
-		currentTab := getCurrentTab()
-		currentTab.SetTitle(strings.TrimPrefix(currentTab.Title(), "* "))
-		children := currentTab.Children()
-		for i := 0; i < children.Len(); i++ {
-			child := children.At(i)
-			typeStr := reflect.TypeOf(child).String()
-			if typeStr == "*main.MyLineEdit" {
-				lineEdit := child.(*MyLineEdit)
-				lineEdit.SetFocus()
+		index := tabWidget.CurrentIndex()
+		for _, t := range tabs {
+			switch t.(type) {
+			case *tabViewServer:
+				t := t.(*tabViewServer)
+				if t.tabIndex == index {
+					t.Focus()
+					return
+				}
+			case *tabViewChannel:
+				t := t.(*tabViewChannel)
+				if t.tabIndex == index {
+					t.Focus()
+					return
+				}
+			case *tabViewPrivmsg:
+				t := t.(*tabViewPrivmsg)
+				if t.tabIndex == index {
+					t.Focus()
+					return
+				}
+			default:
+				log.Panicf("unsupported type %T", t)
 			}
+
 		}
 	})
 
@@ -115,8 +128,7 @@ func main() {
 			})
 			servView := NewServerTab(servConn, servState)
 			servState.tab = servView
-			servConn.conn.ConnectTo(servState.hostname)
-			// servConn.Connect()
+			servConn.Connect()
 		}
 	}
 

@@ -13,7 +13,7 @@ type tabView interface {
 	StatusText() string
 	HasFocus() bool
 	Focus()
-	Close()
+	// Close()
 }
 
 type tabViewWithInput interface {
@@ -51,6 +51,7 @@ func (t *tabViewServer) HasFocus() bool {
 func (cb *tabViewServer) Focus() {
 	cb.unread = 0
 	cb.tabPage.SetTitle(cb.Title())
+	cb.textInput.SetFocus()
 }
 
 // func Errorln() ???
@@ -112,7 +113,7 @@ func NewServerTab(conn *serverConnection, serv *serverState) *tabViewServer {
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		textInput := NewTextInput(t, &clientContext{
+		t.textInput = NewTextInput(t, &clientContext{
 			servConn:     conn,
 			channel:      serv.networkName,
 			cb:           t,
@@ -120,12 +121,13 @@ func NewServerTab(conn *serverConnection, serv *serverState) *tabViewServer {
 			channelState: nil,
 			privmsgState: nil,
 		})
-		checkErr(t.tabPage.Children().Add(textInput))
+		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		t.tabIndex = index
-		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
+		tabs = append(tabs, t)
+		checkErr(tabWidget.SetCurrentIndex(index))
 	})
 	return t
 }
@@ -178,6 +180,7 @@ func (t *tabViewChannel) HasFocus() bool {
 func (cb *tabViewChannel) Focus() {
 	cb.unread = 0
 	cb.tabPage.SetTitle(cb.Title())
+	cb.textInput.SetFocus()
 }
 
 // func Errorln() ???
@@ -270,7 +273,7 @@ func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelSt
 		}.Create(builder)
 		checkErr(hsplit.SetHandleWidth(1))
 
-		textInput := NewTextInput(t, &clientContext{
+		t.textInput = NewTextInput(t, &clientContext{
 			servConn:     conn,
 			channel:      channel.channel,
 			cb:           t,
@@ -278,12 +281,13 @@ func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelSt
 			channelState: channel,
 			privmsgState: nil,
 		})
-		checkErr(t.tabPage.Children().Add(textInput))
+		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		t.tabIndex = index
-		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
+		tabs = append(tabs, t)
+		checkErr(tabWidget.SetCurrentIndex(index))
 	})
 	return t
 }
@@ -320,6 +324,7 @@ func (t *tabViewPrivmsg) HasFocus() bool {
 func (cb *tabViewPrivmsg) Focus() {
 	cb.unread = 0
 	cb.tabPage.SetTitle(cb.Title())
+	cb.textInput.SetFocus()
 }
 
 // func Errorln() ???
@@ -372,7 +377,7 @@ func NewPrivmsgTab(conn *serverConnection, serv *serverState, privmsg *privmsgSt
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		textInput := NewTextInput(t, &clientContext{
+		t.textInput = NewTextInput(t, &clientContext{
 			servConn:     conn,
 			channel:      privmsg.nick,
 			cb:           t,
@@ -380,13 +385,14 @@ func NewPrivmsgTab(conn *serverConnection, serv *serverState, privmsg *privmsgSt
 			channelState: nil,
 			privmsgState: privmsg,
 		})
-		checkErr(t.tabPage.Children().Add(textInput))
+		checkErr(t.tabPage.Children().Add(t.textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		t.tabIndex = index
+		tabs = append(tabs, t)
+		tabWidget.SaveState()
 		// NOTE(tso): don't steal focus
 		// checkErr(tabWidget.SetCurrentIndex(index))
-		tabWidget.SaveState()
 	})
 	return t
 }
