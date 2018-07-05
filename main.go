@@ -21,6 +21,10 @@ var (
 	statusBar *walk.StatusBarItem
 
 	clientCfg *clientConfig
+
+	connections []*serverConnection
+	servers     []*serverState
+	tabs        []*tabView
 )
 
 func main() {
@@ -40,12 +44,14 @@ func main() {
 			},
 		},
 	}.Create()
+
 	mw.SetBounds(walk.Rectangle{
 		X:      1536,
 		Y:      0,
 		Width:  384,
 		Height: 1050,
 	})
+
 	ico, err := walk.NewIconFromFile("chopsuey.ico")
 	checkErr(err)
 	mw.SetIcon(ico)
@@ -54,7 +60,6 @@ func main() {
 
 	font, err := walk.NewFont("ProFontWindows", 9, 0)
 	checkErr(err)
-
 	mw.WindowBase.SetFont(font)
 
 	logfilename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"

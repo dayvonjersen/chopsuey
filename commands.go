@@ -9,7 +9,7 @@ import (
 type clientContext struct {
 	servConn *serverConnection
 	channel  string
-	cb       *chatBox
+	cb       *tabViewWithInput
 }
 
 type clientCommand func(ctx *clientContext, args ...string)
@@ -53,7 +53,7 @@ func rawCmd(ctx *clientContext, args ...string) {
 
 func ctcpCmd(ctx *clientContext, args ...string) {
 	if len(args) < 2 {
-		ctx.cb.printMessage("usage: /ctcp [nick] [message] [args...]")
+		ctx.cb.Println("usage: /ctcp [nick] [message] [args...]")
 		return
 	}
 	ctx.servConn.conn.Ctcp(args[0], args[1], args[2:]...)
@@ -62,16 +62,16 @@ func ctcpCmd(ctx *clientContext, args ...string) {
 func meCmd(ctx *clientContext, args ...string) {
 	msg := strings.Join(args, " ")
 	if len(args) == 0 {
-		ctx.cb.printMessage("usage: /me [message...]")
+		ctx.cb.Println("usage: /me [message...]")
 		return
 	}
 	ctx.servConn.conn.Action(ctx.channel, msg)
-	ctx.cb.printMessage(fmt.Sprintf("%s * %s %s", now(), ctx.servConn.Nick, msg))
+	ctx.cb.Println(fmt.Sprintf("%s * %s %s", now(), ctx.servConn.Nick, msg))
 }
 
 func joinCmd(ctx *clientContext, args ...string) {
 	if len(args) != 1 || len(args[0]) < 2 || args[0][0] != '#' {
-		ctx.cb.printMessage("usage: /join [#channel]")
+		ctx.cb.Println("usage: /join [#channel]")
 		return
 	}
 	ctx.servConn.join(args[0])
@@ -83,17 +83,17 @@ func partCmd(ctx *clientContext, args ...string) {
 
 func noticeCmd(ctx *clientContext, args ...string) {
 	if len(args) < 2 {
-		ctx.cb.printMessage("usage: /notice [#channel or nick] [message...]")
+		ctx.cb.Println("usage: /notice [#channel or nick] [message...]")
 		return
 	}
 	msg := strings.Join(args[1:], " ")
 	ctx.servConn.conn.Notice(args[0], msg)
-	ctx.cb.printMessage(fmt.Sprintf("%s *** %s: %s", now(), ctx.servConn.Nick, msg))
+	ctx.cb.Println(fmt.Sprintf("%s *** %s: %s", now(), ctx.servConn.Nick, msg))
 }
 
 func privmsgCmd(ctx *clientContext, args ...string) {
 	if len(args) < 2 || args[0][0] == '#' {
-		ctx.cb.printMessage("usage: /msg [nick] [message...]")
+		ctx.cb.Println("usage: /msg [nick] [message...]")
 		return
 	}
 	nick := args[0]
@@ -105,12 +105,12 @@ func privmsgCmd(ctx *clientContext, args ...string) {
 	if cb == nil {
 		cb = ctx.servConn.createChatBox(nick, CHATBOX_PRIVMSG)
 	}
-	cb.printMessage(fmt.Sprintf("%s <%s> %s", now(), ctx.servConn.Nick, msg))
+	cb.Println(fmt.Sprintf("%s <%s> %s", now(), ctx.servConn.Nick, msg))
 }
 
 func nickCmd(ctx *clientContext, args ...string) {
 	if len(args) != 1 {
-		ctx.cb.printMessage("usage: /nick [new nick]")
+		ctx.cb.Println("usage: /nick [new nick]")
 		return
 	}
 	ctx.servConn.conn.Nick(args[0])
@@ -126,7 +126,7 @@ func quitCmd(ctx *clientContext, args ...string) {
 
 func modeCmd(ctx *clientContext, args ...string) {
 	if len(args) < 2 {
-		ctx.cb.printMessage("usage: /mode [#channel or your nick] [mode] [nicks...]")
+		ctx.cb.Println("usage: /mode [#channel or your nick] [mode] [nicks...]")
 		return
 	}
 	ctx.servConn.conn.Mode(args[0], args[1:]...)
@@ -138,7 +138,7 @@ func clearCmd(ctx *clientContext, args ...string) {
 
 func topicCmd(ctx *clientContext, args ...string) {
 	if len(args) < 1 {
-		ctx.cb.printMessage("usage: /topic [new topic...]")
+		ctx.cb.Println("usage: /topic [new topic...]")
 		return
 	}
 	ctx.servConn.conn.Topic(ctx.channel, args...)
@@ -156,25 +156,25 @@ func rejoinCmd(ctx *clientContext, args ...string) {
 	if ctx.cb.boxType == CHATBOX_CHANNEL {
 		ctx.servConn.join(ctx.cb.id)
 	} else {
-		ctx.cb.printMessage("ERROR: /rejoin only works for channels.")
+		ctx.cb.Println("ERROR: /rejoin only works for channels.")
 	}
 }
 
 func kickCmd(ctx *clientContext, args ...string) {
 	if len(args) < 1 {
-		ctx.cb.printMessage("usage: /kick [nick] [(optional) reason...]")
+		ctx.cb.Println("usage: /kick [nick] [(optional) reason...]")
 		return
 	}
 	if ctx.cb.boxType == CHATBOX_CHANNEL {
 		ctx.servConn.conn.Kick(ctx.cb.id, args[0], args[1:]...)
 	} else {
-		ctx.cb.printMessage("ERROR: /kick only works for channels.")
+		ctx.cb.Println("ERROR: /kick only works for channels.")
 	}
 }
 
 func serverCmd(ctx *clientContext, args ...string) {
 	if len(args) < 1 {
-		ctx.cb.printMessage("usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
+		ctx.cb.Println("usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
 		return
 	}
 	host := args[0]
