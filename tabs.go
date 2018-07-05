@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 type tabView interface {
@@ -29,10 +30,10 @@ func (t *tabViewCommon) StatusText() string { return t.statusText }
 func (t *tabViewCommon) Title() string {
 	title := t.tabTitle
 	// add nickflash here
-	if unread > 0 && !t.HasFocus() {
-		title = fmt.Sprintf("%d [%d]", title, unread)
+	if t.unread > 0 && !t.HasFocus() {
+		title = fmt.Sprintf("%d [%d]", title, t.unread)
 	}
-	if t.isDisconnected {
+	if t.disconnected {
 		title = "(" + title + ")"
 	}
 	return title
@@ -44,7 +45,6 @@ func (t *tabViewCommon) HasFocus() bool {
 type tabViewWithInput interface {
 	Send(string)
 	Println(string)
-	TabComplete(string) []string
 }
 
 type tabViewChatbox struct {
@@ -60,12 +60,12 @@ func (cb *tabViewChatbox) Focus() {
 
 // func Errorln() ???
 
-func (cb *tabViewChatbox) Println(msg string) {
+func (t *tabViewChatbox) Println(msg string) {
 	mw.WindowBase.Synchronize(func() {
-		cb.textBuffer.AppendText(msg + "\r\n")
-		if !cb.HasFocus() {
-			cb.unread++
-			cb.tabPage.SetTitle(cb.Title())
+		t.textBuffer.AppendText(msg + "\r\n")
+		if !t.HasFocus() {
+			t.unread++
+			t.tabPage.SetTitle(t.Title())
 		}
 	})
 }
@@ -86,13 +86,13 @@ func (cb *tabViewServer) Println(msg string) {
 }
 
 func (t *tabViewServer) Update(servState *serverState) {
-	if t.tabTitle != serv.networkName {
-		t.tabTitle = serv.networkName
+	if t.tabTitle != servState.networkName {
+		t.tabTitle = servState.networkName
 	}
 	t.tabPage.SetTitle(t.Title())
 
 	if servState.connected {
-		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servConn.networkName)
+		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
 	} else {
 		t.statusText = "disconnected x_x"
 	}
@@ -127,7 +127,14 @@ func NewServerTab(conn *serverConnection, serv *serverState) *tabViewServer {
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		textInput := NewTextInput(t, &clientContext{conn, serv.networkName, t})
+		textInput := NewTextInput(t, &clientContext{
+			servConn:     conn,
+			channel:      serv.networkName,
+			cb:           t,
+			serverState:  serv,
+			channelState: nil,
+			privmsgState: nil,
+		})
 		checkErr(t.tabPage.Children().Add(textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
@@ -138,10 +145,22 @@ func NewServerTab(conn *serverConnection, serv *serverState) *tabViewServer {
 	return t
 }
 
+type listBoxModel struct {
+	walk.ListModelBase
+	Items []string
+}
+
+func (m *listBoxModel) ItemCount() int {
+	return len(m.Items)
+}
+
+func (m *listBoxModel) Value(index int) interface{} {
+	return m.Items[index]
+}
+
 type tabViewChannel struct {
 	tabViewChatbox
 	topicInput       *walk.LineEdit
-	nickList         *nickList
 	nickListBox      *walk.ListBox
 	nickListBoxModel *listBoxModel
 	send             func(string)
@@ -151,10 +170,6 @@ func (t *tabViewChannel) Send(message string) {
 	t.send(message)
 }
 
-func (t *tabViewChannel) TabComplete(search string) []string {
-	return t.nickList.Search(search)
-}
-
 func (t *tabViewChannel) Update(servState *serverState, chanState *channelState) {
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
@@ -162,15 +177,22 @@ func (t *tabViewChannel) Update(servState *serverState, chanState *channelState)
 	}
 }
 
+func (t *tabViewChannel) updateNickList(chanState *channelState) {
+	mw.WindowBase.Synchronize(func() {
+		t.nickListBoxModel.Items = chanState.nickList.StringSlice()
+		t.nickListBoxModel.PublishItemsReset()
+	})
+}
+
 func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelState) *tabViewChannel {
 	t := &tabViewChannel{
 		tabTitle:   channel.Channel,
 		textBuffer: &walk.TextEdit{},
-		nickList:   newNickList(),
 	}
+	channel.nickList = newNickList()
 	t.send = func(msg string) {
-		conn.Privmsg(channel.channel, msg)
-		nick := t.nickList.Get(serv.User.Nick)
+		conn.conn.Privmsg(channel.channel, msg)
+		nick := channel.nickList.Get(serv.user.nick)
 		t.Println(fmt.Sprintf("%s <%s> %s", now(), nick, msg))
 	}
 	mw.WindowBase.Synchronize(func() {
@@ -188,7 +210,14 @@ func NewChannelTab(conn *serverConnection, serv *serverState, channel *channelSt
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		textInput := NewTextInput(t, &clientContext{conn, channel.channel, t})
+		textInput := NewTextInput(t, &clientContext{
+			servConn:     conn,
+			channel:      channel.channel,
+			cb:           t,
+			serverState:  serv,
+			channelState: channel,
+			privmsgState: nil,
+		})
 		checkErr(t.tabPage.Children().Add(textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
@@ -241,12 +270,20 @@ func NewPrivmsgTab(conn *serverConnection, serv *serverState, privmsg *privmsgSt
 			VScroll:            true,
 			MaxLength:          0x7FFFFFFE,
 		}.Create(builder)
-		textInput := NewTextInput(t, &clientContext{conn, privmsg.nick, t})
+		textInput := NewTextInput(t, &clientContext{
+			servConn:     conn,
+			channel:      privmsg.nick,
+			cb:           t,
+			serverState:  serv,
+			channelState: nil,
+			privmsgState: privmsg,
+		})
 		checkErr(t.tabPage.Children().Add(textInput))
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		t.tabIndex = index
-		checkErr(tabWidget.SetCurrentIndex(index))
+		// NOTE(tso): don't steal focus
+		// checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 	})
 	return t

@@ -57,10 +57,10 @@ type serverState struct {
 }
 
 type channelState struct {
-	channel string
-	topic   string
-	nicks   *nickList
-	tab     *tabViewChannel
+	channel  string
+	topic    string
+	nickList *nickList
+	tab      *tabViewChannel
 }
 
 type privmsgState struct {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"strings"
 
 	goirc "github.com/fluffle/goirc/client"
@@ -17,21 +16,27 @@ type serverConnection struct {
 	networkName, serverName, Nick string
 	IP                            net.IP
 
-	cfg         *connectionConfig
-	conn        *goirc.Conn
-	channelList *channelList
+	cfg  *connectionConfig
+	conn *goirc.Conn
+	// channelList *channelList
 
 	retryConnectEnabled bool
 
 	isupport map[string]string
 }
 
-func (servConn *serverConnection) connect() {
-	cb := servConn.createChatBox(servConn.serverName, CHATBOX_SERVER)
-	go servConn.retryConnect(cb)
+func (servConn *serverConnection) Connect() {
+	go servConn.retryConnect()
 }
 
-func (servConn *serverConnection) retryConnect(cb *chatBox) {
+/*
+	cb := servConn.createChatBox(servConn.serverName, CHATBOX_SERVER)
+}
+*/
+func (servConn *serverConnection) retryConnect() {
+}
+
+/*
 	for i := 0; i < MAX_CONNECT_RETRIES; i++ {
 		cb.printMessage(now() + " connecting to " + servConn.cfg.ServerString() + "...")
 		statusBar.SetText("connecting to " + servConn.cfg.ServerString() + "...")
@@ -48,15 +53,22 @@ func (servConn *serverConnection) retryConnect(cb *chatBox) {
 		}
 	}
 }
-
-func (servConn *serverConnection) join(channel string) {
-	cb := servConn.getChatBox(channel)
-	if cb == nil {
-		servConn.createChatBox(channel, CHATBOX_CHANNEL)
+*/
+func (servConn *serverConnection) Join(channel string, servState *serverState) {
+	chanState, ok := servState.channels[channel]
+	if !ok {
+		// open a new tab
+		chanState = &channelState{
+			channel:  channel,
+			nickList: newNickList(),
+		}
+		chanState.tab = NewChannelTab(servConn, servState, chanState)
+		servState.channels[channel] = chanState
 	}
 	servConn.conn.Join(channel)
 }
 
+/*
 func (servConn *serverConnection) part(channel, reason string) {
 	if channel[0] == '#' {
 		servConn.conn.Part(channel, reason)
@@ -92,8 +104,8 @@ func (servConn *serverConnection) deleteChatBox(id string) {
 		}
 	}
 }
-
-func NewServerConnection(servState *serverState) *serverConnection {
+*/
+func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
 	goircCfg := goirc.NewConfig(servState.user.nick)
 	goircCfg.Version = clientCfg.Version
 	if servState.ssl {
@@ -115,6 +127,7 @@ func NewServerConnection(servState *serverState) *serverConnection {
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		servState.connected = true
 		servState.tab.Update(servState)
+		connectedCallback()
 	})
 
 	conn.HandleFunc(goirc.DISCONNECTED, func(c *goirc.Conn, l *goirc.Line) {
@@ -122,7 +135,7 @@ func NewServerConnection(servState *serverState) *serverConnection {
 		servState.tab.Update(servState)
 
 		if servConn.retryConnectEnabled {
-			go servConn.retryConnect(cb)
+			go servConn.retryConnect()
 		}
 	})
 
@@ -161,11 +174,11 @@ func NewServerConnection(servState *serverState) *serverConnection {
 				v = s[1]
 			}
 			servConn.isupport[k] = v
-		}
-		if name, ok := servConn.isupport["NETWORK"]; ok {
-			if servState.networkName != name {
-				servState.networkName = name
-				servState.tab.Update(servState)
+			if k == "NETWORK" {
+				if servState.networkName != v {
+					servState.networkName = v
+					servState.tab.Update(servState)
+				}
 			}
 		}
 		printServerMessage(c, l)
@@ -214,7 +227,7 @@ func NewServerConnection(servState *serverState) *serverConnection {
 	// TODO: there are more...
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		servState.Println(now() + " " + l.Cmd + " ERROR: " + strings.Join(l.Args[1:], " "))
+		servState.tab.Println(now() + " " + l.Cmd + " ERROR: " + strings.Join(l.Args[1:], " "))
 	}
 
 	conn.HandleFunc("401", printErrorMessage)
@@ -281,49 +294,53 @@ func NewServerConnection(servState *serverState) *serverConnection {
 	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
 		// debugPrint(l)
 	})
-	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
-		channel := l.Args[0]
 
-		if channel == servState.user.nick {
-			channel = l.Nick
-			boxType = CHATBOX_PRIVMSG
-		}
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
-			cb = servConn.createChatBox(channel, boxType)
-		}
-		var nick string
-		if boxType == CHATBOX_CHANNEL {
-			nick = cb.nickList.Get(l.Nick).String()
+	printer := func(code, fmtstr string, l *goirc.Line) {
+		var (
+			tab  tabViewWithInput
+			nick string
+		)
+		if l.Args[0] == servState.user.nick {
+			nick = l.Nick
+
+			// NOTE(tso): inline NOTICEs from services etc here.
+			pmState, ok := servState.privmsgs[l.Nick]
+			if !ok {
+				pmState = &privmsgState{
+					nick: l.Nick,
+				}
+				pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
+				servState.privmsgs[l.Nick] = pmState
+			}
+			tab = pmState.tab
 		} else {
-			nick = channel
+			chanState, ok := servState.channels[l.Args[0]]
+			if ok {
+				nick = chanState.nickList.Get(l.Nick).String()
+			} else {
+				log.Println("got", code, " but user not on channel")
+				chanState = &channelState{
+					channel: l.Args[0],
+				}
+				chanState.tab = NewChannelTab(servConn, servState, chanState)
+				servState.channels[l.Args[0]] = chanState
+			}
+			tab = chanState.tab
 		}
-		cb.printMessage(fmt.Sprintf("%s <%s> %s", now(), nick, l.Args[1]))
+		tab.Println(fmt.Sprintf(fmtstr, now(), nick, l.Args[1]))
+	}
+	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
+		printer("PRIVMSG", "%s <%s> %s", l)
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
-		channel := l.Args[0]
-		boxType := CHATBOX_CHANNEL
-		if channel == servConn.Nick {
-			channel = l.Nick
-			boxType = CHATBOX_PRIVMSG
-		}
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
-			cb = servConn.createChatBox(channel, boxType)
-		}
-		cb.printMessage(fmt.Sprintf("%s *%s %s*", now(), l.Nick, l.Args[1]))
+		printer("ACTION", "%s * %s %s", l)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
 		// debugPrint(l)
 		channel := strings.TrimSpace(l.Args[0])
-		boxType := CHATBOX_CHANNEL
-		if channel == servConn.Nick {
-			channel = l.Nick
-			boxType = CHATBOX_PRIVMSG
-		}
-		if (channel == "AUTH" || channel == "*" || channel == "") && servConn.Nick != channel {
+		if (channel == "AUTH" || channel == "*" || channel == "") && servState.user.nick != channel {
 			// servers commonly send these NOTICEs when connecting:
 			//
 			// :irc.example.org NOTICE AUTH :*** Looking up your hostname...
@@ -332,62 +349,58 @@ func NewServerConnection(servState *serverState) *serverConnection {
 			printServerMessage(c, l)
 			return
 		}
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
-			cb = servConn.createChatBox(channel, boxType)
-		}
-		cb.printMessage(fmt.Sprintf("%s *** %s: %s", now(), l.Nick, l.Args[1]))
+		printer("NOTICE", "%s *** %s: %s", l)
 	})
 
 	// NAMES
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[2]
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
+		chanState, ok := servState.channels[channel]
+		if !ok {
 			log.Println("got 353 but user not on channel:", l.Args[2])
 			return
 		}
 		nicks := strings.Split(l.Args[3], " ")
 		for _, n := range nicks {
 			if n != "" {
-				cb.nickList.Add(n)
+				chanState.nickList.Add(n)
 			}
 		}
-		cb.updateNickList()
+		chanState.tab.updateNickList(chanState)
 	})
 
 	conn.HandleFunc(goirc.JOIN, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
+		chanState, ok := servState.channels[channel]
+		if !ok {
 			// forced join
-			servConn.join(channel)
+			servConn.Join(channel, servState)
 			return
 		}
-		if !cb.nickList.Has(l.Nick) {
-			cb.nickList.Add(l.Nick)
-			cb.updateNickList()
+		if !chanState.nickList.Has(l.Nick) {
+			chanState.nickList.Add(l.Nick)
+			chanState.tab.updateNickList(chanState)
 			if !clientCfg.HideJoinParts {
-				cb.printMessage(now() + " -> " + l.Nick + " has joined " + l.Args[0])
+				chanState.tab.Println(now() + " -> " + l.Nick + " has joined " + l.Args[0])
 			}
 		}
 	})
 
 	conn.HandleFunc(goirc.PART, func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[0]
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
+		chanState, ok := servState.channels[channel]
+		if !ok {
 			log.Println("got PART but user not on channel:", l.Args[0])
 			return
 		}
-		cb.nickList.Remove(l.Nick)
-		cb.updateNickList()
+		chanState.nickList.Remove(l.Nick)
+		chanState.tab.updateNickList(chanState)
 		if !clientCfg.HideJoinParts {
 			msg := now() + " <- " + l.Nick + " has left " + l.Args[0]
 			if len(l.Args) > 1 {
 				msg += " (" + l.Args[1] + ")"
 			}
-			cb.printMessage(msg)
+			chanState.tab.Println(msg)
 		}
 	})
 
@@ -401,198 +414,199 @@ func NewServerConnection(servState *serverState) *serverConnection {
 		if reason != "" {
 			msg += ": " + reason
 		}
-		for _, cb := range servConn.chatBoxes {
-			if cb.nickList.Has(l.Nick) {
-				cb.nickList.Remove(l.Nick)
-				cb.updateNickList()
+		for _, chanState := range servState.channels {
+			if chanState.nickList.Has(l.Nick) {
+				chanState.nickList.Remove(l.Nick)
+				chanState.tab.updateNickList(chanState)
 				if !clientCfg.HideJoinParts {
-					cb.printMessage(msg)
+					chanState.tab.Println(msg)
 				}
 			}
 		}
 	})
 
-	conn.HandleFunc(goirc.KICK, func(c *goirc.Conn, l *goirc.Line) {
-		op := l.Nick
-		channel := l.Args[0]
-		who := l.Args[1]
-		reason := l.Args[2]
+	/*
+		conn.HandleFunc(goirc.KICK, func(c *goirc.Conn, l *goirc.Line) {
+			op := l.Nick
+			channel := l.Args[0]
+			who := l.Args[1]
+			reason := l.Args[2]
 
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
-			log.Println("got KICK but user not on channel:", channel)
-			return
-		}
-
-		if who == servConn.Nick {
-			msg := fmt.Sprintf("%s *** You have been kicked by %s", now(), op)
-			if reason != op && reason != who {
-				msg += ": " + reason
+			chanState, ok := servState.channels[channel]
+			if !ok {
+				log.Println("got KICK but user not on channel:", channel)
+				return
 			}
-			cb.printMessage(msg)
-			cb.nickList = newNickList()
-			cb.updateNickList()
-		} else {
-			msg := fmt.Sprintf("%s *** %s has been kicked by %s", now(), who, op)
-			if reason != op && reason != who {
-				msg += ": " + reason
-			}
-			cb.printMessage(msg)
-			cb.nickList.Remove(who)
-			cb.updateNickList()
-		}
-	})
 
-	conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
-		oldNick := newNick(l.Nick)
-		newNick := newNick(l.Args[0])
-		if oldNick.name == servConn.Nick {
-			servConn.Nick = newNick.name
-			statusBar.SetText(newNick.name + " connected to " + cfg.ServerString())
-		}
-		for _, cb := range servConn.chatBoxes {
-			if cb.nickList.Has(oldNick.name) {
-				newNick.prefix = oldNick.prefix
-				cb.nickList.Set(oldNick.name, newNick)
+			if who == servState.user.nick {
+				msg := fmt.Sprintf("%s *** You have been kicked by %s", now(), op)
+				if reason != op && reason != who {
+					msg += ": " + reason
+				}
+				cb.printMessage(msg)
+				cb.nickList = newNickList()
 				cb.updateNickList()
-				cb.printMessage(now() + " ** " + oldNick.name + " is now known as " + newNick.name)
+			} else {
+				msg := fmt.Sprintf("%s *** %s has been kicked by %s", now(), who, op)
+				if reason != op && reason != who {
+					msg += ": " + reason
+				}
+				cb.printMessage(msg)
+				cb.nickList.Remove(who)
+				cb.updateNickList()
 			}
-		}
-	})
+		})
 
-	conn.HandleFunc(goirc.MODE, func(c *goirc.Conn, l *goirc.Line) {
-		op := l.Nick
-		channel := l.Args[0]
-		mode := l.Args[1]
-		nicks := l.Args[2:]
+		conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
+			oldNick := newNick(l.Nick)
+			newNick := newNick(l.Args[0])
+			if oldNick.name == servConn.Nick {
+				servConn.Nick = newNick.name
+				statusBar.SetText(newNick.name + " connected to " + cfg.ServerString())
+			}
+			for _, cb := range servConn.chatBoxes {
+				if cb.nickList.Has(oldNick.name) {
+					newNick.prefix = oldNick.prefix
+					cb.nickList.Set(oldNick.name, newNick)
+					cb.updateNickList()
+					cb.printMessage(now() + " ** " + oldNick.name + " is now known as " + newNick.name)
+				}
+			}
+		})
 
-		if channel[0] == '#' {
+		conn.HandleFunc(goirc.MODE, func(c *goirc.Conn, l *goirc.Line) {
+			op := l.Nick
+			channel := l.Args[0]
+			mode := l.Args[1]
+			nicks := l.Args[2:]
+
+			if channel[0] == '#' {
+				cb := servConn.getChatBox(channel)
+				if cb == nil {
+					log.Println("got MODE but user not on channel:", channel)
+					return
+				}
+				if op == "" {
+					op = servConn.networkName
+				}
+				if len(nicks) == 0 {
+					cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", now(), op, mode, channel))
+					return
+				}
+
+				nickStr := fmt.Sprintf("%s", nicks)
+				nickStr = nickStr[1 : len(nickStr)-1]
+				cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", now(), op, mode, nickStr))
+
+				var add bool
+				var idx int
+				prefixUpdater := func(symbol string) {
+					n := nicks[idx]
+					nick := cb.nickList.Get(n)
+					if add {
+						nick.prefix += symbol
+					} else {
+						nick.prefix = strings.Replace(nick.prefix, symbol, "", -1)
+					}
+					cb.nickList.Set(n, nick)
+					cb.updateNickList()
+					idx++
+				}
+				for _, b := range mode {
+					switch b {
+					case '+':
+						add = true
+					case '-':
+						add = false
+					case 'q':
+						prefixUpdater("~")
+					case 'a':
+						prefixUpdater("&")
+					case 'o':
+						prefixUpdater("@")
+					case 'h':
+						prefixUpdater("%")
+					case 'v':
+						prefixUpdater("+")
+					case 'b':
+						idx++
+					default:
+						panic("unhandled mode modifer:" + string(b))
+					}
+				}
+			} else if op == "" {
+				nick := channel
+				for _, cb := range servConn.chatBoxes {
+					if cb.nickList.Has(nick) || nick == servConn.Nick {
+						cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s", now(), nick, mode))
+					}
+				}
+			}
+		})
+
+		conn.HandleFunc("332", func(c *goirc.Conn, l *goirc.Line) {
+			channel := l.Args[1]
+			topic := l.Args[2]
 			cb := servConn.getChatBox(channel)
 			if cb == nil {
-				log.Println("got MODE but user not on channel:", channel)
+				log.Println("got TOPIC but user not on channel:", channel)
 				return
 			}
-			if op == "" {
-				op = servConn.networkName
+			cb.topicInput.SetText(topic)
+			cb.printMessage(fmt.Sprintf("*** topic for %s is %s", channel, topic))
+		})
+
+		conn.HandleFunc(goirc.TOPIC, func(c *goirc.Conn, l *goirc.Line) {
+			channel := l.Args[0]
+			topic := l.Args[1]
+			who := l.Src
+			if i := strings.Index(who, "!"); i != -1 {
+				who = who[0:i]
 			}
-			if len(nicks) == 0 {
-				cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", now(), op, mode, channel))
+			cb := servConn.getChatBox(channel)
+			if cb == nil {
+				log.Println("got TOPIC but user not on channel:", channel)
 				return
 			}
+			cb.topicInput.SetText(topic)
+			cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", now(), who, channel, topic))
+		})
 
-			nickStr := fmt.Sprintf("%s", nicks)
-			nickStr = nickStr[1 : len(nickStr)-1]
-			cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s %s", now(), op, mode, nickStr))
-
-			var add bool
-			var idx int
-			prefixUpdater := func(symbol string) {
-				n := nicks[idx]
-				nick := cb.nickList.Get(n)
-				if add {
-					nick.prefix += symbol
-				} else {
-					nick.prefix = strings.Replace(nick.prefix, symbol, "", -1)
-				}
-				cb.nickList.Set(n, nick)
-				cb.updateNickList()
-				idx++
+		// START OF /LIST
+		conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
+			if servConn.channelList == nil {
+				log.Println("got 321 but servConn.channeList is nil")
+				return
 			}
-			for _, b := range mode {
-				switch b {
-				case '+':
-					add = true
-				case '-':
-					add = false
-				case 'q':
-					prefixUpdater("~")
-				case 'a':
-					prefixUpdater("&")
-				case 'o':
-					prefixUpdater("@")
-				case 'h':
-					prefixUpdater("%")
-				case 'v':
-					prefixUpdater("+")
-				case 'b':
-					idx++
-				default:
-					panic("unhandled mode modifer:" + string(b))
-				}
+			servConn.channelList.inProgress = true
+		})
+
+		// LIST
+		conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
+			channel := l.Args[1]
+			users, err := strconv.Atoi(l.Args[2])
+			checkErr(err)
+			topic := strings.TrimSpace(l.Args[3])
+
+			if servConn.channelList == nil {
+				servConn.channelList = newChannelList(servConn)
 			}
-		} else if op == "" {
-			nick := channel
-			for _, cb := range servConn.chatBoxes {
-				if cb.nickList.Has(nick) || nick == servConn.Nick {
-					cb.printMessage(fmt.Sprintf("%s ** %s sets mode %s", now(), nick, mode))
-				}
+
+			servConn.channelList.mu.Lock()
+			defer servConn.channelList.mu.Unlock()
+			servConn.channelList.Add(channel, users, topic)
+		})
+
+		// END OF /LIST
+		conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
+			if servConn.channelList == nil {
+				log.Println("got 323 but servConn.channeList is nil")
+				return
 			}
-		}
-	})
-
-	conn.HandleFunc("332", func(c *goirc.Conn, l *goirc.Line) {
-		channel := l.Args[1]
-		topic := l.Args[2]
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
-			log.Println("got TOPIC but user not on channel:", channel)
-			return
-		}
-		cb.topicInput.SetText(topic)
-		cb.printMessage(fmt.Sprintf("*** topic for %s is %s", channel, topic))
-	})
-
-	conn.HandleFunc(goirc.TOPIC, func(c *goirc.Conn, l *goirc.Line) {
-		channel := l.Args[0]
-		topic := l.Args[1]
-		who := l.Src
-		if i := strings.Index(who, "!"); i != -1 {
-			who = who[0:i]
-		}
-		cb := servConn.getChatBox(channel)
-		if cb == nil {
-			log.Println("got TOPIC but user not on channel:", channel)
-			return
-		}
-		cb.topicInput.SetText(topic)
-		cb.printMessage(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", now(), who, channel, topic))
-	})
-
-	// START OF /LIST
-	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
-		if servConn.channelList == nil {
-			log.Println("got 321 but servConn.channeList is nil")
-			return
-		}
-		servConn.channelList.inProgress = true
-	})
-
-	// LIST
-	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
-		channel := l.Args[1]
-		users, err := strconv.Atoi(l.Args[2])
-		checkErr(err)
-		topic := strings.TrimSpace(l.Args[3])
-
-		if servConn.channelList == nil {
-			servConn.channelList = newChannelList(servConn)
-		}
-
-		servConn.channelList.mu.Lock()
-		defer servConn.channelList.mu.Unlock()
-		servConn.channelList.Add(channel, users, topic)
-	})
-
-	// END OF /LIST
-	conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
-		if servConn.channelList == nil {
-			log.Println("got 323 but servConn.channeList is nil")
-			return
-		}
-		servConn.channelList.inProgress = false
-		servConn.channelList.complete = true
-	})
-
+			servConn.channelList.inProgress = false
+			servConn.channelList.complete = true
+		})
+	*/
 	return servConn
 }
 

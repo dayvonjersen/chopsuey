@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strings"
 
 	"github.com/lxn/walk"
@@ -43,8 +44,19 @@ func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func NewTextInput(t *tabViewWithInput, ctx *clientContext) *MyLineEdit {
-	textInput := newMyLineEdit(t.tabPage)
+func NewTextInput(t tabViewWithInput, ctx *clientContext) *MyLineEdit {
+	var tabPage *walk.TabPage
+	switch t.(type) {
+	case *tabViewServer:
+		tabPage = t.(*tabViewServer).tabPage
+	case *tabViewChannel:
+		tabPage = t.(*tabViewChannel).tabPage
+	case *tabViewPrivmsg:
+		tabPage = t.(*tabViewPrivmsg).tabPage
+	default:
+		log.Panicf("unsupported type %T", t)
+	}
+	textInput := newMyLineEdit(tabPage)
 
 	textInput.KeyDown().Attach(func(key walk.Key) {
 		if key == walk.KeyReturn {
@@ -53,7 +65,7 @@ func NewTextInput(t *tabViewWithInput, ctx *clientContext) *MyLineEdit {
 				return
 			}
 			textInput.msgHistory = append(textInput.msgHistory, text)
-			textInput.msgHistoryIdx = len(textInput.msgHistory) - 1
+			textInput.msgHistoryIndex = len(textInput.msgHistory) - 1
 			if text[0] == '/' {
 				parts := strings.Split(text[1:], " ")
 				cmd := parts[0]
@@ -78,24 +90,24 @@ func NewTextInput(t *tabViewWithInput, ctx *clientContext) *MyLineEdit {
 			textInput.SetText("")
 		} else if key == walk.KeyUp {
 			if len(textInput.msgHistory) > 0 {
-				text := textInput.msgHistory[textInput.msgHistoryIdx]
+				text := textInput.msgHistory[textInput.msgHistoryIndex]
 				textInput.SetText(text)
 				textInput.SetTextSelection(len(text), len(text))
-				textInput.msgHistoryIdx--
-				if textInput.msgHistoryIdx < 0 {
-					textInput.msgHistoryIdx = 0
+				textInput.msgHistoryIndex--
+				if textInput.msgHistoryIndex < 0 {
+					textInput.msgHistoryIndex = 0
 				}
 			}
 		} else if key == walk.KeyDown {
 			if len(textInput.msgHistory) > 0 {
-				textInput.msgHistoryIdx++
-				if textInput.msgHistoryIdx <= len(textInput.msgHistory)-1 {
-					text := textInput.msgHistory[textInput.msgHistoryIdx]
+				textInput.msgHistoryIndex++
+				if textInput.msgHistoryIndex <= len(textInput.msgHistory)-1 {
+					text := textInput.msgHistory[textInput.msgHistoryIndex]
 					textInput.SetText(text)
 					textInput.SetTextSelection(len(text), len(text))
 				} else {
 					textInput.SetText("")
-					textInput.msgHistoryIdx = len(textInput.msgHistory) - 1
+					textInput.msgHistoryIndex = len(textInput.msgHistory) - 1
 				}
 			}
 		}
@@ -121,7 +133,10 @@ func NewTextInput(t *tabViewWithInput, ctx *clientContext) *MyLineEdit {
 				}
 			} else {
 				term := text[len(text)-1]
-				res := t.TabComplete(term)
+				res := []string{}
+				if ctx.channelState != nil {
+					res = ctx.channelState.nickList.Search(term)
+				}
 				res = append(res, term)
 				textInput.tabComplete = &tabComplete{
 					Active:  true,

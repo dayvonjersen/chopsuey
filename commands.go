@@ -1,15 +1,13 @@
 package main
 
-import (
-	"fmt"
-	"strconv"
-	"strings"
-)
-
 type clientContext struct {
 	servConn *serverConnection
 	channel  string
-	cb       *tabViewWithInput
+	cb       tabViewWithInput
+
+	serverState  *serverState
+	channelState *channelState
+	privmsgState *privmsgState
 }
 
 type clientCommand func(ctx *clientContext, args ...string)
@@ -17,7 +15,10 @@ type clientCommand func(ctx *clientContext, args ...string)
 var clientCommands map[string]clientCommand
 
 func init() {
-	clientCommands = map[string]clientCommand{
+	clientCommands = map[string]clientCommand{}
+}
+
+/*
 		"clear":  clearCmd,
 		"close":  closeCmd,
 		"ctcp":   ctcpCmd,
@@ -213,3 +214,4 @@ func listCmd(ctx *clientContext, args ...string) {
 		ctx.servConn.conn.Raw("LIST")
 	}
 }
+*/

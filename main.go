@@ -107,14 +107,15 @@ func main() {
 				channels: map[string]*channelState{},
 				privmsgs: map[string]*privmsgState{},
 			}
-			servConn := NewServerConnection(servState)
-			servView := NewServerTab(servConn, servState)
-			servState.tab = servView
-			servConn.Connect(func() {
+			var servConn *serverConnection
+			servConn = NewServerConnection(servState, func() {
 				for _, channel := range cfg.AutoJoin {
-					servConn.Join(channel)
+					servConn.Join(channel, servState)
 				}
 			})
+			servView := NewServerTab(servConn, servState)
+			servState.tab = servView
+			servConn.Connect()
 		}
 	}
 
