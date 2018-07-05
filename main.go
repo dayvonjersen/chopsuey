@@ -73,29 +73,9 @@ func main() {
 	tabWidget.CurrentIndexChanged().Attach(func() {
 		index := tabWidget.CurrentIndex()
 		for _, t := range tabs {
-			switch t.(type) {
-			case *tabViewServer:
-				t := t.(*tabViewServer)
-				if t.tabIndex == index {
-					t.Focus()
-					return
-				}
-			case *tabViewChannel:
-				t := t.(*tabViewChannel)
-				if t.tabIndex == index {
-					t.Focus()
-					return
-				}
-			case *tabViewPrivmsg:
-				t := t.(*tabViewPrivmsg)
-				if t.tabIndex == index {
-					t.Focus()
-					return
-				}
-			default:
-				log.Panicf("unsupported type %T", t)
+			if t.Id() == index {
+				t.Focus()
 			}
-
 		}
 	})
 
