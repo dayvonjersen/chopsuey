@@ -22,10 +22,11 @@ type serverConnection struct {
 
 	retryConnectEnabled bool
 
-	isupport map[string]string
+	isupport           map[string]string
+	cancelRetryConnect chan struct{}
 }
 
-func (servConn *serverConnection) Connect(servState *serverState) chan struct{} {
+func (servConn *serverConnection) Connect(servState *serverState) {
 	if servConn.retryConnectEnabled {
 		cancel := make(chan struct{})
 		go func() {
@@ -49,7 +50,7 @@ func (servConn *serverConnection) Connect(servState *serverState) chan struct{} 
 				}
 			}
 		}()
-		return cancel
+		servConn.cancelRetryConnect = cancel
 	} else {
 
 		err := servConn.conn.ConnectTo(servState.hostname)

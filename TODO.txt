@@ -1,3 +1,36 @@
+STILL TODO:
+ - make new tabs open with associated server
+    - get servState.tab.Index()
+    - find max(servState.channels+privmsgs.tabs.Index())
+    - open there
+    - ???
+    - move zig
+
+ - remove closed tabs from []tabs, cleaner teardown
+ 
+ - don't close last tab ever
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/disconnect
+/reconnect
 autoscroll to bottom but don't if we scrolled up on purpose (<-time.After)
 ---------------------------------------------------------------------------------
 
@@ -77,8 +110,6 @@ prevent closing the last tab
 ---------------------------------------3-----------------------------------------
 RICHEDIT BOYS :O :O :O GET HYPE
 
----------------------------------------4-----------------------------------------
-nick doesn't update in statusbar if you're user1 on server1 and user2 on server2
 
 ---------------------------------------5-----------------------------------------
 middle-click to close tabs
@@ -113,7 +144,6 @@ tab: (bold/colors/icons might not be possible) but add:
     something for connection closed
 /search or /find or CTRL+F
     reduce text buffer to matches, then restore
-fix sorting on channellist
 /whois command (write to current tab)
 settings panel which writes to config.json
 hot-loadable config.json
