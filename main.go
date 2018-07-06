@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -25,7 +26,23 @@ var (
 	tabs        []tabView
 )
 
+/*
+var (
+	clientState *clientState
+)
+
+type clientState struct {
+	cfg *clientConfig
+
+	connections []*serverConnection
+	servers     []*serverState
+	tabs        []tabView
+}
+*/
+
 func main() {
+	runtime.LockOSThread()
+
 	MainWindow{
 		AssignTo: &mw,
 		Title:    "chopsuey IRC v0.2",

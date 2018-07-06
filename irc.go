@@ -52,14 +52,12 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 		}()
 		servConn.cancelRetryConnect = cancel
 	} else {
-
 		err := servConn.conn.ConnectTo(servState.hostname)
 		if err != nil {
 			msg := "couldn't connect: " + err.Error()
 			walk.MsgBox(mw, "connection error", msg, walk.MsgBoxIconError)
 			servState.tab.Println(now() + msg)
 		}
-		return nil
 	}
 }
 

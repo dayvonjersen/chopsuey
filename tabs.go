@@ -42,8 +42,16 @@ func (t *tabViewCommon) HasFocus() bool {
 func (t *tabViewCommon) Close() {
 	mw.WindowBase.SetSuspended(true)
 	defer mw.WindowBase.SetSuspended(false)
+	index := t.Id()
+	for i, tab := range tabs {
+		if tab.Id() == index {
+			tabs = append(tabs[0:i], tabs[i+1:]...)
+			break
+		}
+	}
 	checkErr(tabWidget.Pages().Remove(t.tabPage))
-	// checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
+	t.tabPage.Dispose()
+	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
 	tabWidget.SaveState()
 }
 
@@ -420,9 +428,8 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 			OnClicked: func() {
 				mw.WindowBase.Synchronize(func() {
 					cl.Clear()
-					checkErr(tabWidget.Pages().Remove(cl.tabPage))
-					checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
-					tabWidget.SaveState()
+					cl.Close()
+					servState.channelList = nil
 				})
 			},
 		}.Create(builder)
