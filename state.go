@@ -5,8 +5,18 @@ type userState struct {
 	// other stuff like OPER...
 }
 
+const (
+	CONNECTION_EMPTY = iota
+	DISCONNECTED
+	CONNECTING
+	CONNECTION_ERROR
+	CONNECTION_START
+	CONNECTED
+)
+
 type serverState struct {
-	connected   bool
+	connState   int
+	lastError   error
 	hostname    string
 	port        int
 	ssl         bool

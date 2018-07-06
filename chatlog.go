@@ -26,8 +26,7 @@ func NewChatLogger(filename string) func(string) {
 
 	/*
 		NOTE(tso): bad idea not worth it tbh
-		var daily <-chan Time
-		daily <- time.Now()
+		daily := <-time.After(0)
 
 		go func() {
 			for {

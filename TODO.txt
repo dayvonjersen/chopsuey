@@ -6,11 +6,7 @@ STILL TODO:
     - ???
     - move zig
 
- - remove closed tabs from []tabs, cleaner teardown
- 
  - don't close last tab ever
-
- - channelList "Close Tab" button hangs ui
 
 
 

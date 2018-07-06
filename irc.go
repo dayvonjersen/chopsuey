@@ -9,21 +9,19 @@ import (
 	"strings"
 
 	goirc "github.com/fluffle/goirc/client"
-	"github.com/lxn/walk"
 )
 
 const MAX_CONNECT_RETRIES = 100
 
 type serverConnection struct {
-	IP net.IP
-
 	goircCfg *goirc.Config
 	conn     *goirc.Conn
 
 	retryConnectEnabled bool
+	cancelRetryConnect  chan struct{}
 
-	isupport           map[string]string
-	cancelRetryConnect chan struct{}
+	isupport map[string]string
+	IP       net.IP
 }
 
 func (servConn *serverConnection) Connect(servState *serverState) {
@@ -35,16 +33,17 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 				case <-cancel:
 					return
 				default:
-					msg := "connecting to " + servState.networkName + "..."
-					servState.tab.Println(now() + msg)
-					statusBar.SetText(msg)
+					servState.connState = CONNECTING
+					servState.tab.Update(servState)
 
 					err := servConn.conn.ConnectTo(servState.hostname)
 					if err != nil {
-						servState.tab.Println(now() + " " + err.Error())
-						statusBar.SetText("couldn't connect to " + servState.networkName)
+						servState.connState = CONNECTION_ERROR
+						servState.lastError = err
+						servState.tab.Update(servState)
 					} else {
-						statusBar.SetText(servState.user.nick + " connected to " + servState.networkName)
+						servState.connState = CONNECTION_START
+						servState.tab.Update(servState)
 						return
 					}
 				}
@@ -54,9 +53,9 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 	} else {
 		err := servConn.conn.ConnectTo(servState.hostname)
 		if err != nil {
-			msg := "couldn't connect: " + err.Error()
-			walk.MsgBox(mw, "connection error", msg, walk.MsgBoxIconError)
-			servState.tab.Println(now() + msg)
+			servState.connState = CONNECTION_ERROR
+			servState.lastError = err
+			servState.tab.Update(servState)
 		}
 	}
 }
@@ -86,18 +85,6 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 	delete(servState.channels, chanState.channel)
 }
 
-/*
-func (servConn *serverConnection) deleteChatBox(id string) {
-	for i, cb := range servConn.chatBoxes {
-		if cb.id == id {
-			cb.close()
-			servConn.chatBoxes = append(servConn.chatBoxes[0:i], servConn.chatBoxes[i+1:]...)
-			return
-		}
-	}
-}
-*/
-
 func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
 	goircCfg := goirc.NewConfig(servState.user.nick)
 	goircCfg.Version = clientCfg.Version
@@ -119,13 +106,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
-		servState.connected = true
+		servState.connState = CONNECTED
 		servState.tab.Update(servState)
 		connectedCallback()
 	})
 
 	conn.HandleFunc(goirc.DISCONNECTED, func(c *goirc.Conn, l *goirc.Line) {
-		servState.connected = false
+		servState.connState = DISCONNECTED
 		servState.tab.Update(servState)
 
 		if servConn.retryConnectEnabled {

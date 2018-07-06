@@ -106,10 +106,8 @@ func main() {
 		statusBar.SetText("error parsing config.json")
 	} else {
 		for _, cfg := range clientCfg.AutoConnect {
-			//			statusBar.SetText("connecting to " + cfg.ServerString() + "...")
-
 			servState := &serverState{
-				connected:   false,
+				connState:   CONNECTION_EMPTY,
 				hostname:    cfg.Host,
 				port:        cfg.Port,
 				ssl:         cfg.Ssl,

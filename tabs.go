@@ -40,19 +40,27 @@ func (t *tabViewCommon) HasFocus() bool {
 	return t.Id() == tabWidget.CurrentIndex()
 }
 func (t *tabViewCommon) Close() {
-	mw.WindowBase.SetSuspended(true)
-	defer mw.WindowBase.SetSuspended(false)
-	index := t.Id()
-	for i, tab := range tabs {
-		if tab.Id() == index {
-			tabs = append(tabs[0:i], tabs[i+1:]...)
-			break
+	mw.WindowBase.Synchronize(func() {
+		mw.WindowBase.SetSuspended(true)
+		defer mw.WindowBase.SetSuspended(false)
+		index := t.Id()
+		for i, tab := range tabs {
+			if tab.Id() == index {
+				tabs = append(tabs[0:i], tabs[i+1:]...)
+				break
+			}
 		}
-	}
-	checkErr(tabWidget.Pages().Remove(t.tabPage))
-	t.tabPage.Dispose()
-	checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
-	tabWidget.SaveState()
+		checkErr(tabWidget.Pages().Remove(t.tabPage))
+		t.tabPage.Dispose()
+		tabWidget.SaveState()
+
+		if tabWidget.Pages().Len() > 0 {
+			checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
+		} else {
+			tabWidget.Pages().Clear()
+		}
+		tabWidget.SaveState()
+	})
 }
 
 type tabViewChatbox struct {
@@ -112,21 +120,41 @@ func (t *tabViewServer) Update(servState *serverState) {
 	if t.tabTitle != servState.networkName {
 		t.tabTitle = servState.networkName
 	}
-	t.tabPage.SetTitle(t.Title())
+	mw.WindowBase.Synchronize(func() {
+		t.tabPage.SetTitle(t.Title())
+	})
 
-	if servState.connected {
+	switch servState.connState {
+	case CONNECTION_EMPTY:
+		t.statusText = "not connected to any network"
+		t.disconnected = true
+	case CONNECTED:
 		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
-	} else {
+		t.disconnected = false
+	case CONNECTING:
+		t.statusText = "connecting to " + servState.networkName + "..."
+		t.Println(now() + " " + t.statusText)
+		t.disconnected = true
+	case CONNECTION_ERROR:
+		t.statusText = "couldn't connect: " + servState.lastError.Error()
+		t.Println(now() + " ERROR: " + t.statusText)
+		t.disconnected = true
+	case DISCONNECTED:
 		t.statusText = "disconnected x_x"
+		t.Println(now() + " " + t.statusText)
+		t.disconnected = true
+	case CONNECTION_START:
+		t.statusText = "connected to " + servState.networkName
+		t.disconnected = false
+	}
+	if t.HasFocus() {
+		statusBar.SetText(t.statusText)
 	}
 	for _, chanState := range servState.channels {
 		chanState.tab.Update(servState, chanState)
 	}
 	for _, pmState := range servState.privmsgs {
 		pmState.tab.Update(servState, pmState)
-	}
-	if t.HasFocus() {
-		statusBar.SetText(t.statusText)
 	}
 }
 
@@ -163,6 +191,7 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
+		t.Focus()
 		tabs = append(tabs, t)
 	})
 	return t
@@ -198,6 +227,7 @@ func (t *tabViewChannel) Update(servState *serverState, chanState *channelState)
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
+	t.disconnected = servState.connState != CONNECTED
 }
 
 func (t *tabViewChannel) updateNickList(chanState *channelState) {
@@ -285,6 +315,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
+		t.Focus()
 		tabs = append(tabs, t)
 	})
 	return t
@@ -304,6 +335,7 @@ func (t *tabViewPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
+	t.disconnected = servState.connState != CONNECTED
 }
 
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabViewPrivmsg {

@@ -222,10 +222,11 @@ func serverCmd(ctx *commandContext, args ...string) {
 		}
 	}
 	servState := &serverState{
-		connected: false,
-		hostname:  host,
-		port:      port,
-		ssl:       ssl,
+		connState:   CONNECTION_EMPTY,
+		hostname:    host,
+		port:        port,
+		ssl:         ssl,
+		networkName: fmt.Sprintf("%s:%d", hostname, port),
 		user: &userState{
 			nick: ctx.servState.user.nick,
 		},
