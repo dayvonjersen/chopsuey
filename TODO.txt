@@ -1,3 +1,4 @@
+autoscroll to bottom but don't if we scrolled up on purpose (<-time.After)
 ---------------------------------------------------------------------------------
 
 clientState {

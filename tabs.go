@@ -53,6 +53,7 @@ type tabViewChatbox struct {
 	disconnected bool
 	textBuffer   *walk.TextEdit
 	textInput    *MyLineEdit
+	chatlogger   func(string)
 }
 
 func (t *tabViewChatbox) Clear() {
@@ -80,6 +81,7 @@ func (t *tabViewChatbox) Focus() {
 func (t *tabViewChatbox) Println(msg string) {
 	mw.WindowBase.Synchronize(func() {
 		t.textBuffer.AppendText(msg + "\r\n")
+		t.chatlogger(msg)
 		if !t.HasFocus() {
 			t.unread++
 			t.tabPage.SetTitle(t.Title())
@@ -124,6 +126,7 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 	t := &tabViewServer{}
 	t.tabTitle = servState.networkName
 	t.textBuffer = &walk.TextEdit{}
+	t.chatlogger = NewChatLogger(servState.networkName)
 
 	mw.WindowBase.Synchronize(func() {
 		var err error
@@ -209,6 +212,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		nick := chanState.nickList.Get(servState.user.nick)
 		t.Println(fmt.Sprintf("%s <%s> %s", now(), nick, msg))
 	}
+	t.chatlogger = NewChatLogger(servState.networkName + "-" + chanState.channel)
 
 	mw.WindowBase.Synchronize(func() {
 		var err error
@@ -303,6 +307,7 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		nick := newNick(servState.user.nick)
 		t.Println(fmt.Sprintf("%s <%s> %s", now(), nick, msg))
 	}
+	t.chatlogger = NewChatLogger(servState.networkName + "-" + pmState.nick)
 
 	mw.WindowBase.Synchronize(func() {
 		var err error
