@@ -40,9 +40,7 @@ set Timeout, Name, QuitMessage, etc...
 /reconnect
 go retryConnect never stops if the server tab was closed
 ---------------------------------------------------------------------------------
-autoscroll to bottom but don't if we scrolled up on purpose (<-time.After)
----------------------------------------------------------------------------------
-prevent closing the last tab 
+prevent closing the last tab [✓]
     - allow servConn.conn to be nil
     - /server doesn't open a new tab if current tab is a nil CHATBOX_SERVER
 
@@ -105,3 +103,19 @@ topic widget should allow input and send /topic or whatever
 split extra long text input, allow ctrl+enter, split on \n
 ---------------------------------------------------------------------------------
 /ignore
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+RESOURCES:
+
+About Tab Controls | Microsoft Docs
+https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
+
+RichEdit stuff:
+https://docs.microsoft.com/en-us/windows/desktop/Controls/bumper-rich-edit-rich-edit-control-reference
+https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-tagrichedit_image_parameters
+https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-_charformat
+https://github.com/Microsoft/Windows-classic-samples/blob/master/Samples/DynamicDPI/cpp/SampleRichEditControl.cpp
+
+Windows #define stuff:
+https://doc.pcsoft.fr/en-US/?6510001
+https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types

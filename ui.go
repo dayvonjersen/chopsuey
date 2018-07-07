@@ -8,6 +8,7 @@ import (
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 type tabView interface {
@@ -92,6 +93,7 @@ func (t *tabViewChatbox) Focus() {
 	t.tabPage.SetTitle(t.Title())
 	statusBar.SetText(t.statusText)
 	t.textInput.SetFocus()
+	t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 }
 
 func (t *tabViewChatbox) Println(msg string) {
@@ -101,6 +103,9 @@ func (t *tabViewChatbox) Println(msg string) {
 		if !t.HasFocus() {
 			t.unread++
 			t.tabPage.SetTitle(t.Title())
+		}
+		if t.textInput.Focused() {
+			t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 		}
 	})
 }
