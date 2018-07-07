@@ -1,6 +1,7 @@
 =================================================================================
 BUGS:
 
+ - dcc is broken (as in /send crashes the whole application)
  - channel list statusBar text not updating
  - draw issue when
     1) open /list from #channel
@@ -11,6 +12,27 @@ BUGS:
 
 =================================================================================
 
+separate the concepts of messages that are written with chatbox.Println
+for better notifications in tab title/statusbar/wherever
+
+there are the following things sent to chatbox.Println:
+    1) client messages (connecting, disconnected, command usage, etc...)
+    2) error messages sent by server
+    3) server messages that aren't errors
+    4) joins/parts/topics/modes/other metadata
+    5) NOTICE
+    6) hard chats
+
+we only really want the counter for 6
+3 is kinda the same but it's distracting
+some clients notify for 4 and it's kinda annoying
+there should be a different, non-numerical indicator for 1, 2 and 5
+
+I'm glad we had this talk
+
+---------------------------------------------------------------------------------
+/msg shouldn't open a new tab if it's to services like NickServ
+---------------------------------------------------------------------------------
 set Timeout, Name, QuitMessage, etc...
 ---------------------------------------------------------------------------------
 /disconnect
