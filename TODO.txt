@@ -1,6 +1,14 @@
 =================================================================================
 BUGS:
 
+ - channel list statusBar text not updating
+ - draw issue when
+    1) open /list from #channel
+    2) click to channel list tab
+    3) click to server tab
+
+    fixes itself when you click on #channel again
+
 =================================================================================
 
 set Timeout, Name, QuitMessage, etc...
