@@ -1,3 +1,13 @@
+=================================================================================
+BUGS:
+
+statusBar text not being updated again
+HasFocus() should ask for mainwindow's focus
+channelList suspends drawing everything
+privmsg from ***
+
+=================================================================================
+
 set Timeout, Name, QuitMessage, etc...
 ---------------------------------------------------------------------------------
 /disconnect
@@ -135,3 +145,5 @@ channel list parsing don't rely on goirc.Client Args array...
     Args:  {"tso|chopsuey", "#ｓｅｃｒｅｔ", "ｃｈａｎｎｅｌ", "1", "[+nt] "},
     Time:  time.Time{},
 }
+---------------------------------------------------------------------------------
+/ignore

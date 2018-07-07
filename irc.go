@@ -103,6 +103,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		conn:                conn,
 		retryConnectEnabled: true,
 		goircCfg:            goircCfg,
+		isupport:            map[string]string{},
 	}
 
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
