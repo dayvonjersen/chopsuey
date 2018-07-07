@@ -5,8 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"reflect"
-	"strings"
+	"runtime"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -21,12 +20,32 @@ var (
 	statusBar *walk.StatusBarItem
 
 	clientCfg *clientConfig
+
+	connections []*serverConnection
+	servers     []*serverState
+	tabs        []tabView
 )
 
+/*
+var (
+	clientState *clientState
+)
+
+type clientState struct {
+	cfg *clientConfig
+
+	connections []*serverConnection
+	servers     []*serverState
+	tabs        []tabView
+}
+*/
+
 func main() {
+	runtime.LockOSThread()
+
 	MainWindow{
 		AssignTo: &mw,
-		Title:    "chopsuey IRC v0.2",
+		Title:    "chopsuey IRC v0.3",
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
@@ -40,12 +59,14 @@ func main() {
 			},
 		},
 	}.Create()
+
 	mw.SetBounds(walk.Rectangle{
 		X:      1536,
 		Y:      0,
 		Width:  384,
 		Height: 1050,
 	})
+
 	ico, err := walk.NewIconFromFile("chopsuey.ico")
 	checkErr(err)
 	mw.SetIcon(ico)
@@ -54,29 +75,26 @@ func main() {
 
 	font, err := walk.NewFont("ProFontWindows", 9, 0)
 	checkErr(err)
-
 	mw.WindowBase.SetFont(font)
 
-	logfilename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"
-	logfile, err := os.Create(logfilename)
-	checkErr(err)
-	defer logfile.Close()
-	l := &tsoLogger{}
-	l.LogFn = func(msg string) {
-		io.WriteString(logfile, msg+"\n")
+	// debug log, writes all the messages across the wire to a file (hopefully)
+	{
+		filename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"
+		f, err := os.Create(filename)
+		checkErr(err)
+		defer f.Close()
+		l := &tsoLogger{}
+		l.LogFn = func(msg string) {
+			io.WriteString(f, msg+"\n")
+		}
+		logging.SetLogger(l)
 	}
-	logging.SetLogger(l)
 
 	tabWidget.CurrentIndexChanged().Attach(func() {
-		currentTab := getCurrentTab()
-		currentTab.SetTitle(strings.TrimPrefix(currentTab.Title(), "* "))
-		children := currentTab.Children()
-		for i := 0; i < children.Len(); i++ {
-			child := children.At(i)
-			typeStr := reflect.TypeOf(child).String()
-			if typeStr == "*main.MyLineEdit" {
-				lineEdit := child.(*MyLineEdit)
-				lineEdit.SetFocus()
+		index := tabWidget.CurrentIndex()
+		for _, t := range tabs {
+			if t.Index() == index {
+				t.Focus()
 			}
 		}
 	})
@@ -88,17 +106,31 @@ func main() {
 		statusBar.SetText("error parsing config.json")
 	} else {
 		for _, cfg := range clientCfg.AutoConnect {
-			statusBar.SetText("connecting to " + cfg.ServerString() + "...")
-			servConn := newServerConnection(cfg)
-			servConn.connect()
+			servState := &serverState{
+				connState:   CONNECTION_EMPTY,
+				hostname:    cfg.Host,
+				port:        cfg.Port,
+				ssl:         cfg.Ssl,
+				networkName: cfg.ServerString(),
+				user: &userState{
+					nick: cfg.Nick,
+				},
+				channels: map[string]*channelState{},
+				privmsgs: map[string]*privmsgState{},
+			}
+			var servConn *serverConnection
+			servConn = NewServerConnection(servState, func() {
+				for _, channel := range cfg.AutoJoin {
+					servConn.Join(channel, servState)
+				}
+			})
+			servView := NewServerTab(servConn, servState)
+			servState.tab = servView
+			servConn.Connect(servState)
 		}
 	}
 
 	mw.Run()
-}
-
-func getCurrentTab() *walk.TabPage {
-	return tabWidget.Pages().At(tabWidget.CurrentIndex())
 }
 
 type tsoLogger struct {
