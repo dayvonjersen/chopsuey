@@ -570,13 +570,25 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 	// LIST
 	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
-		channel := l.Args[1]
-		users, err := strconv.Atoi(l.Args[2])
+		args := strings.SplitN(l.Raw, " ", 6)
+		/*
+			args = []string{
+				":irc.example.org",
+				"322",
+				"nick",
+				"#channel",
+				"4", // user count
+				":[+nt] some topic",
+			}
+		*/
+		channel := args[3]
+		users, err := strconv.Atoi(args[4])
 		if err != nil {
+			// this caught the problem before so I'm keeping it for good luck
 			checkErr(err)
 			debugPrint(l)
 		}
-		topic := strings.TrimSpace(l.Args[3])
+		topic := strings.TrimSpace(args[5][1:])
 
 		if servState.channelList == nil {
 			servState.channelList = NewChannelList(servConn, servState)
