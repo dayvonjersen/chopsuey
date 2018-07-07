@@ -1,11 +1,6 @@
 =================================================================================
 BUGS:
 
-statusBar text not being updated again
-HasFocus() should ask for mainwindow's focus
-channelList suspends drawing everything
-privmsg from ***
-
 =================================================================================
 
 set Timeout, Name, QuitMessage, etc...

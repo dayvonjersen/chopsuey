@@ -121,7 +121,6 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 			nick: nick,
 		}
 		pmState.tab = NewPrivmsgTab(ctx.servConn, ctx.servState, pmState)
-		ctx.servState.privmsgs[nick] = pmState
 	}
 
 	ctx.servConn.conn.Privmsg(nick, msg)

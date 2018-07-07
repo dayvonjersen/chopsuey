@@ -27,6 +27,39 @@ var (
 )
 
 /*
+might need to remember how to do this in the future:
+
+type myMainWindow struct {
+	*walk.MainWindow
+}
+
+func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	if msg == win.WM_ACTIVATE {
+		log.Println("got WM_ACTIVATE")
+		focusCurrentTab()
+	}
+	return mw.MainWindow.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func main() {
+	mw = new(myMainWindow)
+	MainWindow{
+		AssignTo: &mw.MainWindow,
+		// ...
+	}.Create()
+	walk.InitWrapperWindow(mw)
+}
+*/
+
+var mainWindowFocused bool = true // start focused because windows
+/*
+this is better but windows
+func mainWindowFocused() bool {
+	return mw.Handle() == win.GetFocus()
+}
+*/
+
+/*
 var (
 	clientState *clientState
 )
@@ -90,14 +123,24 @@ func main() {
 		logging.SetLogger(l)
 	}
 
-	tabWidget.CurrentIndexChanged().Attach(func() {
+	focusCurrentTab := func() {
 		index := tabWidget.CurrentIndex()
 		for _, t := range tabs {
 			if t.Index() == index {
 				t.Focus()
+				return
 			}
 		}
+	}
+
+	mw.Activating().Attach(func() {
+		mainWindowFocused = true
+		focusCurrentTab()
 	})
+	mw.Deactivating().Attach(func() {
+		mainWindowFocused = false
+	})
+	tabWidget.CurrentIndexChanged().Attach(focusCurrentTab)
 
 	clientCfg, err = getClientConfig()
 	if err != nil {

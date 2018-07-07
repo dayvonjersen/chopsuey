@@ -37,7 +37,7 @@ func (t *tabViewCommon) Index() int {
 }
 func (t *tabViewCommon) StatusText() string { return t.statusText }
 func (t *tabViewCommon) HasFocus() bool {
-	return t.Index() == tabWidget.CurrentIndex()
+	return mainWindowFocused && t.Index() == tabWidget.CurrentIndex()
 }
 func (t *tabViewCommon) Close() {
 	mw.WindowBase.Synchronize(func() {
@@ -155,6 +155,9 @@ func (t *tabViewServer) Update(servState *serverState) {
 	}
 	for _, pmState := range servState.privmsgs {
 		pmState.tab.Update(servState, pmState)
+	}
+	if servState.channelList != nil {
+		servState.channelList.Update(servState)
 	}
 }
 
@@ -291,7 +294,6 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 								nick: nick.name,
 							}
 							pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
-							servState.privmsgs[nick.name] = pmState
 						}
 						mw.WindowBase.Synchronize(func() {
 							checkErr(tabWidget.SetCurrentIndex(pmState.tab.Index()))
@@ -334,6 +336,9 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		t.Focus()
 		tabs = append(tabs, t)
 	})
+	chanState.tab = t
+	servState.channels[chanState.channel] = chanState
+	servState.tab.Update(servState)
 	return t
 }
 
@@ -417,6 +422,9 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		tabWidget.SaveState()
 		tabs = append(tabs, t)
 	})
+	pmState.tab = t
+	servState.privmsgs[pmState.nick] = pmState
+	servState.tab.Update(servState)
 	return t
 }
 
@@ -436,10 +444,12 @@ func (cl *tabViewChannelList) Add(channel string, users int, topic string) {
 	}
 	cl.mdl.items = append(cl.mdl.items, item)
 	if cl.complete || len(cl.mdl.items)%50 == 0 {
-		cl.tabPage.SetSuspended(true)
-		defer cl.tabPage.SetSuspended(false)
-		cl.mdl.PublishRowsReset()
-		cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
+		// cl.tabPage.SetSuspended(true)
+		// defer cl.tabPage.SetSuspended(false)
+		mw.WindowBase.Synchronize(func() {
+			cl.mdl.PublishRowsReset()
+			cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
+		})
 	}
 }
 
@@ -449,6 +459,21 @@ func (cl *tabViewChannelList) Clear() {
 	defer cl.tabPage.SetSuspended(false)
 	cl.mdl.PublishRowsReset()
 	cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
+}
+
+func (t *tabViewChannelList) Title() string { return t.tabTitle }
+func (t *tabViewChannelList) Focus()        {}
+func (t *tabViewChannelList) Update(servState *serverState) {
+	t.statusText = servState.tab.statusText
+	if t.HasFocus() {
+		statusBar.SetText(t.statusText)
+	}
+	if servState.connState != CONNECTED {
+		t.tabTitle = "(channels)"
+	} else {
+		t.tabTitle = "channels"
+	}
+	t.tabPage.SetTitle(t.tabTitle)
 }
 
 func NewChannelList(servConn *serverConnection, servState *serverState) *tabViewChannelList {
@@ -464,7 +489,8 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 		var err error
 		cl.tabPage, err = walk.NewTabPage()
 		checkErr(err)
-		cl.tabPage.SetTitle("channels")
+		cl.tabTitle = "channels"
+		cl.tabPage.SetTitle(cl.tabTitle)
 		cl.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(cl.tabPage)
 
@@ -506,7 +532,9 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, cl.tabPage))
 		checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(cl.tabPage)))
 		tabWidget.SaveState()
+		tabs = append(tabs, cl)
 	})
+	servState.tab.Update(servState)
 
 	return cl
 }

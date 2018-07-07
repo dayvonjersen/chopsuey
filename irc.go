@@ -68,7 +68,6 @@ func (servConn *serverConnection) Join(channel string, servState *serverState) {
 			nickList: newNickList(),
 		}
 		chanState.tab = NewChannelTab(servConn, servState, chanState)
-		servState.channels[channel] = chanState
 	}
 	servConn.conn.Join(channel)
 }
@@ -286,15 +285,18 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			nick = l.Nick
 
 			// NOTE(tso): inline NOTICEs from services etc here.
-			pmState, ok := servState.privmsgs[l.Nick]
-			if !ok {
-				pmState = &privmsgState{
-					nick: l.Nick,
+			if l.Ident == "service" {
+				tab = servState.tab
+			} else {
+				pmState, ok := servState.privmsgs[l.Nick]
+				if !ok {
+					pmState = &privmsgState{
+						nick: l.Nick,
+					}
+					pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
 				}
-				pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
-				servState.privmsgs[l.Nick] = pmState
+				tab = pmState.tab
 			}
-			tab = pmState.tab
 		} else {
 			chanState, ok := servState.channels[l.Args[0]]
 			if ok {
@@ -305,7 +307,6 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 					channel: l.Args[0],
 				}
 				chanState.tab = NewChannelTab(servConn, servState, chanState)
-				servState.channels[l.Args[0]] = chanState
 			}
 			tab = chanState.tab
 		}
@@ -320,9 +321,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
-		// debugPrint(l)
-		channel := strings.TrimSpace(l.Args[0])
-		if (channel == "AUTH" || channel == "*" || channel == "") && servState.user.nick != channel {
+		if l.Host == l.Src {
 			// servers commonly send these NOTICEs when connecting:
 			//
 			// :irc.example.org NOTICE AUTH :*** Looking up your hostname...
