@@ -1,6 +1,7 @@
 =================================================================================
 BUGS:
 
+ - I don't think we're delete(servState.privmsg, ...) ever
  - dcc is broken (as in /send crashes the whole application)
  - channel list statusBar text not updating
  - draw issue when
@@ -100,8 +101,6 @@ inline NOTICEs
 system tray
 ---------------------------------------------------------------------------------
 topic widget should allow input and send /topic or whatever
----------------------------------------------------------------------------------
-\n at beginning of chatbox.printMessage unless chatbox is empty
 ---------------------------------------------------------------------------------
 split extra long text input, allow ctrl+enter, split on \n
 ---------------------------------------------------------------------------------
