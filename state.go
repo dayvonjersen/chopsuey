@@ -28,29 +28,6 @@ type serverState struct {
 	channelList *tabViewChannelList
 }
 
-func (servState *serverState) IndexMax() int {
-	max := servState.tab.Index()
-	if servState.channelList != nil {
-		index := servState.channelList.Index()
-		if index > max {
-			max = index
-		}
-	}
-	for _, chanState := range servState.channels {
-		index := chanState.tab.Index()
-		if index > max {
-			max = index
-		}
-	}
-	for _, pmState := range servState.privmsgs {
-		index := pmState.tab.Index()
-		if index > max {
-			max = index
-		}
-	}
-	return max
-}
-
 type channelState struct {
 	channel  string
 	topic    string

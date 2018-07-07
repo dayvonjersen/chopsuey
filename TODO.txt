@@ -20,6 +20,8 @@ middle-click to close tabs
 scroll to cycle through tabs
 context menu (close)
 ---------------------------------------------------------------------------------
+nickflash
+---------------------------------------------------------------------------------
 /script external scripts:
     """
     /script script_name.py everything after /script passed as an argument
@@ -40,29 +42,38 @@ SEND COLORS (todo) ideas:
 PARSE COLORS
     - use tsobot colors.go
 COLORS FOR NICKS
-tab: (bold/colors/icons might not be possible) but add:
-    something for nickflash
-    something for connection closed
+---------------------------------------------------------------------------------
 /search or /find or CTRL+F
     reduce text buffer to matches, then restore
+---------------------------------------------------------------------------------
 /whois command (write to current tab)
+---------------------------------------------------------------------------------
 settings panel which writes to config.json
 hot-loadable config.json
 autogen default config.json
+automatic NickServ stuff
+---------------------------------------------------------------------------------
 limit message history (configurable)
+---------------------------------------------------------------------------------
 don't log messages if offline
-nickflash
+---------------------------------------------------------------------------------
 count(nicklist)
 hide/show nicklist
+---------------------------------------------------------------------------------
 inline NOTICEs
+---------------------------------------------------------------------------------
 system tray
+---------------------------------------------------------------------------------
 topic widget should allow input and send /topic or whatever
+---------------------------------------------------------------------------------
 \n at beginning of chatbox.printMessage unless chatbox is empty
-chatbox scroll to bottom automatically
+---------------------------------------------------------------------------------
 split extra long text input, allow ctrl+enter, split on \n
-automatic NickServ stuff
+---------------------------------------------------------------------------------
 
 channel list parsing don't rely on goirc.Client Args array...
+    it uses strings.Fields() which is too clever for its own good
+    use strings.Split(l.Raw, " ") instead...
 
 2018/07/05 04:19:13 strconv.Atoi: parsing "is": invalid syntax
 2018/07/05 04:19:13 &client.Line{
