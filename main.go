@@ -93,7 +93,7 @@ func main() {
 	tabWidget.CurrentIndexChanged().Attach(func() {
 		index := tabWidget.CurrentIndex()
 		for _, t := range tabs {
-			if t.Id() == index {
+			if t.Index() == index {
 				t.Focus()
 			}
 		}

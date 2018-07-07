@@ -1,101 +1,11 @@
-STILL TODO:
- - make new tabs open with associated server
-    - get servState.tab.Index()
-    - find max(servState.channels+privmsgs.tabs.Index())
-    - open there
-    - ???
-    - move zig
-
- - don't close last tab ever
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+set Timeout, Name, QuitMessage, etc...
+---------------------------------------------------------------------------------
 /disconnect
 /reconnect
+go retryConnect never stops if the server tab was closed
+---------------------------------------------------------------------------------
 autoscroll to bottom but don't if we scrolled up on purpose (<-time.After)
 ---------------------------------------------------------------------------------
-
-clientState {
-    // SOMETHING ABOUT TAB INDEXES
-    []servers{
-        []channels
-        []privmsg
-    }
-}
-
-... we need a massive overhaul of how this thing is structured
-right now servConn's have []chatBoxes which correspond to tabPages
-there's no way to grab a chatBox by its tabWidget index
-and actually I don't know where the servConn's are being stored
-
-there should probably be a global []*chatBox
-
-chatBox struct {
-    tabIndex
-    id
-    titleText
-    statusBarText
-    servConn
-}
-
-and a global []*serverConnection
-
-
-the widgets shouldn't contain anything about state
-and the state shouldn't have anything about widgets
-
-but this isn't a perfect world 
-
-
-
-serverConnection is a state
-but so are channels and private messages
-
-server, channel, privmsg {
-    *chatBox
-}
-
-
-and doing that the global []chatBox can have the same indices as the
-tabwidget
-
-
-
-
-serverConnection {
-    user {
-        nick
-    }
-    []channels{
-        []users
-    }
-    []privmsg{
-    }
-}
----------------------------------------------------------------------------------
-
-
-go retryConnect never stops if the server tab was closed
-set Timeout, Name, QuitMessage, etc...
-
---------------------------------------2------------------------------------------
 prevent closing the last tab 
     - allow servConn.conn to be nil
     - /server doesn't open a new tab if current tab is a nil CHATBOX_SERVER
@@ -103,18 +13,13 @@ prevent closing the last tab
     also: CTRL+T for a new nil CHATBOX_SERVER unless one exists then just
     switch to it
     /exit to close application
-
-
----------------------------------------3-----------------------------------------
+---------------------------------------------------------------------------------
 RICHEDIT BOYS :O :O :O GET HYPE
-
-
----------------------------------------5-----------------------------------------
+---------------------------------------------------------------------------------
 middle-click to close tabs
 scroll to cycle through tabs
 context menu (close)
-
----------------------------------------6-----------------------------------------
+---------------------------------------------------------------------------------
 /script external scripts:
     """
     /script script_name.py everything after /script passed as an argument
@@ -128,14 +33,12 @@ context menu (close)
     print("Hello, world.")
     """
     <user> Hello, world.
-
 ---------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 SEND COLORS (todo) ideas:
     \{red}
     ^red{text here}
 PARSE COLORS
+    - use tsobot colors.go
 COLORS FOR NICKS
 tab: (bold/colors/icons might not be possible) but add:
     something for nickflash

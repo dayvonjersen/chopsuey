@@ -127,7 +127,7 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 	ctx.servConn.conn.Privmsg(nick, msg)
 	pmState.tab.Println(fmt.Sprintf("%s <%s> %s", now(), ctx.servState.user.nick, msg))
 	mw.WindowBase.Synchronize(func() {
-		checkErr(tabWidget.SetCurrentIndex(pmState.tab.Id()))
+		checkErr(tabWidget.SetCurrentIndex(pmState.tab.Index()))
 	})
 }
 
@@ -207,7 +207,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 		ctx.tab.Println("usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
 		return
 	}
-	host := args[0]
+	hostname := args[0]
 	port := 6667
 	ssl := false
 	if len(args) > 1 {
@@ -223,7 +223,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 	}
 	servState := &serverState{
 		connState:   CONNECTION_EMPTY,
-		hostname:    host,
+		hostname:    hostname,
 		port:        port,
 		ssl:         ssl,
 		networkName: fmt.Sprintf("%s:%d", hostname, port),

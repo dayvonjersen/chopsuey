@@ -11,7 +11,7 @@ import (
 )
 
 type tabView interface {
-	Id() int
+	Index() int
 	Title() string
 	StatusText() string
 	HasFocus() bool
@@ -32,20 +32,20 @@ type tabViewCommon struct {
 	statusText string
 }
 
-func (t *tabViewCommon) Id() int {
+func (t *tabViewCommon) Index() int {
 	return tabWidget.Pages().Index(t.tabPage)
 }
 func (t *tabViewCommon) StatusText() string { return t.statusText }
 func (t *tabViewCommon) HasFocus() bool {
-	return t.Id() == tabWidget.CurrentIndex()
+	return t.Index() == tabWidget.CurrentIndex()
 }
 func (t *tabViewCommon) Close() {
 	mw.WindowBase.Synchronize(func() {
 		mw.WindowBase.SetSuspended(true)
 		defer mw.WindowBase.SetSuspended(false)
-		index := t.Id()
+		index := t.Index()
 		for i, tab := range tabs {
-			if tab.Id() == index {
+			if tab.Index() == index {
 				tabs = append(tabs[0:i], tabs[i+1:]...)
 				break
 			}
@@ -128,9 +128,10 @@ func (t *tabViewServer) Update(servState *serverState) {
 	case CONNECTION_EMPTY:
 		t.statusText = "not connected to any network"
 		t.disconnected = true
-	case CONNECTED:
-		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
-		t.disconnected = false
+	case DISCONNECTED:
+		t.statusText = "disconnected x_x"
+		t.Println(now() + " " + t.statusText)
+		t.disconnected = true
 	case CONNECTING:
 		t.statusText = "connecting to " + servState.networkName + "..."
 		t.Println(now() + " " + t.statusText)
@@ -139,12 +140,11 @@ func (t *tabViewServer) Update(servState *serverState) {
 		t.statusText = "couldn't connect: " + servState.lastError.Error()
 		t.Println(now() + " ERROR: " + t.statusText)
 		t.disconnected = true
-	case DISCONNECTED:
-		t.statusText = "disconnected x_x"
-		t.Println(now() + " " + t.statusText)
-		t.disconnected = true
 	case CONNECTION_START:
 		t.statusText = "connected to " + servState.networkName
+		t.disconnected = false
+	case CONNECTED:
+		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
 		t.disconnected = false
 	}
 	if t.HasFocus() {
@@ -187,6 +187,7 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 			pmState:   nil,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
+
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
@@ -293,7 +294,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 							servState.privmsgs[nick.name] = pmState
 						}
 						mw.WindowBase.Synchronize(func() {
-							checkErr(tabWidget.SetCurrentIndex(pmState.tab.Id()))
+							checkErr(tabWidget.SetCurrentIndex(pmState.tab.Index()))
 						})
 					},
 				},
@@ -311,7 +312,22 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 			pmState:   nil,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
-		checkErr(tabWidget.Pages().Add(t.tabPage))
+
+		{
+			index := servState.tab.Index()
+			if servState.channelList != nil {
+				index = servState.channelList.Index()
+			}
+			for _, ch := range servState.channels {
+				i := ch.tab.Index()
+				if i > index {
+					index = i
+				}
+			}
+			index++
+
+			checkErr(tabWidget.Pages().Insert(index, t.tabPage))
+		}
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
@@ -372,7 +388,29 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 			pmState:   pmState,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
-		checkErr(tabWidget.Pages().Add(t.tabPage))
+
+		{
+			index := servState.tab.Index()
+			if servState.channelList != nil {
+				index = servState.channelList.Index()
+			}
+			for _, ch := range servState.channels {
+				i := ch.tab.Index()
+				if i > index {
+					index = i
+				}
+			}
+			for _, pm := range servState.privmsgs {
+				i := pm.tab.Index()
+				if i > index {
+					index = i
+				}
+			}
+			index++
+
+			checkErr(tabWidget.Pages().Insert(index, t.tabPage))
+		}
+
 		// NOTE(tso): don't steal focus
 		// index := tabWidget.Pages().Index(t.tabPage)
 		// checkErr(tabWidget.SetCurrentIndex(index))
@@ -465,7 +503,7 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 				})
 			},
 		}.Create(builder)
-		checkErr(tabWidget.Pages().Add(cl.tabPage))
+		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, cl.tabPage))
 		checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(cl.tabPage)))
 		tabWidget.SaveState()
 	})
