@@ -9,4 +9,4 @@ icon:
 	# go get github.com/akavel/rsrc
 	rsrc -ico chopsuey.ico
 richedit:
-	go build richedit.go && ./richedit.exe |&pp
+	go build -o richedit.exe richedit.go colors.go && ./richedit.exe |&pp

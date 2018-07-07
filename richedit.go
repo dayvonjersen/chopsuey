@@ -490,14 +490,23 @@ func main() {
 	checkErr(err)
 	// checkErr(re.SetReadOnly(true))
 
-	re.SetText("this is a test http://www.google.com")
-	re.Color(0x99, 0xcc, 0xff, 0, 4)
-	re.BackgroundColor(0x66, 0xee, 0x77, 0, 9)
-	re.Bold(10, 14)
-	re.SetCharFormat(charformat{
-		dwMask:    32,
-		dwEffects: 32,
-	}, 15, 36)
+	str := "this is a \x0313te\x0fst http://www.google.com"
+	rt := parseString(str)
+	re.SetText(rt.str)
+	//	r, g, b := ColorRefToRGB()
+
+	color := colorPaletteWindows[rt.fgColors[0][0]]
+	r := color >> 16 & 0xff
+	g := color >> 8 & 0xff
+	b := color & 0xff
+	re.Color(r, g, b, rt.fgColors[0][1], rt.fgColors[0][2])
+	//	re.Color(0x99, 0xcc, 0xff, 0, 4)
+	//	re.BackgroundColor(0x66, 0xee, 0x77, 0, 9)
+	//	re.Bold(10, 14)
+	//	re.SetCharFormat(charformat{
+	//		dwMask:    32,
+	//		dwEffects: 32,
+	//	}, 15, 36)
 	go func() {
 		<-time.After(time.Second)
 		mw.WindowBase.Synchronize(func() {

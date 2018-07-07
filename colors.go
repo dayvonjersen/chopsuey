@@ -137,15 +137,37 @@ func parseString(str string) *richtext {
 				rt.bgColors = append(rt.bgColors, [3]int{bg, i})
 			}
 		case fmtBold:
+			if len(rt.bold) > 0 {
+				rt.bold[len(rt.bold)-1][1] = i
+			}
+			rt.bold = append(rt.bold, [2]int{i})
 		case fmtItalic:
+			if len(rt.italic) > 0 {
+				rt.italic[len(rt.italic)-1][1] = i
+			}
+			rt.italic = append(rt.italic, [2]int{i})
 		case fmtUnderline:
+			if len(rt.underline) > 0 {
+				rt.underline[len(rt.underline)-1][1] = i
+			}
+			rt.underline = append(rt.underline, [2]int{i})
 		case fmtReverse:
+
 		case fmtReset:
 			if rt.fgColors != nil {
 				rt.fgColors[len(rt.fgColors)-1][2] = i
 			}
 			if rt.bgColors != nil {
 				rt.bgColors[len(rt.bgColors)-1][2] = i
+			}
+			if rt.bold != nil {
+				rt.bold[len(rt.bold)-1][1] = i
+			}
+			if rt.italic != nil {
+				rt.italic[len(rt.italic)-1][1] = i
+			}
+			if rt.underline != nil {
+				rt.underline[len(rt.underline)-1][1] = i
 			}
 		}
 	}
@@ -158,9 +180,27 @@ func parseString(str string) *richtext {
 		}
 	}
 	if rt.bgColors != nil {
-		lastIdx := len(rt.fgColors) - 1
+		lastIdx := len(rt.bgColors) - 1
 		if rt.bgColors[lastIdx][2] == 0 {
 			rt.bgColors[lastIdx][2] = len(str)
+		}
+	}
+	if rt.bold != nil {
+		lastIdx := len(rt.bold) - 1
+		if rt.bold[lastIdx][1] == 0 {
+			rt.bold[lastIdx][1] = len(str)
+		}
+	}
+	if rt.italic != nil {
+		lastIdx := len(rt.fgColors) - 1
+		if rt.italic[lastIdx][1] == 0 {
+			rt.italic[lastIdx][1] = len(str)
+		}
+	}
+	if rt.underline != nil {
+		lastIdx := len(rt.fgColors) - 1
+		if rt.underline[lastIdx][1] == 0 {
+			rt.underline[lastIdx][1] = len(str)
 		}
 	}
 	return rt
