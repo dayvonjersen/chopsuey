@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/kr/pretty"
@@ -51,70 +52,34 @@ func TestParseString(t *testing.T) {
 		expected *richtext
 	}{
 		{
-			input: "\x0372,69test",
+			input: "\x0313,3test",
 			expected: &richtext{
-				str:      "test",
-				fgColors: [][3]int{{72, 0, 4}},
-				bgColors: [][3]int{{69, 0, 4}},
+				str: "test",
+				styles: [][]int{
+					{styleForegroundColor, 0, 4, 0xff00ff},
+					{styleBackgroundColor, 0, 4, 0x018000},
+				},
 			},
 		},
+
 		{
-			input: "\x0372,69te\x0fst",
+			input: fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset, //+ fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me",
 			expected: &richtext{
-				str:      "test",
-				fgColors: [][3]int{{72, 0, 2}},
-				bgColors: [][3]int{{69, 0, 2}},
+				str: "this is a test https://", //github.com/generaltso/chopsuey\r\n\r\nkill me",
+				styles: [][]int{
+					{styleItalic, 0, 4},
+					{styleBold, 10, 23},
+					{styleForegroundColor, 10, 11, colorPaletteWindows[4]},
+					{styleForegroundColor, 11, 12, colorPaletteWindows[7]},
+					{styleForegroundColor, 12, 13, colorPaletteWindows[8]},
+					{styleForegroundColor, 13, 23, colorPaletteWindows[3]},
+					{styleUnderline, 15, 23},
+				},
 			},
 		},
 	} {
 		actual := parseString(test.input)
-		failed := (actual.str != test.expected.str ||
-			len(actual.fgColors) != len(test.expected.fgColors) ||
-			len(actual.bgColors) != len(test.expected.bgColors) ||
-			len(actual.bold) != len(test.expected.bold) ||
-			len(actual.italic) != len(test.expected.italic) ||
-			len(actual.underline) != len(test.expected.underline))
-		if !failed {
-			for i, fg := range actual.fgColors {
-				if test.expected.fgColors[i][0] != fg[0] ||
-					test.expected.fgColors[i][1] != fg[1] ||
-					test.expected.fgColors[i][2] != fg[2] {
-					failed = true
-					break
-				}
-			}
-			for i, bg := range actual.bgColors {
-				if test.expected.bgColors[i][0] != bg[0] ||
-					test.expected.bgColors[i][1] != bg[1] ||
-					test.expected.bgColors[i][2] != bg[2] {
-					failed = true
-					break
-				}
-			}
-			for i, bold := range actual.bold {
-				if test.expected.bold[i][0] != bold[0] ||
-					test.expected.bold[i][1] != bold[1] {
-					failed = true
-					break
-				}
-			}
-			for i, italic := range actual.italic {
-				if test.expected.italic[i][0] != italic[0] ||
-					test.expected.italic[i][1] != italic[1] {
-					failed = true
-					break
-				}
-			}
-			for i, underline := range actual.underline {
-				if test.expected.underline[i][0] != underline[0] ||
-					test.expected.underline[i][1] != underline[1] {
-					failed = true
-					break
-				}
-			}
-		}
-
-		if failed {
+		if !reflect.DeepEqual(actual, test.expected) {
 			fmt.Println("expected:")
 			_printf(test.expected)
 			fmt.Println("\nactual:")

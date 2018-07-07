@@ -482,31 +482,41 @@ func main() {
 		Layout:   VBox{},
 	}.Create()
 
-	font, err := walk.NewFont("ProFontWindows", 9, 0)
+	font, err := walk.NewFont("Comic Sans MS", 24, 0)
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 
 	re, err := NewRichEdit(mw)
 	checkErr(err)
-	// checkErr(re.SetReadOnly(true))
+	checkErr(re.SetReadOnly(true))
 
-	str := "this is a \x0313te\x0fst http://www.google.com"
+	str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
 	rt := parseString(str)
 	re.SetText(rt.str)
-	//	r, g, b := ColorRefToRGB()
 
-	color := colorPaletteWindows[rt.fgColors[0][0]]
-	r := color >> 16 & 0xff
-	g := color >> 8 & 0xff
-	b := color & 0xff
-	re.Color(r, g, b, rt.fgColors[0][1], rt.fgColors[0][2])
-	//	re.Color(0x99, 0xcc, 0xff, 0, 4)
-	//	re.BackgroundColor(0x66, 0xee, 0x77, 0, 9)
-	//	re.Bold(10, 14)
-	//	re.SetCharFormat(charformat{
-	//		dwMask:    32,
-	//		dwEffects: 32,
-	//	}, 15, 36)
+	for _, style := range rt.styles {
+		start, end := style[1], style[2]
+		switch style[0] {
+		case styleForegroundColor:
+			charfmt := charformat{
+				dwMask:      CFM_COLOR,
+				crTextColor: uint32(style[3]),
+			}
+			re.SetCharFormat(charfmt, start, end)
+		case styleBackgroundColor:
+			charfmt := charformat2{
+				dwMask:      CFM_BACKCOLOR,
+				crBackColor: uint32(style[3]),
+			}
+			re.SetCharFormat2(charfmt, start, end)
+		case styleBold:
+			re.Bold(start, end)
+		case styleItalic:
+			re.Italic(start, end)
+		case styleUnderline:
+			re.Underline(start, end)
+		}
+	}
 	go func() {
 		<-time.After(time.Second)
 		mw.WindowBase.Synchronize(func() {

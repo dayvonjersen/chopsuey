@@ -14,9 +14,34 @@ const (
 	fmtUnderline = "\x1f"
 	fmtReverse   = "\x16" // swap background and foreground colors
 	fmtReset     = "\x0f"
+
+	//styleColor           = 3
+	styleBold            = 2
+	styleItalic          = 29
+	styleUnderline       = 31
+	styleReverse         = 22
+	styleReset           = 15
+	styleForegroundColor = 102
+	styleBackgroundColor = 98
+
+	fmtWhite     = "\x030"
+	fmtBlack     = "\x031"
+	fmtNavy      = "\x032"
+	fmtGreen     = "\x033"
+	fmtRed       = "\x034"
+	fmtMaroon    = "\x035"
+	fmtPurple    = "\x036"
+	fmtOrange    = "\x037"
+	fmtYellow    = "\x038"
+	fmtLime      = "\x039"
+	fmtTeal      = "\x0310"
+	fmtCyan      = "\x0311"
+	fmtBlue      = "\x0312"
+	fmtPink      = "\x0313"
+	fmtDarkGray  = "\x0314"
+	fmtLightGray = "\x0315"
 )
 
-var fmtChars = [6]string{fmtColor, fmtBold, fmtItalic, fmtUnderline, fmtReverse, fmtReset}
 var fmtCharsString = "\x03\x02\x1d\x1f\x16\x0f"
 
 const (
@@ -70,12 +95,8 @@ func init() {
 }
 
 type richtext struct {
-	str       string   // stripped of all control characters
-	fgColors  [][3]int // color, start, end (offset relative to str)
-	bgColors  [][3]int // color, start, end (offset relative to str)
-	bold      [][2]int // start,end offsets relative to str
-	italic    [][2]int // start,end offsets relative to str
-	underline [][2]int // start,end offsets relative to str
+	str    string  // stripped of all control characters
+	styles [][]int // style type, start offset, end offset, color value
 }
 
 func findNumber(str string) (number, start, end int, err error) {
@@ -98,9 +119,17 @@ func findNumber(str string) (number, start, end int, err error) {
 	return intval, s, e, err
 }
 
-func parseString(str string) *richtext {
-	rt := &richtext{}
+func clearLast(styles [][]int, styleCode int, index int) [][]int {
+	for i, style := range styles {
+		if (style[0] == styleCode || styleCode == styleReset) && style[2] == 0 {
+			styles[i][2] = index
+		}
+	}
+	return styles
+}
 
+func parseString(str string) *richtext {
+	styles := [][]int{}
 	for {
 		i := strings.IndexAny(str, fmtCharsString)
 		if i == -1 {
@@ -111,99 +140,39 @@ func parseString(str string) *richtext {
 		if len(str) == 0 {
 			break
 		}
-		switch fmtCode {
-		case fmtColor:
-			fg, s, e, err := findNumber(str[i:])
-			if err != nil || s != 0 || e > 1 {
-				break
-			}
-			str = str[:s+i] + str[e+1+i:]
-
-			if len(rt.fgColors) > 0 {
-				rt.fgColors[len(rt.fgColors)-1][2] = i
-			}
-
-			rt.fgColors = append(rt.fgColors, [3]int{fg, i})
-			if str[i] == ',' {
-				str = str[:i] + str[i+1:]
-				bg, s, e, err := findNumber(str[i:])
+		if fmtCode != fmtReset {
+			if fmtCode == fmtColor {
+				fg, s, e, err := findNumber(str[i:])
 				if err != nil || s != 0 || e > 1 {
-					continue
+					break
 				}
 				str = str[:s+i] + str[e+1+i:]
-				if len(rt.bgColors) > 0 {
-					rt.fgColors[len(rt.fgColors)-1][2] = i
+
+				styles = clearLast(styles, styleForegroundColor, i)
+				styles = append(styles, []int{styleForegroundColor, i, 0, colorPaletteWindows[fg]})
+
+				if str[i] == ',' {
+					str = str[:i] + str[i+1:]
+					bg, s, e, err := findNumber(str[i:])
+					if err != nil || s != 0 || e > 1 {
+						continue
+					}
+
+					str = str[:s+i] + str[e+1+i:]
+
+					styles = clearLast(styles, styleBackgroundColor, i)
+					styles = append(styles, []int{styleBackgroundColor, i, 0, colorPaletteWindows[bg]})
 				}
-				rt.bgColors = append(rt.bgColors, [3]int{bg, i})
+			} else {
+				styles = clearLast(styles, int(rune(fmtCode[0])), i)
+				styles = append(styles, []int{int(rune(fmtCode[0])), i, 0})
 			}
-		case fmtBold:
-			if len(rt.bold) > 0 {
-				rt.bold[len(rt.bold)-1][1] = i
-			}
-			rt.bold = append(rt.bold, [2]int{i})
-		case fmtItalic:
-			if len(rt.italic) > 0 {
-				rt.italic[len(rt.italic)-1][1] = i
-			}
-			rt.italic = append(rt.italic, [2]int{i})
-		case fmtUnderline:
-			if len(rt.underline) > 0 {
-				rt.underline[len(rt.underline)-1][1] = i
-			}
-			rt.underline = append(rt.underline, [2]int{i})
-		case fmtReverse:
-
-		case fmtReset:
-			if rt.fgColors != nil {
-				rt.fgColors[len(rt.fgColors)-1][2] = i
-			}
-			if rt.bgColors != nil {
-				rt.bgColors[len(rt.bgColors)-1][2] = i
-			}
-			if rt.bold != nil {
-				rt.bold[len(rt.bold)-1][1] = i
-			}
-			if rt.italic != nil {
-				rt.italic[len(rt.italic)-1][1] = i
-			}
-			if rt.underline != nil {
-				rt.underline[len(rt.underline)-1][1] = i
-			}
+		} else {
+			styles = clearLast(styles, styleReset, i)
 		}
 	}
-	rt.str = str
-
-	if rt.fgColors != nil {
-		lastIdx := len(rt.fgColors) - 1
-		if rt.fgColors[lastIdx][2] == 0 {
-			rt.fgColors[lastIdx][2] = len(str)
-		}
-	}
-	if rt.bgColors != nil {
-		lastIdx := len(rt.bgColors) - 1
-		if rt.bgColors[lastIdx][2] == 0 {
-			rt.bgColors[lastIdx][2] = len(str)
-		}
-	}
-	if rt.bold != nil {
-		lastIdx := len(rt.bold) - 1
-		if rt.bold[lastIdx][1] == 0 {
-			rt.bold[lastIdx][1] = len(str)
-		}
-	}
-	if rt.italic != nil {
-		lastIdx := len(rt.fgColors) - 1
-		if rt.italic[lastIdx][1] == 0 {
-			rt.italic[lastIdx][1] = len(str)
-		}
-	}
-	if rt.underline != nil {
-		lastIdx := len(rt.fgColors) - 1
-		if rt.underline[lastIdx][1] == 0 {
-			rt.underline[lastIdx][1] = len(str)
-		}
-	}
-	return rt
+	styles = clearLast(styles, styleReset, len(str))
+	return &richtext{str, styles}
 }
 
 func colorString(str string, col ...int) string {
