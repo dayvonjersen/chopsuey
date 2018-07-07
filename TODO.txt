@@ -3,6 +3,8 @@ BUGS:
 
  - /close doesn't cascade
  - DISCONNECTED state doesn't cascade
+ - /quit will close the last tab
+ - I don't even think the TextEdit is scrolling to the bottom...
  - I don't think we're delete(servState.privmsg, ...) ever
  - dcc is broken (as in /send crashes the whole application)
  - channel list statusBar text not updating
@@ -51,10 +53,33 @@ prevent closing the last tab [✓]
     /exit to close application
 ---------------------------------------------------------------------------------
 RICHEDIT BOYS :O :O :O GET HYPE
+
+before integrating into the client, investigate how to:
+ - insert image(s)
+ - clickable links
+ 
+and
+ - write more test cases
+
+then we can
+ - strip control codes from other parts of the ui (like channel list)
+ - use lots of colors in the richedit
+ - SEND COLORS (todo) ideas:
+    \{red}                              \\\{(red|orange|yellow|‥)\}
+    ^red{text here}                     \^(red|orange|yellow|‥)
+    `red:no u`                          `(red|‥):(.*)`
+    <color red>oh god pls no</color>    <̖̲̯͈͙̜̹͇̯̻̱̦̹͇͉̠̲̗̪͉͎͙̥̠͚͕̤̬̭̙̖̳̳̤͙̺ͅ[̭̬̣͈͉̞͕͓̘̗̥̣͔̪̗̞̘̖̻͙̥̪̟̣̫̞̙̼̜͙̪̹̝̲̞͙̞͓̻̖̺̻̼̜̬͉͇̭͕̟̙͎͍̟̩̭̮̯̜̦̣̳̝̮^͓̰̹̹̭̦̙̝̦̻͎͔̥̼͖̼̥̥͇̤̲̞͖͍͕̤̲̦͕̻̭̺̩̺̮̙̞͚̻̣͈̯̭̙͈̪̙̜͔͉͈͚͈̹͖̦̹̪̮̹̖͍̼̣̗͔͉̺͚̪͕̭̼̮̗͚͓͎̣̯͉̠̞̦͎̪̮̻̙̼̼͎͔̩͇͙̲̭͚͓͕̤̖̺͕̲̣͓̥̺̼̺̺̲̻̘̠̰̦̝̩͈̲̻̰̣̭̥͎͓͔ͅͅͅͅͅ>̟̲̹̘͙͉̪͍̗̲̜̣̠̥̦̯̤͍]̜̜̖͙̜͚̟̹̭̱͕̠̖̖̮̖͈͖̝̠͖͙͙̲̻̠͎͖̦̬͎̟̭̹̠̘͈͎͙̟̹͈̟̩̥̬̳͈̭̠̬̱̘̦̱̣̱͔͓͖̖̤̺̩̮̱̳͈̙̦̩̖͎̥͓͎̞̳̹̰͔̬͍̖̝̘͍̤͚̱̯͍͖̯̥̜̖̘̤̹̜̳̘̜͕͚̟͓͙̼̼̮̩̞̥̼͎̖̻̗͖͈̱̺̝͇̪̱̬̺͚̯̜͉͕̬̳̪̦̫̫ͅͅͅͅ+̲̝̳͉̲̳̬̫̣̬͚͕̜̰̩̭͎̻͓͖̻̥̟̭͕͓̩͙͚̥̝͕̫͍̲̙̦͈̯̫̭̹̬͙̞͈͙͎̼̤͖͎̝̣͙͚̹̠̯̯̯̪̦̤̟̮̗̤̮̜̮̫̭̞͚̱͓̦̠͎̮̲͕̪̘͈̹̟͚͕̯̯͓̼̭͍̺͓̗̬̩ͅ>͉̩̹͔̬͍͍̪̹̬̼̜̬͕̠̳͖̲|̺͙̭̼̭̩̗̯̫̪̻͙̪̬̠̘͍̝̞̙̤͉͇\͈̤̮̝̼͕͕͙̹̱̭͉̭̬̣̣͔̦̰̙̘̞̝͇͚̼̭̙͔̫̝̮͍̩͖͈̠̥̰͇̼̭̼̖̝͇̗̰̩̭̰͔̳͔̞̼̲̟̞̮̩̰̜̗̯̪̦͚̞̻̗̺̥̥̣͖̲̘̦͙͍̩̹̘̳̼̱̥̬̦̤͉̥̩̥͙̘͇̗̣̼̯͍͔̭̣̟̘͓̱͍͕̮̯͚̱͇̪̤̙̙̩̹̮͈̘͎̙͇̭̱̻̬̱͇͍͚̹͔̥͉̟͔̬̜̹͈̜̦̱̮̲͇̥̫̖̳͉̪̯͉̮̪͕̰̲̳̯͓̘̠̞͎͓̻̲̩ͅͅͅͅͅ\̬̮̞͇̰͚͇̩̲̰̱͚̞̖̻̪̮̘͔̹̜̹̞̞͙͔̠̝̹̫̩̝̺͙̠̮̤̰͎̝͙̰̥̰̻̻̥̬̖̱̻͖͙͙̺̤͈̜̗̫̬̪̥̤̯̰̖̰̦̻̹̥̫ͅͅͅn͉͕͎̟+͖͕̰͎̣̲̺͍̰̖̦̪̜͎͎̺͙̦̱̤͓̙̪̜͍̰̟̰͉̫͈̭̦̮̖͎̗̹̰͍̩̞͎̫̜̙͈̦͖̫͉̩͇͍̬̫̻̪͇̦̻̰̻̪̫̝͎̣͖̝̩̲̘͚͉͈̭͖̣̱͓̗̥̖̠̫͈͉͓̣̭͚̖̞͓̰̣͍̺͙͓̤̖̰̖̭̺̤͈͓̟̗ͅͅͅ
+ - UNIQUE RANDOM COLORS FOR NICKS
+ - T H E M E S
+
+
+oh gosh im so excited c:
+
 ---------------------------------------------------------------------------------
 middle-click to close tabs
 scroll to cycle through tabs
 context menu (close)
+improve tabs in general
 ---------------------------------------------------------------------------------
 nickflash
 ---------------------------------------------------------------------------------
@@ -72,13 +97,6 @@ nickflash
     """
     <user> Hello, world.
 ---------------------------------------------------------------------------------
-SEND COLORS (todo) ideas:
-    \{red}
-    ^red{text here}
-PARSE COLORS
-    - use tsobot colors.go
-COLORS FOR NICKS
----------------------------------------------------------------------------------
 /search or /find or CTRL+F
     reduce text buffer to matches, then restore
 ---------------------------------------------------------------------------------
@@ -92,6 +110,8 @@ automatic NickServ stuff
 limit message history (configurable)
 ---------------------------------------------------------------------------------
 don't log messages if offline
+don't display messages if not sent (or at least "previous message not sent"
+!Undelivered
 ---------------------------------------------------------------------------------
 count(nicklist)
 hide/show nicklist
@@ -105,6 +125,8 @@ topic widget should allow input and send /topic or whatever
 split extra long text input, allow ctrl+enter, split on \n
 ---------------------------------------------------------------------------------
 /ignore
+---------------------------------------------------------------------------------
+/kickban
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 RESOURCES:
