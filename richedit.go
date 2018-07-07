@@ -492,7 +492,7 @@ func main() {
 
 	re.SetText("this is a test http://www.google.com")
 	re.Color(0x99, 0xcc, 0xff, 0, 4)
-	re.BackgroundColor(0x66, 0xee, 0x77, 5, 9)
+	re.BackgroundColor(0x66, 0xee, 0x77, 0, 9)
 	re.Bold(10, 14)
 	re.SetCharFormat(charformat{
 		dwMask:    32,
