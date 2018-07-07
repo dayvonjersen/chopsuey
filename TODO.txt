@@ -1,6 +1,8 @@
 =================================================================================
 BUGS:
 
+ - /close doesn't cascade
+ - DISCONNECTED state doesn't cascade
  - I don't think we're delete(servState.privmsg, ...) ever
  - dcc is broken (as in /send crashes the whole application)
  - channel list statusBar text not updating
