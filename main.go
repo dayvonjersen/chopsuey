@@ -110,18 +110,24 @@ func main() {
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 
-	// debug log, writes all the messages across the wire to a file (hopefully)
-	{
+	// debug log
+	const DEBUG_WRITE_TO_FILE = false
+
+	l := &tsoLogger{}
+	if DEBUG_WRITE_TO_FILE {
 		filename := "./log/" + time.Now().Format("20060102150405.999999999") + ".log"
 		f, err := os.Create(filename)
 		checkErr(err)
 		defer f.Close()
-		l := &tsoLogger{}
 		l.LogFn = func(msg string) {
 			io.WriteString(f, msg+"\n")
 		}
-		logging.SetLogger(l)
+	} else {
+		l.LogFn = func(msg string) {
+			fmt.Println(msg)
+		}
 	}
+	logging.SetLogger(l)
 
 	focusCurrentTab := func() {
 		index := tabWidget.CurrentIndex()
