@@ -174,11 +174,14 @@ func topicCmd(ctx *commandContext, args ...string) {
 }
 
 func closeCmd(ctx *commandContext, args ...string) {
+	if ctx.tab == ctx.servState.tab {
+		quitCmd(ctx, args...)
+		return
+	}
 	if ctx.chanState != nil {
 		partCmd(ctx, args...)
-	} else {
-		ctx.tab.Close()
 	}
+	ctx.tab.Close()
 }
 
 func rejoinCmd(ctx *commandContext, args ...string) {
