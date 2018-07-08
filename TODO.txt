@@ -1,12 +1,10 @@
 =================================================================================
 BUGS:
 
- - /close doesn't cascade
+ - server tabs not closing at all now
  - DISCONNECTED state doesn't cascade
- - /quit will close the last tab
  - I don't even think the TextEdit is scrolling to the bottom...
  - I don't think we're delete(servState.privmsg, ...) ever
- - dcc is broken (as in /send crashes the whole application)
  - channel list statusBar text not updating
  - draw issue when
     1) open /list from #channel
@@ -16,6 +14,11 @@ BUGS:
     fixes itself when you click on #channel again
 
 =================================================================================
+keyboard nav or some context menus at least
+---------------------------------------------------------------------------------
+JOIN needs to a create a tab only when we actually join that channel, which
+seems to be when we get TOPIC or NAMES
+---------------------------------------------------------------------------------
 
 separate the concepts of messages that are written with chatbox.Println
 for better notifications in tab title/statusbar/wherever
@@ -54,16 +57,16 @@ prevent closing the last tab [✓]
 ---------------------------------------------------------------------------------
 RICHEDIT BOYS :O :O :O GET HYPE
 
-before integrating into the client, investigate how to:
- - insert image(s)
- - clickable links
+nvm OLE is exceptionally awful and I can't figure out how to get the
+OBJECTPOSITIONS messages so fuck it if we want more out of the UI than pretty
+colors there's always walk.WebView, electron, Qt, or reinventing the wheel
+(render text and handle pointer events for text selection and put stuff on the
+clipboard manually and invent a scrollbar and waste like a solid year on that)
  
-and
  - write more test cases
-
-then we can
  - strip control codes from other parts of the ui (like channel list)
  - use lots of colors in the richedit
+    - see above re: Println
  - SEND COLORS (todo) ideas:
     \{red}                              \\\{(red|orange|yellow|‥)\}
     ^red{text here}                     \^(red|orange|yellow|‥)
@@ -80,6 +83,7 @@ middle-click to close tabs
 scroll to cycle through tabs
 context menu (close)
 improve tabs in general
+ - multiline, stretch-to-fit, button style
 ---------------------------------------------------------------------------------
 nickflash
 ---------------------------------------------------------------------------------
@@ -123,10 +127,15 @@ system tray
 topic widget should allow input and send /topic or whatever
 ---------------------------------------------------------------------------------
 split extra long text input, allow ctrl+enter, split on \n
+i heard 512 bytes was maxlen
 ---------------------------------------------------------------------------------
 /ignore
 ---------------------------------------------------------------------------------
 /kickban
+---------------------------------------------------------------------------------
+/send 
+proper file transfers with a Save As dialog and everything
+unrelated: maybe turn tsobot into a XDCC bot
 
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 RESOURCES:
