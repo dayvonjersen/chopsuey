@@ -1,10 +1,12 @@
-=================================================================================
 BUGS:
 
- - server tabs not closing at all now
- - DISCONNECTED state doesn't cascade
- - I don't think we're delete(servState.privmsg, ...) ever
- - channel list statusBar text not updating
+ * server tabs not closing at all now
+ * DISCONNECTED state doesn't cascade
+ * I don't think we're delete(servState.privmsg, ...) ever
+ * channel list statusBar text not updating
+
+
+
  - draw issue when
     1) open /list from #channel
     2) click to channel list tab
@@ -13,38 +15,77 @@ BUGS:
     fixes itself when you click on #channel again
 
 =================================================================================
-keyboard nav or some context menus at least
+
+FEATURES:
+
+ * keyboard nav or some context menus at least
 ---------------------------------------------------------------------------------
-JOIN needs to a create a tab only when we actually join that channel, which
+ * JOIN needs to a create a tab only when we actually join that channel, which
 seems to be when we get TOPIC or NAMES
 ---------------------------------------------------------------------------------
-
-separate the concepts of messages that are written with chatbox.Println
-for better notifications in tab title/statusbar/wherever
-
-there are the following things sent to chatbox.Println:
-    1) client messages (connecting, disconnected, command usage, etc...)
-    2) error messages sent by server
-    3) server messages that aren't errors
-    4) joins/parts/topics/modes/other metadata
-    5) NOTICE
-    6) hard chats
-
-we only really want the counter for 6
-3 is kinda the same but it's distracting
-some clients notify for 4 and it's kinda annoying
-there should be a different, non-numerical indicator for 1, 2 and 5
-
-I'm glad we had this talk
-
+ * 
+/disconnect
+/reconnect
+go retryConnect never stops if the server tab was closed
 ---------------------------------------------------------------------------------
+ * 
+links
+    - make them blue and underlined at least
+    - attempt to read OBJECTPOSITIONS just one more time
+---------------------------------------------------------------------------------
+ * 
+nickflash
+---------------------------------------------------------------------------------
+ *
+/script external scripts:
+    """
+    /script script_name.py everything after /script passed as an argument
+
+    /register script_name python script_name.py
+    /script_name everything after /script passed as an argument
+
+    python script_name.py "everything after /script passed as an argument"
+    """
+
+    print("Hello, world.")
+    """
+    <user> Hello, world.
+---------------------------------------------------------------------------------
+ * clickable button next to the topicInput [ 1337 users, 69 ops ] 
+   to show/hide the nicklist
+
+count(nicklist)
+hide/show nicklist
+---------------------------------------------------------------------------------
+ * 
+topic widget should allow input and send /topic or whatever
+
+
+
+
+
 /msg shouldn't open a new tab if it's to services like NickServ
 ---------------------------------------------------------------------------------
 set Timeout, Name, QuitMessage, etc...
 ---------------------------------------------------------------------------------
-/disconnect
-/reconnect
-go retryConnect never stops if the server tab was closed
+split extra long text input, allow ctrl+enter, split on \n
+i heard 512 bytes was maxlen
+---------------------------------------------------------------------------------
+/ignore
+---------------------------------------------------------------------------------
+/kickban
+---------------------------------------------------------------------------------
+/send 
+proper file transfers with a Save As dialog and everything
+unrelated: maybe turn tsobot into a XDCC bot
+---------------------------------------------------------------------------------
+inline twitter links
+ - maybe use the API
+ - maybe just scrape the HTML
+---------------------------------------------------------------------------------
+replace goirc with simple channels and goroutines
+---------------------------------------------------------------------------------
+replace walk with qt
 ---------------------------------------------------------------------------------
 prevent closing the last tab [✓]
     - allow servConn.conn to be nil
@@ -54,14 +95,8 @@ prevent closing the last tab [✓]
     switch to it
     /exit to close application
 ---------------------------------------------------------------------------------
-RICHEDIT BOYS :O :O :O GET HYPE
 
-nvm OLE is exceptionally awful and I can't figure out how to get the
-OBJECTPOSITIONS messages so fuck it if we want more out of the UI than pretty
-colors there's always walk.WebView, electron, Qt, or reinventing the wheel
-(render text and handle pointer events for text selection and put stuff on the
-clipboard manually and invent a scrollbar and waste like a solid year on that)
- 
+colors
  - write more test cases
  - strip control codes from other parts of the ui (like channel list)
  - use lots of colors in the richedit
@@ -84,22 +119,6 @@ context menu (close)
 improve tabs in general
  - multiline, stretch-to-fit, button style
 ---------------------------------------------------------------------------------
-nickflash
----------------------------------------------------------------------------------
-/script external scripts:
-    """
-    /script script_name.py everything after /script passed as an argument
-
-    /register script_name python script_name.py
-    /script_name everything after /script passed as an argument
-
-    python script_name.py "everything after /script passed as an argument"
-    """
-
-    print("Hello, world.")
-    """
-    <user> Hello, world.
----------------------------------------------------------------------------------
 /search or /find or CTRL+F
     reduce text buffer to matches, then restore
 ---------------------------------------------------------------------------------
@@ -116,31 +135,20 @@ don't log messages if offline
 don't display messages if not sent (or at least "previous message not sent"
 !Undelivered
 ---------------------------------------------------------------------------------
-count(nicklist)
-hide/show nicklist
----------------------------------------------------------------------------------
-inline NOTICEs
----------------------------------------------------------------------------------
 system tray
 ---------------------------------------------------------------------------------
-topic widget should allow input and send /topic or whatever
----------------------------------------------------------------------------------
-split extra long text input, allow ctrl+enter, split on \n
-i heard 512 bytes was maxlen
----------------------------------------------------------------------------------
-/ignore
----------------------------------------------------------------------------------
-/kickban
----------------------------------------------------------------------------------
-/send 
-proper file transfers with a Save As dialog and everything
-unrelated: maybe turn tsobot into a XDCC bot
+enable_caption(0)
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
 RESOURCES:
 
 About Tab Controls | Microsoft Docs
 https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
+
+Windows #define stuff:
+https://doc.pcsoft.fr/en-US/?6510001
+https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
 
 RichEdit stuff:
 https://docs.microsoft.com/en-us/windows/desktop/Controls/bumper-rich-edit-rich-edit-control-reference
@@ -148,6 +156,38 @@ https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-tagric
 https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-_charformat
 https://github.com/Microsoft/Windows-classic-samples/blob/master/Samples/DynamicDPI/cpp/SampleRichEditControl.cpp
 
-Windows #define stuff:
-https://doc.pcsoft.fr/en-US/?6510001
-https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+ADDENDUM:
+
+RE: inserting images in RichEdit
+
+nvm OLE is exceptionally awful and I can't figure out how to get the
+OBJECTPOSITIONS messages so fuck it if we want more out of the UI than pretty
+colors there's always walk.WebView, electron, Qt, or reinventing the wheel
+(render text and handle pointer events for text selection and put stuff on the
+clipboard manually and invent a scrollbar and waste like a solid year on that)
+
+-tso, July Sun Jul 8 07:49:26 2018 -0400
+
+RE: ui
+
+separate the concepts of messages that are written with chatbox.Println
+for better notifications in tab title/statusbar/wherever
+
+there are the following things sent to chatbox.Println:
+    1) client messages (connecting, disconnected, command usage, etc...)
+    2) error messages sent by server
+    3) server messages that aren't errors
+    4) joins/parts/topics/modes/other metadata
+    5) NOTICE
+    6) hard chats
+
+we only really want the counter for 6
+3 is kinda the same but it's distracting
+some clients notify for 4 and it's kinda annoying
+there should be a different, non-numerical indicator for 1, 2 and 5
+
+I'm glad we had this talk
+
+-tso, Sat Jul 7 01:31:25 2018 -0400
