@@ -99,7 +99,7 @@ func (t *tabViewChatbox) Focus() {
 func (t *tabViewChatbox) Println(msg string) {
 	mw.WindowBase.Synchronize(func() {
 		text, styles := parseString(msg)
-		t.textBuffer.AppendText(text+"\r\n", styles...)
+		t.textBuffer.AppendText("\r\n"+text, styles...)
 		t.chatlogger(msg)
 		if !t.HasFocus() {
 			t.unread++
