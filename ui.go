@@ -68,7 +68,7 @@ type tabViewChatbox struct {
 	tabViewCommon
 	unread       int
 	disconnected bool
-	textBuffer   *walk.TextEdit
+	textBuffer   *RichEdit
 	textInput    *MyLineEdit
 	chatlogger   func(string)
 }
@@ -98,7 +98,8 @@ func (t *tabViewChatbox) Focus() {
 
 func (t *tabViewChatbox) Println(msg string) {
 	mw.WindowBase.Synchronize(func() {
-		t.textBuffer.AppendText(msg + "\r\n")
+		text, styles := parseString(msg)
+		t.textBuffer.AppendText(text+"\r\n", styles...)
 		t.chatlogger(msg)
 		if !t.HasFocus() {
 			t.unread++
@@ -169,7 +170,6 @@ func (t *tabViewServer) Update(servState *serverState) {
 func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewServer {
 	t := &tabViewServer{}
 	t.tabTitle = servState.networkName
-	t.textBuffer = &walk.TextEdit{}
 	t.chatlogger = NewChatLogger(servState.networkName)
 
 	mw.WindowBase.Synchronize(func() {
@@ -178,15 +178,8 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabViewSe
 		checkErr(err)
 		t.tabPage.SetTitle(t.tabTitle)
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
-		builder := NewBuilder(t.tabPage)
-		TextEdit{
-			AssignTo:           &t.textBuffer,
-			ReadOnly:           true,
-			AlwaysConsumeSpace: true,
-			Persistent:         true,
-			VScroll:            true,
-			MaxLength:          0x7FFFFFFE,
-		}.Create(builder)
+		t.textBuffer, err = NewRichEdit(t.tabPage)
+		checkErr(err)
 		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
 			tab:       t,
@@ -249,7 +242,6 @@ func (t *tabViewChannel) updateNickList(chanState *channelState) {
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabViewChannel {
 	t := &tabViewChannel{}
 	t.tabTitle = chanState.channel
-	t.textBuffer = &walk.TextEdit{}
 	chanState.nickList = newNickList()
 	t.nickListBox = &walk.ListBox{}
 	t.nickListBoxModel = &listBoxModel{}
@@ -268,28 +260,26 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		t.tabPage.SetTitle(t.tabTitle)
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(t.tabPage)
-
 		LineEdit{
 			AssignTo: &t.topicInput,
 			ReadOnly: true,
 		}.Create(builder)
-		var hsplit *walk.Splitter
+
+		t.textBuffer = &RichEdit{}
+
 		HSplitter{
-			AssignTo: &hsplit,
+			AlwaysConsumeSpace: true,
+			HandleWidth:        2,
 			Children: []Widget{
-				TextEdit{
-					AssignTo:           &t.textBuffer,
-					ReadOnly:           true,
-					AlwaysConsumeSpace: true,
-					VScroll:            true,
-					MaxLength:          0x7FFFFFFE,
-					StretchFactor:      3,
+				RichEditDecl{
+					AssignTo:      &t.textBuffer,
+					StretchFactor: 3,
 				},
 				ListBox{
-					StretchFactor:      1,
 					AssignTo:           &t.nickListBox,
 					Model:              t.nickListBoxModel,
 					AlwaysConsumeSpace: false,
+					StretchFactor:      1,
 					OnItemActivated: func() {
 						nick := newNick(t.nickListBoxModel.Items[t.nickListBox.CurrentIndex()])
 
@@ -306,10 +296,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 					},
 				},
 			},
-			AlwaysConsumeSpace: true,
 		}.Create(builder)
-
-		checkErr(hsplit.SetHandleWidth(1))
 
 		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
@@ -367,7 +354,6 @@ func (t *tabViewPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabViewPrivmsg {
 	t := &tabViewPrivmsg{}
 	t.tabTitle = pmState.nick
-	t.textBuffer = &walk.TextEdit{}
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(pmState.nick, msg)
 		nick := newNick(servState.user.nick)
@@ -381,15 +367,9 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		checkErr(err)
 		t.tabPage.SetTitle(t.tabTitle)
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
-		builder := NewBuilder(t.tabPage)
-		TextEdit{
-			AssignTo:           &t.textBuffer,
-			ReadOnly:           true,
-			AlwaysConsumeSpace: true,
-			Persistent:         true,
-			VScroll:            true,
-			MaxLength:          0x7FFFFFFE,
-		}.Create(builder)
+		t.textBuffer, err = NewRichEdit(t.tabPage)
+		checkErr(err)
+		checkErr(t.tabPage.Children().Add(t.textBuffer))
 		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
 			tab:       t,

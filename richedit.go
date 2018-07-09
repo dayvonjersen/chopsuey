@@ -1,16 +1,14 @@
-// +build ignore
-
 package main
 
 import (
 	"fmt"
-	"log"
 	"syscall"
-	"time"
 	"unsafe"
 
 	"github.com/lxn/walk"
-	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/walk/declarative"
+
+	//. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 )
 
@@ -399,7 +397,7 @@ func (re *RichEdit) Underline(start, end int) {
 }
 
 func (re *RichEdit) LayoutFlags() walk.LayoutFlags {
-	return walk.ShrinkableHorz | walk.ShrinkableVert | walk.GrowableHorz | walk.GrowableVert | walk.GreedyHorz | walk.GreedyVert
+	return walk.GrowableHorz | walk.GrowableVert | walk.GreedyHorz | walk.GreedyVert
 }
 
 func (re *RichEdit) MinSizeHint() walk.Size {
@@ -407,7 +405,7 @@ func (re *RichEdit) MinSizeHint() walk.Size {
 }
 
 func (re *RichEdit) SizeHint() walk.Size {
-	return walk.Size{100, 100}
+	return walk.Size{400, 100}
 }
 
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -437,65 +435,15 @@ func (re *RichEdit) SetText(text string) {
 	re.SendMessage(win.WM_SETTEXT, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
 }
 
-func (re *RichEdit) AppendText(text string) {
+func (re *RichEdit) AppendText(text string, styles ...[]int) {
 	s, e := re.TextSelection()
 	l := re.TextLength()
 	re.SetTextSelection(l, l)
 	re.ReplaceSelectedText(text, false)
-	re.SetTextSelection(s, e)
-}
-
-func (re *RichEdit) SetReadOnly(readOnly bool) error {
-	if 0 == re.SendMessage(win.EM_SETREADONLY, uintptr(win.BoolToBOOL(readOnly)), 0) {
-		return fmt.Errorf("SendMessage(EM_SETREADONLY) failed for some reason")
-	}
-
-	return nil
-}
-
-func NewRichEdit(parent walk.Container) (*RichEdit, error) {
-	re := &RichEdit{}
-	err := walk.InitWidget(
-		re,
-		parent,
-		"RICHEDIT",
-		win.ES_MULTILINE|win.WS_VISIBLE|win.WS_CHILD|win.WS_BORDER|win.WS_VSCROLL,
-		win.WS_EX_CLIENTEDGE,
-	)
-	if err != nil {
-		return nil, err
-	}
-	re.SetAlwaysConsumeSpace(true)
-	return re, err
-}
-
-/*
-if __name__ == "__main__":
-*/
-func main() {
-	var mw *walk.MainWindow
-
-	MainWindow{
-		AssignTo: &mw,
-		Title:    "Rich Edit Test",
-		MinSize:  Size{600, 400},
-		Layout:   VBox{},
-	}.Create()
-
-	font, err := walk.NewFont("Comic Sans MS", 24, 0)
-	checkErr(err)
-	mw.WindowBase.SetFont(font)
-
-	re, err := NewRichEdit(mw)
-	checkErr(err)
-	checkErr(re.SetReadOnly(true))
-
-	str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
-	rt := parseString(str)
-	re.SetText(rt.str)
-
-	for _, style := range rt.styles {
+	for _, style := range styles {
 		start, end := style[1], style[2]
+		start += l
+		end += l
 		switch style[0] {
 		case styleForegroundColor:
 			charfmt := charformat{
@@ -517,6 +465,78 @@ func main() {
 			re.Underline(start, end)
 		}
 	}
+	re.SetTextSelection(s, e)
+}
+
+func (re *RichEdit) SetReadOnly(readOnly bool) error {
+	if 0 == re.SendMessage(win.EM_SETREADONLY, uintptr(win.BoolToBOOL(readOnly)), 0) {
+		return fmt.Errorf("SendMessage(EM_SETREADONLY) failed for some reason")
+	}
+
+	return nil
+}
+
+func NewRichEdit(parent walk.Container) (*RichEdit, error) {
+	re := &RichEdit{}
+	err := walk.InitWidget(
+		re,
+		parent,
+		"RICHEDIT",
+		win.ES_MULTILINE|win.WS_VISIBLE|win.WS_CHILD|win.WS_VSCROLL,
+		win.WS_EX_CLIENTEDGE,
+	)
+	if err != nil {
+		return nil, err
+	}
+	re.SetAlwaysConsumeSpace(true)
+	re.SetReadOnly(true)
+	return re, err
+}
+
+type RichEditDecl struct {
+	AssignTo      **RichEdit
+	StretchFactor int
+}
+
+func (re RichEditDecl) Create(builder *declarative.Builder) error {
+	w, err := NewRichEdit(builder.Parent())
+	if err != nil {
+		return err
+	}
+	if re.AssignTo != nil {
+		*re.AssignTo = w
+	}
+
+	return builder.InitWidget(re, w, func() error { return nil })
+}
+
+/*
+if __name__ == "__main__":
+func main() {
+	var mw *walk.MainWindow
+
+	MainWindow{
+		AssignTo: &mw,
+		Title:    "Rich Edit Test",
+		MinSize:  Size{600, 400},
+		Layout:   VBox{},
+	}.Create()
+
+	font, err := walk.NewFont("Comic Sans MS", 24, 0)
+	checkErr(err)
+	mw.WindowBase.SetFont(font)
+
+	re, err := NewRichEdit(mw)
+	checkErr(err)
+	// checkErr(re.SetReadOnly(true))
+
+	str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
+
+	for i := 0; i < 3; i++ {
+		text, styles := parseString(str)
+		re.AppendText(text, styles...)
+	}
+
 	go func() {
 		<-time.After(time.Second)
 		mw.WindowBase.Synchronize(func() {
@@ -533,3 +553,4 @@ func checkErr(err error) {
 		log.Panicln(err)
 	}
 }
+*/

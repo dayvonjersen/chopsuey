@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+func colorize(colorCode, text string) string {
+	return colorCode + text + fmtReset
+}
+
 const (
 	fmtColor     = "\x03"
 	fmtBold      = "\x02"
@@ -128,8 +132,8 @@ func clearLast(styles [][]int, styleCode int, index int) [][]int {
 	return styles
 }
 
-func parseString(str string) *richtext {
-	styles := [][]int{}
+func parseString(str string) (text string, styles [][]int) {
+	styles = [][]int{}
 	for {
 		i := strings.IndexAny(str, fmtCharsString)
 		if i == -1 {
@@ -172,7 +176,7 @@ func parseString(str string) *richtext {
 		}
 	}
 	styles = clearLast(styles, styleReset, len(str))
-	return &richtext{str, styles}
+	return str, styles
 }
 
 func colorString(str string, col ...int) string {

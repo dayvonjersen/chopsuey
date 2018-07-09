@@ -78,7 +78,8 @@ func TestParseString(t *testing.T) {
 			},
 		},
 	} {
-		actual := parseString(test.input)
+		text, styles := parseString(test.input)
+		actual := &richtext{text, styles}
 		if !reflect.DeepEqual(actual, test.expected) {
 			fmt.Println("expected:")
 			_printf(test.expected)

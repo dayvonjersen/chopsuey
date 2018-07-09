@@ -78,7 +78,7 @@ func main() {
 
 	MainWindow{
 		AssignTo: &mw,
-		Title:    "chopsuey IRC v0.3",
+		Title:    "chopsuey IRC v0.4",
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
