@@ -78,7 +78,7 @@ func meCmd(ctx *commandContext, args ...string) {
 		return
 	}
 	ctx.servConn.conn.Action(dest, msg)
-	ctx.tab.Println(fmt.Sprintf("%s * %s %s", now(), ctx.servState.user.nick, msg))
+	ctx.tab.Println(fmt.Sprintf(color("%s", LightGrey)+color(" *%s %s*", DarkGrey), now(), ctx.servState.user.nick, msg))
 }
 
 func joinCmd(ctx *commandContext, args ...string) {

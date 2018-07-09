@@ -209,7 +209,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	// TODO: there are more...
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		servState.tab.Println(color(now(), LightGray) + color(" ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
+		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
 	}
 
 	conn.HandleFunc("401", printErrorMessage)
@@ -318,7 +318,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
-		printer("ACTION", color("%s", LightGrey)+color(" * %s %s", DarkGrey), l)
+		printer("ACTION", color("%s", LightGrey)+color(" *%s %s*", DarkGrey), l)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
@@ -331,7 +331,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			printServerMessage(c, l)
 			return
 		}
-		printer("NOTICE", "%s *** %s: %s", l)
+		printer("NOTICE", color("%s *** %s: %s", Orange), l)
 	})
 
 	// NAMES
@@ -363,7 +363,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			chanState.nickList.Add(l.Nick)
 			chanState.tab.updateNickList(chanState)
 			if !clientCfg.HideJoinParts {
-				chanState.tab.Println(now() + " -> " + l.Nick + " has joined " + l.Args[0])
+				chanState.tab.Println(color(now(), LightGrey) + italic(color(" -> "+l.Nick+" has joined "+l.Args[0], Orange)))
 			}
 		}
 	})
@@ -378,11 +378,11 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.nickList.Remove(l.Nick)
 		chanState.tab.updateNickList(chanState)
 		if !clientCfg.HideJoinParts {
-			msg := now() + " <- " + l.Nick + " has left " + l.Args[0]
+			msg := " <- " + l.Nick + " has left " + l.Args[0]
 			if len(l.Args) > 1 {
 				msg += " (" + l.Args[1] + ")"
 			}
-			chanState.tab.Println(msg)
+			chanState.tab.Println(color(now(), LightGrey) + italic(color(msg, Orange)))
 		}
 	})
 
@@ -392,7 +392,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			reason = strings.TrimPrefix(reason, "Quit:")
 		}
 		reason = strings.TrimSpace(reason)
-		msg := now() + " <- " + l.Nick + " has quit"
+		msg := " <- " + l.Nick + " has quit"
 		if reason != "" {
 			msg += ": " + reason
 		}
@@ -401,7 +401,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				chanState.nickList.Remove(l.Nick)
 				chanState.tab.updateNickList(chanState)
 				if !clientCfg.HideJoinParts {
-					chanState.tab.Println(msg)
+					chanState.tab.Println(color(now(), LightGrey) + italic(color(msg, Orange)))
 				}
 			}
 		}
@@ -420,19 +420,19 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 
 		if who == servState.user.nick {
-			msg := fmt.Sprintf("%s *** You have been kicked by %s", now(), op)
+			msg := fmt.Sprintf(" *** You have been kicked by %s", op)
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
-			chanState.tab.Println(msg)
+			chanState.tab.Println(color(now(), LightGrey) + color(msg, Red))
 			chanState.nickList = newNickList()
 			chanState.tab.updateNickList(chanState)
 		} else {
-			msg := fmt.Sprintf("%s *** %s has been kicked by %s", now(), who, op)
+			msg := fmt.Sprintf(" *** %s has been kicked by %s", who, op)
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
-			chanState.tab.Println(msg)
+			chanState.tab.Println(color(now(), LightGrey) + color(msg, Orange))
 			chanState.nickList.Remove(who)
 			chanState.tab.updateNickList(chanState)
 		}
@@ -450,7 +450,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				newNick.prefix = oldNick.prefix
 				chanState.nickList.Set(oldNick.name, newNick)
 				chanState.tab.updateNickList(chanState)
-				chanState.tab.Println(now() + " ** " + oldNick.name + " is now known as " + newNick.name)
+				chanState.tab.Println(color(now(), LightGrey) + italic(color(" ** "+oldNick.name+" is now known as "+newNick.name, Orange)))
 			}
 		}
 	})
@@ -471,13 +471,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				op = servState.networkName
 			}
 			if len(nicks) == 0 {
-				chanState.tab.Println(fmt.Sprintf("%s ** %s sets mode %s %s", now(), op, mode, channel))
+				chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s %s", op, mode, channel), Orange)))
 				return
 			}
 
 			nickStr := fmt.Sprintf("%s", nicks)
 			nickStr = nickStr[1 : len(nickStr)-1]
-			chanState.tab.Println(fmt.Sprintf("%s ** %s sets mode %s %s", now(), op, mode, nickStr))
+			chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s %s", op, mode, nickStr), Orange)))
 
 			var add bool
 			var idx int
@@ -519,7 +519,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			nick := channel
 			for _, chanState := range servState.channels {
 				if chanState.nickList.Has(nick) || nick == servState.user.nick {
-					chanState.tab.Println(fmt.Sprintf("%s ** %s sets mode %s", now(), nick, mode))
+					chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s", nick, mode), Orange)))
 				}
 			}
 		}
@@ -537,7 +537,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.topic = topic
 		// NOTE(tso): probably should put this in Update() but fuck it
 		chanState.tab.topicInput.SetText(topic)
-		chanState.tab.Println(fmt.Sprintf("*** topic for %s is %s", channel, topic))
+		chanState.tab.Println(color(now(), LightGrey) + " topic for " + channel + " is " + topic)
 	})
 
 	conn.HandleFunc(goirc.TOPIC, func(c *goirc.Conn, l *goirc.Line) {
@@ -557,7 +557,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.topic = topic
 		// NOTE(tso): probably should put this in Update() but fuck it
 		chanState.tab.topicInput.SetText(topic)
-		chanState.tab.Println(fmt.Sprintf("%s *** %s has changed the topic for %s to %s", now(), who, channel, topic))
+		chanState.tab.Println(color(now(), LightGrey) + fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic))
 	})
 
 	// START OF /LIST
