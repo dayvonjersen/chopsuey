@@ -3,7 +3,6 @@ BUGS:
 
  - server tabs not closing at all now
  - DISCONNECTED state doesn't cascade
- - I don't even think the TextEdit is scrolling to the bottom...
  - I don't think we're delete(servState.privmsg, ...) ever
  - channel list statusBar text not updating
  - draw issue when

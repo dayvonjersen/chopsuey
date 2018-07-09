@@ -409,6 +409,21 @@ func (re *RichEdit) SizeHint() walk.Size {
 }
 
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	// disable smooth scroll
+	if msg == win.WM_MOUSEWHEEL {
+		delta := int(int16(win.HIWORD(uint32(wParam))))
+		var direction uintptr
+		if delta > 0 {
+			direction = win.SB_LINEUP
+		} else {
+			direction = win.SB_LINEDOWN
+		}
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		return re.SendMessage(win.WM_VSCROLL, direction, 0)
+	}
 	return re.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
@@ -490,6 +505,12 @@ func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 	}
 	re.SetAlwaysConsumeSpace(true)
 	re.SetReadOnly(true)
+
+	// str := "filling up the buffer just to test something...\n"
+	// for i := 0; i < 1000; i++ {
+	// 	re.AppendText(str)
+	// }
+
 	return re, err
 }
 
