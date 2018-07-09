@@ -249,7 +249,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(chanState.channel, msg)
 		nick := chanState.nickList.Get(servState.user.nick)
-		t.Println(fmt.Sprintf("%s <%s> %s", now(), nick, msg))
+		t.Println(fmt.Sprintf(color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", now(), nick, msg))
 	}
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + chanState.channel)
 
@@ -357,7 +357,7 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(pmState.nick, msg)
 		nick := newNick(servState.user.nick)
-		t.Println(fmt.Sprintf("%s <%s> %s", now(), nick, msg))
+		t.Println(fmt.Sprintf(color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", now(), nick, msg))
 	}
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + pmState.nick)
 

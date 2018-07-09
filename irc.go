@@ -121,7 +121,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		servState.tab.Println(now() + " " + l.Cmd + ": " + strings.Join(l.Args[1:], " "))
+		str := color(now(), LightGray) + " " + color(l.Cmd+": "+strings.Join(l.Args[1:], " "), Blue)
+		servState.tab.Println(str)
 	}
 
 	// WELCOME
@@ -208,7 +209,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	// TODO: there are more...
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		servState.tab.Println(now() + " " + l.Cmd + " ERROR: " + strings.Join(l.Args[1:], " "))
+		servState.tab.Println(color(now(), LightGray) + color(" ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
 	}
 
 	conn.HandleFunc("401", printErrorMessage)
@@ -313,11 +314,11 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		tab.Println(fmt.Sprintf(fmtstr, now(), nick, l.Args[1]))
 	}
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
-		printer("PRIVMSG", "%s <%s> %s", l)
+		printer("PRIVMSG", color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", l)
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
-		printer("ACTION", "%s * %s %s", l)
+		printer("ACTION", color("%s", LightGrey)+color(" * %s %s", DarkGrey), l)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {

@@ -2,13 +2,44 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 )
 
-func colorize(colorCode, text string) string {
-	return colorCode + text + fmtReset
+func italic(text string) string    { return fmtItalic + text + fmtItalic }
+func bold(text string) string      { return fmtBold + text + fmtBold }
+func underline(text string) string { return fmtUnderline + text + fmtUnderline }
+
+const (
+	White     = 0
+	Black     = 1
+	Navy      = 2
+	Green     = 3
+	Red       = 4
+	Maroon    = 5
+	Purple    = 6
+	Orange    = 7
+	Yellow    = 8
+	Lime      = 9
+	Teal      = 10
+	Cyan      = 11
+	Blue      = 12
+	Pink      = 13
+	DarkGray  = 14
+	LightGray = 15
+	DarkGrey  = 14
+	LightGrey = 15 // >_>
+)
+
+func color(text string, colors ...int) string {
+	str := ""
+	if len(colors) > 0 {
+		str = strconv.Itoa(colors[0])
+	}
+	if len(colors) > 1 {
+		str += "," + strconv.Itoa(colors[1])
+	}
+	return fmtColor + str + text + fmtReset
 }
 
 const (
@@ -48,25 +79,6 @@ const (
 
 var fmtCharsString = "\x03\x02\x1d\x1f\x16\x0f"
 
-const (
-	colorWhite     = 0
-	colorBlack     = 1
-	colorNavy      = 2
-	colorGreen     = 3
-	colorRed       = 4
-	colorMaroon    = 5
-	colorPurple    = 6
-	colorOrange    = 7
-	colorYellow    = 8
-	colorLime      = 9
-	colorTeal      = 10
-	colorCyan      = 11
-	colorBlue      = 12
-	colorPink      = 13
-	colorDarkGray  = 14
-	colorLightGray = 15
-)
-
 var colorPalette = [16]int{
 	0xffffff, //white
 	0x000000, //black
@@ -103,7 +115,7 @@ type richtext struct {
 	styles [][]int // style type, start offset, end offset, color value
 }
 
-func findNumber(str string) (number, start, end int, err error) {
+func findNumber(str string, maxlen int) (number, start, end int, err error) {
 	s := -1
 	e := -1
 	for i, b := range str {
@@ -112,6 +124,9 @@ func findNumber(str string) (number, start, end int, err error) {
 				s = i
 			}
 			e = i
+			if e-s >= maxlen {
+				break
+			}
 		} else if s != -1 {
 			break
 		}
@@ -123,13 +138,15 @@ func findNumber(str string) (number, start, end int, err error) {
 	return intval, s, e, err
 }
 
-func clearLast(styles [][]int, styleCode int, index int) [][]int {
+func clearLast(styles [][]int, styleCode int, index int) ([][]int, bool) {
+	match := false
 	for i, style := range styles {
 		if (style[0] == styleCode || styleCode == styleReset) && style[2] == 0 {
 			styles[i][2] = index
+			match = true
 		}
 	}
-	return styles
+	return styles, match
 }
 
 func parseString(str string) (text string, styles [][]int) {
@@ -146,43 +163,38 @@ func parseString(str string) (text string, styles [][]int) {
 		}
 		if fmtCode != fmtReset {
 			if fmtCode == fmtColor {
-				fg, s, e, err := findNumber(str[i:])
+				fg, s, e, err := findNumber(str[i:], 1)
 				if err != nil || s != 0 || e > 1 {
 					break
 				}
 				str = str[:s+i] + str[e+1+i:]
 
-				styles = clearLast(styles, styleForegroundColor, i)
+				styles, _ = clearLast(styles, styleForegroundColor, i)
 				styles = append(styles, []int{styleForegroundColor, i, 0, colorPaletteWindows[fg]})
 
 				if str[i] == ',' {
 					str = str[:i] + str[i+1:]
-					bg, s, e, err := findNumber(str[i:])
+					bg, s, e, err := findNumber(str[i:], 1)
 					if err != nil || s != 0 || e > 1 {
 						continue
 					}
 
 					str = str[:s+i] + str[e+1+i:]
 
-					styles = clearLast(styles, styleBackgroundColor, i)
+					styles, _ = clearLast(styles, styleBackgroundColor, i)
 					styles = append(styles, []int{styleBackgroundColor, i, 0, colorPaletteWindows[bg]})
 				}
 			} else {
-				styles = clearLast(styles, int(rune(fmtCode[0])), i)
-				styles = append(styles, []int{int(rune(fmtCode[0])), i, 0})
+				var match bool
+				styles, match = clearLast(styles, int(rune(fmtCode[0])), i)
+				if !match {
+					styles = append(styles, []int{int(rune(fmtCode[0])), i, 0})
+				}
 			}
 		} else {
-			styles = clearLast(styles, styleReset, i)
+			styles, _ = clearLast(styles, styleReset, i)
 		}
 	}
-	styles = clearLast(styles, styleReset, len(str))
+	styles, _ = clearLast(styles, styleReset, len(str))
 	return str, styles
-}
-
-func colorString(str string, col ...int) string {
-	if len(col) > 1 {
-		return fmt.Sprintf("\x03%d,%d%s\x0f", col[0], col[1], str)
-	} else {
-		return fmt.Sprintf("\x03%d%s\x0f", col[0], str)
-	}
 }
