@@ -496,7 +496,7 @@ func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 	err := walk.InitWidget(
 		re,
 		parent,
-		"RICHEDIT",
+		"RICHEDIT20W",
 		win.ES_MULTILINE|win.WS_VISIBLE|win.WS_CHILD|win.WS_VSCROLL,
 		win.WS_EX_CLIENTEDGE,
 	)
@@ -557,6 +557,7 @@ func main() {
 		text, styles := parseString(str)
 		re.AppendText(text, styles...)
 	}
+	re.AppendText("\n\n世界\n")
 
 	go func() {
 		<-time.After(time.Second)
