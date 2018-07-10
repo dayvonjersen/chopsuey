@@ -480,6 +480,11 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 			re.Italic(start, end)
 		case styleUnderline:
 			re.Underline(start, end)
+		case styleLink:
+			re.SetCharFormat(charformat{
+				dwMask:    CFM_LINK,
+				dwEffects: CFM_LINK,
+			}, start, end)
 		}
 	}
 	re.SetTextSelection(s, e)
@@ -499,15 +504,31 @@ type _nmhdr struct {
 	code     uint32
 }
 
+type _chrg struct {
+	min, max int32
+}
+
+type _enlink struct {
+	nmhdr     _nmhdr
+	msg       int32
+	wParam    uintptr
+	lParam    uintptr
+	charRange _chrg
+}
+
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 
 	if msg == win.WM_NOTIFY {
-		fmt.Println("WM_NOTIFY:")
-		fmt.Printf("msg: %v wParam: %v lParam: %v\n", msg, wParam, lParam)
+		// fmt.Println("WM_NOTIFY:")
+		// fmt.Printf("msg: %v wParam: %v lParam: %v\n", msg, wParam, lParam)
 		mdma := (*_nmhdr)(unsafe.Pointer(lParam))
-		fmt.Printf("%#v\n", mdma)
+		// fmt.Printf("%#v\n", mdma)
 		if mdma.code == EN_LINK {
-			fmt.Println("omfg...")
+			hyrule := (*_enlink)(unsafe.Pointer(lParam))
+			if hyrule.msg != win.WM_MOUSEMOVE {
+				fmt.Printf("%#v\n", hyrule)
+				// fmt.Printf("%#v\n", hyrule.charRange)
+			}
 		}
 	}
 
@@ -573,6 +594,8 @@ func (re RichEditDecl) Create(builder *declarative.Builder) error {
 /*
 if __name__ == "__main__":
 */
+const styleLink = 691337
+
 func main() {
 	var mw *walk.MainWindow
 
@@ -593,11 +616,19 @@ func main() {
 
 	//str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
 
-	re.SetText("http://www.google.com/")
-	re.SetCharFormat(charformat{
-		dwMask:    CFM_LINK,
-		dwEffects: CFM_LINK,
-	}, 0, 22)
+	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("\nno style")
+	re.AppendText("\n")
+	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("\nno grace")
+	re.AppendText("\n")
+	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("\nno style")
+	re.AppendText("\n")
+	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("\nno grace")
+	re.AppendText("\n")
+
 	/*
 		for i := 0; i < 3; i++ {
 			text, styles := parseString(str)
