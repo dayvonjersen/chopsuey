@@ -332,8 +332,7 @@ const (
 	SES_CTFNOLOCK            = 0x10000000
 	SES_NOEALINEHEIGHTADJUST = 0x20000000
 	SES_MAX                  = 0x20000000
-
-//#endif
+	//#endif
 )
 
 type charformat struct {
@@ -566,10 +565,10 @@ type _enlink struct {
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 
 	if msg == win.WM_NOTIFY {
-		// fmt.Println("WM_NOTIFY:")
+		fmt.Println("WM_NOTIFY:")
 		// fmt.Printf("msg: %v wParam: %v lParam: %v\n", msg, wParam, lParam)
 		mdma := (*_nmhdr)(unsafe.Pointer(lParam))
-		// fmt.Printf("%#v\n", mdma)
+		fmt.Printf("code: %#v\n", mdma.code)
 		if mdma.code == EN_LINK {
 			hyrule := (*_enlink)(unsafe.Pointer(lParam))
 			if hyrule.msg != win.WM_MOUSEMOVE && hyrule.msg != 32 {
@@ -610,8 +609,10 @@ func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 	if err != nil {
 		return nil, err
 	}
-	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK|ENM_MOUSEEVENTS))
-	re.SendMessage(EM_SETEDITSTYLE, 0, uintptr(SES_CTFALLOWEMBED))
+	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK|ENM_MOUSEEVENTS|ENM_OBJECTPOSITIONS|ENM_KEYEVENTS))
+	re.SendMessage(EM_SETEDITSTYLE, 0, uintptr(SES_CTFALLOWEMBED|SES_EXTENDBACKCOLOR))
+	re.SendMessage(EM_AUTOURLDETECT, 1, 0)
+
 	re.SetAlwaysConsumeSpace(true)
 	re.SetReadOnly(true)
 
@@ -665,18 +666,21 @@ func main() {
 
 	//str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
 
-	re.AppendText("http://www/", []int{styleLink, 0, 11})
-	re.AppendText("\nno style")
-	re.AppendText("\n")
-	re.AppendText("http://wwww/", []int{styleLink, 0, 12})
-	re.AppendText("\nno grace")
-	re.AppendText("\n")
-	re.AppendText("http://wwwW/", []int{styleLink, 0, 12})
-	re.AppendText("\nno style")
-	re.AppendText("\n")
-	re.AppendText("http://wwwWWWWwwwwW/", []int{styleLink, 0, 20})
-	re.AppendText("\nno grace")
-	re.AppendText("\n")
+	/*
+		re.AppendText("http://www/", []int{styleLink, 0, 11})
+		re.AppendText("\nno style")
+		re.AppendText("\n")
+		re.AppendText("http://wwww/", []int{styleLink, 0, 12})
+		re.AppendText("\nno grace")
+		re.AppendText("\n")
+		re.AppendText("http://wwwW/", []int{styleLink, 0, 12})
+		re.AppendText("\nno style")
+		re.AppendText("\n")
+		re.AppendText("http://wwwWWWWwwwwW/", []int{styleLink, 0, 20})
+		re.AppendText("\nno grace")
+		re.AppendText("\n")
+	*/
+	re.AppendText("http://www.goatse.cx/")
 
 	/*
 		for i := 0; i < 3; i++ {
