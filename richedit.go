@@ -290,6 +290,52 @@ const CFM_BACKCOLOR = 0x04000000
 
 // tbf it's in 64-bit mingw header files
 
+// so are these
+const (
+	SES_EMULATESYSEDIT  = 1
+	SES_BEEPONMAXTEXT   = 2
+	SES_EXTENDBACKCOLOR = 4
+	SES_MAPCPS          = 8
+	//#if _RICHEDIT_VER >= 0x0500
+	SES_HYPERLINKTOOLTIPS = 8
+	//#endif
+	SES_EMULATE10 = 16
+	//#if _RICHEDIT_VER >= 0x0700
+	SES_DEFAULTLATINLIGA = 16
+	//#endif
+	SES_USECRLF = 32
+	SES_USEAIMM = 64
+	SES_NOIME   = 128
+
+	SES_ALLOWBEEPS         = 256
+	SES_UPPERCASE          = 512
+	SES_LOWERCASE          = 1024
+	SES_NOINPUTSEQUENCECHK = 2048
+	SES_BIDI               = 4096
+	SES_SCROLLONKILLFOCUS  = 8192
+	SES_XLTCRCRLFTOCR      = 16384
+	SES_DRAFTMODE          = 32768
+
+	SES_USECTF           = 0x00010000
+	SES_HIDEGRIDLINES    = 0x00020000
+	SES_USEATFONT        = 0x00040000
+	SES_CUSTOMLOOK       = 0x00080000
+	SES_LBSCROLLNOTIFY   = 0x00100000
+	SES_CTFALLOWEMBED    = 0x00200000
+	SES_CTFALLOWSMARTTAG = 0x00400000
+	SES_CTFALLOWPROOFING = 0x00800000
+	//#if _RICHEDIT_VER >= 0x0500
+	SES_LOGICALCARET         = 0x01000000
+	SES_WORDDRAGDROP         = 0x02000000
+	SES_SMARTDRAGDROP        = 0x04000000
+	SES_MULTISELECT          = 0x08000000
+	SES_CTFNOLOCK            = 0x10000000
+	SES_NOEALINEHEIGHTADJUST = 0x20000000
+	SES_MAX                  = 0x20000000
+
+//#endif
+)
+
 type charformat struct {
 	cbSize          uint32
 	dwMask          uint32
@@ -564,7 +610,8 @@ func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 	if err != nil {
 		return nil, err
 	}
-	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK))
+	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK|ENM_MOUSEEVENTS))
+	re.SendMessage(EM_SETEDITSTYLE, 0, uintptr(SES_CTFALLOWEMBED))
 	re.SetAlwaysConsumeSpace(true)
 	re.SetReadOnly(true)
 
