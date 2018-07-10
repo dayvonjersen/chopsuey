@@ -26,21 +26,6 @@ links
  * 
 nickflash
 ---------------------------------------------------------------------------------
- *
-/script external scripts:
-    """
-    /script script_name.py everything after /script passed as an argument
-
-    /register script_name python script_name.py
-    /script_name everything after /script passed as an argument
-
-    python script_name.py "everything after /script passed as an argument"
-    """
-
-    print("Hello, world.")
-    """
-    <user> Hello, world.
----------------------------------------------------------------------------------
  * clickable button next to the topicInput [ 1337 users, 69 ops ] 
    to show/hide the nicklist
 
@@ -52,7 +37,10 @@ topic widget should allow input and send /topic or whatever
 
 
 
-
+---------------------------------------------------------------------------------
+better scripting examples
+---------------------------------------------------------------------------------
+autoload registered scripts at startup (config.json)
 ---------------------------------------------------------------------------------
 /part without closing tab
  - chanState tracks whether "connected" to channel?

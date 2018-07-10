@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -22,6 +25,14 @@ var clientCommands map[string]clientCommand
 
 func init() {
 	clientCommands = map[string]clientCommand{
+		// connectivity
+		"connect":    connectCmd,
+		"disconnect": disconnectCmd,
+		"quit":       quitCmd,
+		"reconnect":  reconnectCmd,
+		"server":     serverCmd,
+
+		// other core functionality
 		"clear":  clearCmd,
 		"close":  closeCmd,
 		"ctcp":   ctcpCmd,
@@ -34,24 +45,26 @@ func init() {
 		"nick":   nickCmd,
 		"notice": noticeCmd,
 		"part":   partCmd,
-		"quit":   quitCmd,
 		"rejoin": rejoinCmd,
-		"server": serverCmd,
 		"topic":  topicCmd,
 
-		"connect":    connectCmd,
-		"disconnect": disconnectCmd,
-		"reconnect":  reconnectCmd,
-
+		// stubs
 		"help": helpCmd,
 		"exit": exitCmd,
 
-		"raw":  rawCmd,
+		// experimental/WIP
 		"send": sendCmd,
+
+		// scripting
+		"script":     scriptCmd,
+		"register":   registerCmd,
+		"unregister": unregisterCmd,
+
+		// debugging
+		"raw": rawCmd,
 	}
 }
 
-// for debug purposes only
 func rawCmd(ctx *commandContext, args ...string) {
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
 }
@@ -374,4 +387,121 @@ func listCmd(ctx *commandContext, args ...string) {
 	if !ctx.servState.channelList.inProgress {
 		ctx.servConn.conn.Raw("LIST")
 	}
+}
+
+const SCRIPTS_DIR = "./scripts/"
+
+var scriptAliases = map[string]string{}
+
+func registerCmd(ctx *commandContext, args ...string) {
+	if len(args) < 2 {
+		ctx.tab.Println("usage: /register [alias] [script file]")
+		return
+	}
+
+	name := args[0]
+	file := args[1]
+
+	if _, ok := clientCommands[name]; ok {
+		if alias, ok := scriptAliases[name]; !ok {
+			ctx.tab.Println("ERROR: cannot overwrite built-in client command /" + name)
+		} else {
+			ctx.tab.Println("overwriting previous alias of " + alias + " for /" + name)
+		}
+		return
+	}
+
+	scriptAliases[name] = file
+	clientCommands[name] = func(ctx *commandContext, args ...string) {
+		scriptCmd(ctx, append([]string{file}, args...)...)
+	}
+	ctx.tab.Println("/" + name + " registered as alias to " + file)
+}
+
+func unregisterCmd(ctx *commandContext, args ...string) {
+	if len(args) != 1 {
+		ctx.tab.Println("usage: /unregister [alias]")
+		return
+	}
+	name := args[0]
+	alias, ok := scriptAliases[name]
+	if !ok {
+		ctx.tab.Println("ERROR: /" + name + " is not a registered alias of any script")
+		return
+	}
+	delete(scriptAliases, name)
+	delete(clientCommands, name)
+	ctx.tab.Println("/" + name + " (" + alias + ") unregistered")
+}
+
+func scriptCmd(ctx *commandContext, args ...string) {
+	if len(args) < 0 {
+		ctx.tab.Println("usage: /script [file in " + SCRIPTS_DIR + "] [args...]")
+		return
+	}
+
+	if ctx.chanState == nil && ctx.pmState == nil {
+		ctx.tab.Println("ERROR: scripts only work in channels and private messages!")
+		return
+	}
+
+	scriptFile := filepath.Base(args[0])
+
+	f, err := os.Open(SCRIPTS_DIR + scriptFile)
+	checkErr(err)
+	if os.IsNotExist(err) {
+		ctx.tab.Println("script not found: " + scriptFile)
+		return
+	}
+	{
+		finfo, err := f.Stat()
+		checkErr(err)
+		if finfo.IsDir() {
+			ctx.tab.Println("script not found: " + scriptFile)
+			return
+		}
+	}
+	f.Close()
+
+	args = append([]string{SCRIPTS_DIR + scriptFile}, args[1:]...)
+
+	var bin string
+	ext := filepath.Ext(scriptFile)
+	switch ext {
+	case ".go":
+		bin = "go"
+		args = append([]string{"run"}, args...)
+	case ".php":
+		bin = "php"
+	case ".pl":
+		bin = "perl"
+	case ".py":
+		bin = "python"
+	case ".rb":
+		bin = "ruby"
+	case ".sh":
+		bin = "bash"
+	default:
+		ctx.tab.Println("unsupported script type: " + ext)
+		return
+	}
+
+	go func() {
+		cmd := exec.Command(bin, args...)
+		stdout := bytes.NewBuffer([]byte{})
+		stderr := bytes.NewBuffer([]byte{})
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+		if err := cmd.Run(); err != nil {
+			ctx.tab.Println("ERROR: " + bin + " " + strings.Join(args, " ") + "\r\nreturned: " + err.Error())
+		}
+		out := strings.TrimSpace(stdout.String())
+		err := strings.TrimSpace(stderr.String())
+		if err != "" {
+			ctx.tab.Println(bin + " " + strings.Join(args, " ") + "\r\nreturned: " + err)
+		}
+		if out != "" {
+			ctx.tab.Send(out)
+		}
+	}()
 }
