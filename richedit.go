@@ -13,6 +13,7 @@ import (
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
 
+	"github.com/kr/pretty"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 )
@@ -505,15 +506,15 @@ type _nmhdr struct {
 }
 
 type _chrg struct {
-	min, max int32
+	cpMin, cpMax int32
 }
 
 type _enlink struct {
-	nmhdr     _nmhdr
-	msg       int32
-	wParam    uintptr
-	lParam    uintptr
-	charRange _chrg
+	nmhdr  _nmhdr
+	msg    int32
+	wParam uintptr
+	lParam [4]byte
+	chrg   _chrg
 }
 
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -525,8 +526,9 @@ func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		// fmt.Printf("%#v\n", mdma)
 		if mdma.code == EN_LINK {
 			hyrule := (*_enlink)(unsafe.Pointer(lParam))
-			if hyrule.msg != win.WM_MOUSEMOVE {
-				fmt.Printf("%#v\n", hyrule)
+			if hyrule.msg != win.WM_MOUSEMOVE && hyrule.msg != 32 {
+				// fmt.Printf("%#v\n \"text\": %v", hyrule, string(text))
+				printf(hyrule)
 				// fmt.Printf("%#v\n", hyrule.charRange)
 			}
 		}
@@ -616,16 +618,16 @@ func main() {
 
 	//str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
 
-	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("http://www/", []int{styleLink, 0, 11})
 	re.AppendText("\nno style")
 	re.AppendText("\n")
-	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("http://wwww/", []int{styleLink, 0, 12})
 	re.AppendText("\nno grace")
 	re.AppendText("\n")
-	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("http://wwwW/", []int{styleLink, 0, 12})
 	re.AppendText("\nno style")
 	re.AppendText("\n")
-	re.AppendText("http://www.google.com/", []int{styleLink, 0, 22})
+	re.AppendText("http://wwwWWWWwwwwW/", []int{styleLink, 0, 20})
 	re.AppendText("\nno grace")
 	re.AppendText("\n")
 
@@ -652,4 +654,12 @@ func checkErr(err error) {
 	if err != nil {
 		log.Panicln(err)
 	}
+}
+
+func printf(args ...interface{}) {
+	s := ""
+	for _, x := range args {
+		s += fmt.Sprintf("%# v", pretty.Formatter(x))
+	}
+	log.Print(s)
 }
