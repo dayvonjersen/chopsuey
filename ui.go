@@ -234,12 +234,14 @@ func (t *tabViewChannel) Update(servState *serverState, chanState *channelState)
 	t.disconnected = servState.connState != CONNECTED
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
+		t.topicInput.SetText(chanState.topic)
 	})
 
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
+
 }
 
 func (t *tabViewChannel) updateNickList(chanState *channelState) {

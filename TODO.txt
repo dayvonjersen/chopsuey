@@ -16,27 +16,24 @@ BUGS:
 FEATURES:
 
  * keyboard nav or some context menus at least
-    - CTRL+T for a new nil CHATBOX_SERVER unless one exists then just switch to it
+    - CTRL+T for a new nil CHATBOX_SERVER unless one exists
+    - CTRL+(Shift)+Tab to cycle through tabs 
+    - CTRL+F4 to close a tab
+    future:
+    - Esc to hide to tray
 ---------------------------------------------------------------------------------
- * 
-links
+ * links
     - make them blue and underlined at least
     - attempt to read OBJECTPOSITIONS just one more time
 ---------------------------------------------------------------------------------
- * 
-nickflash
+ * nickflash
 ---------------------------------------------------------------------------------
- * clickable button next to the topicInput [ 1337 users, 69 ops ] 
-   to show/hide the nicklist
+ * topic widget should allow input and send /topic or whatever
 
-count(nicklist)
-hide/show nicklist
+
+
 ---------------------------------------------------------------------------------
- * 
-topic widget should allow input and send /topic or whatever
-
-
-
+code cleanup
 ---------------------------------------------------------------------------------
 better scripting examples
 ---------------------------------------------------------------------------------

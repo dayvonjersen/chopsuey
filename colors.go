@@ -164,10 +164,13 @@ func parseString(str string) (text string, styles [][]int) {
 		if fmtCode != fmtReset {
 			if fmtCode == fmtColor {
 				fg, s, e, err := findNumber(str[i:], 1)
-				if err != nil || s != 0 || e > 1 || fg > 15 {
+				if err != nil || s != 0 || e > 1 {
 					break
 				}
 				str = str[:s+i] + str[e+1+i:]
+				if fg > 15 { // FIXME(tso): eating \x03xx where x > 15 without displaying any color or resetting previous color is WRONG
+					break
+				}
 
 				styles, _ = clearLast(styles, styleForegroundColor, i)
 				styles = append(styles, []int{styleForegroundColor, i, 0, colorPaletteWindows[fg]})
@@ -175,11 +178,14 @@ func parseString(str string) (text string, styles [][]int) {
 				if str[i] == ',' {
 					str = str[:i] + str[i+1:]
 					bg, s, e, err := findNumber(str[i:], 1)
-					if err != nil || s != 0 || e > 1 || bg > 15 {
+					if err != nil || s != 0 || e > 1 {
 						continue
 					}
 
 					str = str[:s+i] + str[e+1+i:]
+					if bg > 15 { // FIXME(tso): eating \x03xx where x > 15 without displaying any color or resetting previous color is WRONG
+						break
+					}
 
 					styles, _ = clearLast(styles, styleBackgroundColor, i)
 					styles = append(styles, []int{styleBackgroundColor, i, 0, colorPaletteWindows[bg]})

@@ -534,8 +534,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 		chanState := ensureChanState(channel)
 		chanState.topic = topic
-		// NOTE(tso): probably should put this in Update() but fuck it
-		chanState.tab.topicInput.SetText(topic)
+		chanState.tab.Update(servState, chanState)
 		chanState.tab.Println(color(now(), LightGrey) + " topic for " + channel + " is " + topic)
 	})
 
@@ -550,8 +549,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 		chanState := ensureChanState(channel)
 		chanState.topic = topic
-		// NOTE(tso): probably should put this in Update() but fuck it
-		chanState.tab.topicInput.SetText(topic)
+		chanState.tab.Update(servState, chanState)
 		chanState.tab.Println(color(now(), LightGrey) + fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic))
 	})
 
