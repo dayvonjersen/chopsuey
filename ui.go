@@ -102,7 +102,8 @@ func (t *tabViewChatbox) Focus() {
 func (t *tabViewChatbox) Println(msg string) {
 	mw.WindowBase.Synchronize(func() {
 		text, styles := parseString(msg)
-		t.textBuffer.AppendText("\r\n"+text, styles...)
+		t.textBuffer.AppendText("\r\n")
+		t.textBuffer.AppendText(text, styles...)
 		t.chatlogger(msg)
 		if !t.HasFocus() {
 			t.unread++
@@ -515,7 +516,7 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 			},
 			OnItemActivated: func() {
 				channel := cl.mdl.items[tbl.CurrentIndex()].channel
-				servConn.Join(channel, servState)
+				servConn.conn.Join(channel)
 			},
 		}.Create(builder)
 		PushButton{

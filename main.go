@@ -170,7 +170,7 @@ func main() {
 			var servConn *serverConnection
 			servConn = NewServerConnection(servState, func() {
 				for _, channel := range cfg.AutoJoin {
-					servConn.Join(channel, servState)
+					servConn.conn.Join(channel)
 				}
 			})
 			servView := NewServerTab(servConn, servState)

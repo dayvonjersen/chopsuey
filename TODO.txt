@@ -18,9 +18,6 @@ FEATURES:
  * keyboard nav or some context menus at least
     - CTRL+T for a new nil CHATBOX_SERVER unless one exists then just switch to it
 ---------------------------------------------------------------------------------
- * JOIN needs to a create a tab only when we actually join that channel, which
-seems to be when we get TOPIC or NAMES
----------------------------------------------------------------------------------
  * 
 links
     - make them blue and underlined at least

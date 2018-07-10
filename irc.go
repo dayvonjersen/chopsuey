@@ -60,18 +60,6 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 	servConn.cancelRetryConnect = cancel
 }
 
-func (servConn *serverConnection) Join(channel string, servState *serverState) {
-	chanState, ok := servState.channels[channel]
-	if !ok {
-		chanState = &channelState{
-			channel:  channel,
-			nickList: newNickList(),
-		}
-		chanState.tab = NewChannelTab(servConn, servState, chanState)
-	}
-	servConn.conn.Join(channel)
-}
-
 func (servConn *serverConnection) Part(channel, reason string, servState *serverState) {
 	if channel[0] == '#' {
 		servConn.conn.Part(channel, reason)
@@ -118,7 +106,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if servConn.retryConnectEnabled {
 			connectedCallback = func() {
 				for _, channel := range servState.channels {
-					servConn.Join(channel.channel, servState)
+					conn.Join(channel.channel)
 				}
 			}
 			servConn.Connect(servState)
@@ -339,14 +327,23 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		printer("NOTICE", color("%s *** %s: %s", Orange), l)
 	})
 
+	ensureChanState := func(channel string) *channelState {
+		chanState, ok := servState.channels[channel]
+		if !ok {
+			chanState = &channelState{
+				channel:  channel,
+				nickList: newNickList(),
+			}
+			chanState.tab = NewChannelTab(servConn, servState, chanState)
+			servState.channels[channel] = chanState
+		}
+		return chanState
+	}
+
 	// NAMES
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[2]
-		chanState, ok := servState.channels[channel]
-		if !ok {
-			log.Println("got 353 but user not on channel:", l.Args[2])
-			return
-		}
+		chanState := ensureChanState(channel)
 		nicks := strings.Split(l.Args[3], " ")
 		for _, n := range nicks {
 			if n != "" {
@@ -361,7 +358,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState, ok := servState.channels[channel]
 		if !ok {
 			// forced join
-			servConn.Join(channel, servState)
+			conn.Join(channel)
+			ensureChanState(channel)
 			return
 		}
 		if !chanState.nickList.Has(l.Nick) {
@@ -534,11 +532,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		channel := l.Args[1]
 		topic := l.Args[2]
 
-		chanState, ok := servState.channels[channel]
-		if !ok {
-			log.Println("got TOPIC but user not on channel:", channel)
-			return
-		}
+		chanState := ensureChanState(channel)
 		chanState.topic = topic
 		// NOTE(tso): probably should put this in Update() but fuck it
 		chanState.tab.topicInput.SetText(topic)
@@ -554,11 +548,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			who = who[0:i]
 		}
 
-		chanState, ok := servState.channels[channel]
-		if !ok {
-			log.Println("got TOPIC but user not on channel:", channel)
-			return
-		}
+		chanState := ensureChanState(channel)
 		chanState.topic = topic
 		// NOTE(tso): probably should put this in Update() but fuck it
 		chanState.tab.topicInput.SetText(topic)

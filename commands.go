@@ -124,7 +124,7 @@ func joinCmd(ctx *commandContext, args ...string) {
 		ctx.tab.Println("usage: /join [#channel]")
 		return
 	}
-	ctx.servConn.Join(args[0], ctx.servState)
+	ctx.servConn.conn.Join(args[0])
 }
 
 func partCmd(ctx *commandContext, args ...string) {
@@ -305,7 +305,7 @@ func topicCmd(ctx *commandContext, args ...string) {
 func rejoinCmd(ctx *commandContext, args ...string) {
 	if ctx.chanState != nil {
 		ctx.servConn.Part(ctx.chanState.channel, "rejoining...", ctx.servState)
-		ctx.servConn.Join(ctx.chanState.channel, ctx.servState)
+		ctx.servConn.conn.Join(ctx.chanState.channel)
 	} else {
 		ctx.tab.Println("ERROR: /rejoin only works for channels.")
 	}
