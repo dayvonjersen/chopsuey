@@ -25,16 +25,18 @@ FEATURES:
     future:
     - Esc to hide to tray
 ---------------------------------------------------------------------------------
- * links
-    - make them blue and underlined at least
-    - attempt to read OBJECTPOSITIONS just one more time
----------------------------------------------------------------------------------
  * topic widget should allow input and send /topic or whatever
 
 
 
 ---------------------------------------------------------------------------------
 code cleanup
+ - richedit
+ - colors
+ - ui
+ - irc
+ - commands
+ - everything really...
 ---------------------------------------------------------------------------------
 better scripting examples
 ---------------------------------------------------------------------------------
@@ -115,6 +117,12 @@ enable_caption(0)
 irc bouncer (separate project?)
 ---------------------------------------------------------------------------------
 tab completion for commands might be nice
+---------------------------------------------------------------------------------
+hide join/parts should be optional for every channel not a global setting
+---------------------------------------------------------------------------------
+write autojoin on exit (as an option) (config.json)
+---------------------------------------------------------------------------------
+/version
 
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
@@ -132,6 +140,15 @@ https://docs.microsoft.com/en-us/windows/desktop/Controls/bumper-rich-edit-rich-
 https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-tagrichedit_image_parameters
 https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-_charformat
 https://github.com/Microsoft/Windows-classic-samples/blob/master/Samples/DynamicDPI/cpp/SampleRichEditControl.cpp
+https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyle
+https://docs.microsoft.com/en-us/windows/desktop/Controls/em-seteventmask
+https://docs.microsoft.com/en-us/windows/desktop/Controls/rich-edit-control-event-mask-flags
+https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyleex
+https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
+
+Useful:
+https://www.dwheeler.com/essays/open-files-urls.html
+
 
 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 
