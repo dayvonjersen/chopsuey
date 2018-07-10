@@ -110,7 +110,7 @@ func (t *tabViewChatbox) Println(msg string) {
 			t.unread++
 			t.tabPage.SetTitle(t.Title())
 		}
-		if t.textInput.Focused() {
+		if t.textInput.Focused() || !mainWindowFocused {
 			t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 		}
 	})
