@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strconv"
 	"sync"
 
 	"github.com/lxn/walk"
@@ -219,6 +220,7 @@ func (m *listBoxModel) Value(index int) interface{} {
 type tabViewChannel struct {
 	tabViewChatbox
 	topicInput       *walk.LineEdit
+	nickListToggle   *walk.PushButton
 	nickListBox      *walk.ListBox
 	nickListBoxModel *listBoxModel
 	send             func(string)
@@ -241,9 +243,30 @@ func (t *tabViewChannel) Update(servState *serverState, chanState *channelState)
 }
 
 func (t *tabViewChannel) updateNickList(chanState *channelState) {
+	nicks := chanState.nickList.StringSlice()
+	count := len(nicks)
+	ops := 0
+	for _, n := range nicks {
+		m := nickRegex.FindAllStringSubmatch(n, 01)
+		if m[0][1] != "" && m[0][1] != "+" {
+			ops++
+		}
+	}
+	text := strconv.Itoa(count) + " user"
+	if count != 1 {
+		text += "s"
+	}
+	if ops > 0 {
+		text += ", " + strconv.Itoa(ops) + " op"
+		if ops != 1 {
+			text += "s"
+		}
+	}
+
 	mw.WindowBase.Synchronize(func() {
-		t.nickListBoxModel.Items = chanState.nickList.StringSlice()
+		t.nickListBoxModel.Items = nicks
 		t.nickListBoxModel.PublishItemsReset()
+		t.nickListToggle.SetText(text)
 	})
 }
 
@@ -251,6 +274,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 	t := &tabViewChannel{}
 	t.tabTitle = chanState.channel
 	chanState.nickList = newNickList()
+	t.nickListToggle = &walk.PushButton{}
 	t.nickListBox = &walk.ListBox{}
 	t.nickListBoxModel = &listBoxModel{}
 	t.topicInput = &walk.LineEdit{}
@@ -268,9 +292,42 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		t.tabPage.SetTitle(t.tabTitle)
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(t.tabPage)
-		LineEdit{
-			AssignTo: &t.topicInput,
-			ReadOnly: true,
+
+		size := walk.Size{}
+		size2 := walk.Size{}
+		Composite{
+			Layout: HBox{
+				MarginsZero: true,
+				Spacing:     2,
+			},
+			Children: []Widget{
+				LineEdit{
+					AssignTo: &t.topicInput,
+					ReadOnly: true,
+				},
+				PushButton{
+					AssignTo: &t.nickListToggle,
+					Text:     "OK",
+					OnClicked: func() {
+						mw.WindowBase.Synchronize(func() {
+							s := t.nickListBox.Size()
+							s2 := t.textBuffer.Size()
+							if s.Width == 0 {
+								s.Width = size.Width
+								size2 = s2
+								s2.Width -= s.Width
+							} else {
+								size = s
+								s.Width = 0
+								s2.Width += size.Width
+							}
+							t.textBuffer.SetSize(s2)
+							t.nickListBox.SetSize(s)
+							// t.nickListBox.SetVisible(!t.nickListBox.Visible())
+						})
+					},
+				},
+			},
 		}.Create(builder)
 
 		t.textBuffer = &RichEdit{}

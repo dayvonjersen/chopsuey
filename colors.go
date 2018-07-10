@@ -164,7 +164,7 @@ func parseString(str string) (text string, styles [][]int) {
 		if fmtCode != fmtReset {
 			if fmtCode == fmtColor {
 				fg, s, e, err := findNumber(str[i:], 1)
-				if err != nil || s != 0 || e > 1 {
+				if err != nil || s != 0 || e > 1 || fg > 15 {
 					break
 				}
 				str = str[:s+i] + str[e+1+i:]
@@ -175,7 +175,7 @@ func parseString(str string) (text string, styles [][]int) {
 				if str[i] == ',' {
 					str = str[:i] + str[i+1:]
 					bg, s, e, err := findNumber(str[i:], 1)
-					if err != nil || s != 0 || e > 1 {
+					if err != nil || s != 0 || e > 1 || bg > 15 {
 						continue
 					}
 
