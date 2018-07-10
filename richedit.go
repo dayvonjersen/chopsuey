@@ -5,9 +5,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf16"
 	"unsafe"
 
 	"github.com/lxn/walk"
@@ -562,19 +565,38 @@ type _enlink struct {
 	chrg   _chrg
 }
 
+type _textrange struct {
+	chrg _chrg
+	text []uint16
+}
+
+func (re *RichEdit) openURL(min, max int32) {
+	textRange := &_textrange{
+		chrg: _chrg{min, max},
+		text: make([]uint16, (max-min)*2),
+	}
+	re.SendMessage(EM_GETTEXTRANGE, 0, uintptr(unsafe.Pointer(textRange)))
+
+	text := string(utf16.Decode(textRange.text))
+	text = strings.TrimSpace(text)
+
+}
+
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 
 	if msg == win.WM_NOTIFY {
-		fmt.Println("WM_NOTIFY:")
+		// fmt.Println("WM_NOTIFY:")
 		// fmt.Printf("msg: %v wParam: %v lParam: %v\n", msg, wParam, lParam)
 		mdma := (*_nmhdr)(unsafe.Pointer(lParam))
-		fmt.Printf("code: %#v\n", mdma.code)
+		// fmt.Printf("code: %#v\n", mdma.code)
 		if mdma.code == EN_LINK {
 			hyrule := (*_enlink)(unsafe.Pointer(lParam))
-			if hyrule.msg != win.WM_MOUSEMOVE && hyrule.msg != 32 {
-				// fmt.Printf("%#v\n \"text\": %v", hyrule, string(text))
-				printf(hyrule)
-				// fmt.Printf("%#v\n", hyrule.charRange)
+			// fmt.Println(hyrule.msg)
+			//if hyrule.msg != win.WM_MOUSEMOVE && hyrule.msg != 32 {
+			if hyrule.msg == 514 {
+				//	// printf(hyrule)
+				go re.openURL(hyrule.chrg.cpMin, hyrule.chrg.cpMax)
+				//}
 			}
 		}
 	}
@@ -647,6 +669,10 @@ if __name__ == "__main__":
 const styleLink = 691337
 
 func main() {
+
+	cmd := exec.Command("/usr/bin/start", "")
+	checkErr(cmd.Run())
+	os.Exit(0)
 	var mw *walk.MainWindow
 
 	MainWindow{
