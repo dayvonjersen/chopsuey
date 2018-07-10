@@ -5,7 +5,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -573,13 +572,15 @@ type _textrange struct {
 func (re *RichEdit) openURL(min, max int32) {
 	textRange := &_textrange{
 		chrg: _chrg{min, max},
-		text: make([]uint16, (max-min)*2),
+		text: make([]uint16, (max - min)),
 	}
 	re.SendMessage(EM_GETTEXTRANGE, 0, uintptr(unsafe.Pointer(textRange)))
 
 	text := string(utf16.Decode(textRange.text))
-	text = strings.TrimSpace(text)
+	fmt.Printf("%#v\n", text)
 
+	cmd := exec.Command("cmd", "/c", "start", text)
+	checkErr(cmd.Run())
 }
 
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -670,9 +671,6 @@ const styleLink = 691337
 
 func main() {
 
-	cmd := exec.Command("/usr/bin/start", "")
-	checkErr(cmd.Run())
-	os.Exit(0)
 	var mw *walk.MainWindow
 
 	MainWindow{
