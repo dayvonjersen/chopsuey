@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -338,6 +339,7 @@ func init() {
 
 type RichEdit struct {
 	walk.WidgetBase
+	linecount int
 }
 
 func (re *RichEdit) SetCharFormat(charfmt charformat, start, end int) {
@@ -453,12 +455,26 @@ func (re *RichEdit) SetText(text string) {
 func (re *RichEdit) AppendText(text string, styles ...[]int) {
 	s, e := re.TextSelection()
 	l := re.TextLength()
+	// HACK(tso): something is happening here that i don't fully understand
+	//			  TextLength() includes \n as chars but the call to SetCharFormat()
+	//			  ignores \n chars????
+	//            this only happened when we switched to RICHEDIT20W from RICHEDIT
+	//			  in order to support unicode but this has nothing to with character
+	//			  encoding afaict
+	// -tso, 7/10/2018 3:00:03 AM
+	if l == 0 {
+		re.linecount = 0
+		if text == "\n" { // HACK(tso): hey while we're here, counting lines...
+			return
+		}
+	}
+	re.linecount += strings.Count(text, "\n")
 	re.SetTextSelection(l, l)
 	re.ReplaceSelectedText(text, false)
 	for _, style := range styles {
 		start, end := style[1], style[2]
-		start += l
-		end += l
+		start += l - re.linecount // HACK(tso): this fixes it idk why
+		end += l - re.linecount   // HACK(tso): see above
 		switch style[0] {
 		case styleForegroundColor:
 			charfmt := charformat{
