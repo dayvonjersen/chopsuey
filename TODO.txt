@@ -29,6 +29,12 @@ BUGS:
  - unicode characters display in a shitty font make sure Universalia is
    used if the text isn't ascii  
 
+ - // to escape / instead of calling a command needs to append the rest of
+   the text after the not command
+   input:    //version tso
+   expected: /version tso
+   actual:   /version
+
 ================================================================================
 
 FEATURES:
@@ -46,6 +52,19 @@ FEATURES:
 
 
 
+--------------------------------------------------------------------------------
+whitespace or something to indicate where unread messages start
+--------------------------------------------------------------------------------
+"started logging at 7/10/2018 5:31:47 PM" in chatlogs
+and delete all the chatlogs we have it's almost a megabyte
+maybe they should be gzipped :o
+--------------------------------------------------------------------------------
+CTCP messages should appear somewhere in UI
+--------------------------------------------------------------------------------
+get rid of that printf in nickflash/highlighter
+--------------------------------------------------------------------------------
+highlight list
+probably should compile regexp for that since its more complex
 --------------------------------------------------------------------------------
 code cleanup
  - richedit
@@ -124,6 +143,13 @@ settings panel which writes to config.json
 hot-loadable config.json
 autogen default config.json
 automatic NickServ stuff
+ - IDEA(tso): dialog
+    "Clickable links are disabled by default as a security precaution. 
+                    You can enable them in Settings
+
+                    [Yes I know don't show me this again]
+                          [Thanks for telling me!]
+    "
 --------------------------------------------------------------------------------
 limit message history (configurable)
 --------------------------------------------------------------------------------
