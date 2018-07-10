@@ -6,9 +6,10 @@ import (
 	"strings"
 )
 
-func italic(text string) string    { return fmtItalic + text + fmtItalic }
-func bold(text string) string      { return fmtBold + text + fmtBold }
-func underline(text string) string { return fmtUnderline + text + fmtUnderline }
+// FIXME(tso): these are supposed to work like toggles not reset formatting at end
+func italic(text string) string    { return fmtItalic + text + fmtReset }
+func bold(text string) string      { return fmtBold + text + fmtReset }
+func underline(text string) string { return fmtUnderline + text + fmtReset }
 
 const (
 	White     = 0

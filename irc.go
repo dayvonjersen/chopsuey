@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -306,12 +307,34 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 		tab.Println(fmt.Sprintf(fmtstr, now(), nick, l.Args[1]))
 	}
+
+	highlighter := func(text string, l *goirc.Line) string {
+		// NOTE(tso): not using compiled regexp here because user's nick can change
+		//			  unless recompiling a new one when the nick changes will really
+		//			  give that much of a performance increase
+		// -tso 7/10/2018 6:58:36 AM
+		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, l.Args[1])
+		log.Printf("nick: %v line: %v match: %v", servState.user.nick, l.Args[1], m)
+		if m {
+			return bold(color(" * ", Black, Yellow)) + text
+		}
+		return text
+	}
+
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
-		printer("PRIVMSG", color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", l)
+		if l.Args[0] != servState.user.nick {
+			printer("PRIVMSG", color("%s", LightGrey)+" "+highlighter(color("%s", DarkGrey), l)+" %s", l)
+		} else {
+			printer("PRIVMSG", color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", l)
+		}
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
-		printer("ACTION", color("%s", LightGrey)+color(" *%s %s*", DarkGrey), l)
+		if l.Args[0] != servState.user.nick {
+			printer("ACTION", color("%s", LightGrey)+highlighter(color(" *%s %s*", DarkGrey), l), l)
+		} else {
+			printer("ACTION", color("%s", LightGrey)+color(" *%s %s*", DarkGrey), l)
+		}
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
