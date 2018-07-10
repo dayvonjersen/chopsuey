@@ -1,15 +1,19 @@
+// +build ignore
+
 package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
 
-	//. "github.com/lxn/walk/declarative"
+	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 )
 
@@ -335,6 +339,7 @@ func ColorRefToRGB(cr uint32) (r, g, b int) {
 
 func init() {
 	win.MustLoadLibrary("Riched32.dll")
+	win.MustLoadLibrary("Msftedit.dll")
 }
 
 type RichEdit struct {
@@ -408,25 +413,6 @@ func (re *RichEdit) MinSizeHint() walk.Size {
 
 func (re *RichEdit) SizeHint() walk.Size {
 	return walk.Size{400, 100}
-}
-
-func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	// disable smooth scroll
-	if msg == win.WM_MOUSEWHEEL {
-		delta := int(int16(win.HIWORD(uint32(wParam))))
-		var direction uintptr
-		if delta > 0 {
-			direction = win.SB_LINEUP
-		} else {
-			direction = win.SB_LINEDOWN
-		}
-		re.SendMessage(win.WM_VSCROLL, direction, 0)
-		re.SendMessage(win.WM_VSCROLL, direction, 0)
-		re.SendMessage(win.WM_VSCROLL, direction, 0)
-		re.SendMessage(win.WM_VSCROLL, direction, 0)
-		return re.SendMessage(win.WM_VSCROLL, direction, 0)
-	}
-	return re.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (re *RichEdit) TextLength() int {
@@ -507,18 +493,55 @@ func (re *RichEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
+type _nmhdr struct {
+	hwndFrom uintptr
+	idFrom   uintptr
+	code     uint32
+}
+
+func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+
+	if msg == win.WM_NOTIFY {
+		fmt.Println("WM_NOTIFY:")
+		fmt.Printf("msg: %v wParam: %v lParam: %v\n", msg, wParam, lParam)
+		mdma := (*_nmhdr)(unsafe.Pointer(lParam))
+		fmt.Printf("%#v\n", mdma)
+		if mdma.code == EN_LINK {
+			fmt.Println("omfg...")
+		}
+	}
+
+	// disable smooth scroll
+	if msg == win.WM_MOUSEWHEEL {
+		delta := int(int16(win.HIWORD(uint32(wParam))))
+		var direction uintptr
+		if delta > 0 {
+			direction = win.SB_LINEUP
+		} else {
+			direction = win.SB_LINEDOWN
+		}
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		re.SendMessage(win.WM_VSCROLL, direction, 0)
+		return re.SendMessage(win.WM_VSCROLL, direction, 0)
+	}
+	return re.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
 func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 	re := &RichEdit{}
 	err := walk.InitWidget(
 		re,
 		parent,
-		"RICHEDIT20W",
+		"RICHEDIT50W",
 		win.ES_MULTILINE|win.WS_VISIBLE|win.WS_CHILD|win.WS_VSCROLL,
 		win.WS_EX_CLIENTEDGE,
 	)
 	if err != nil {
 		return nil, err
 	}
+	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK))
 	re.SetAlwaysConsumeSpace(true)
 	re.SetReadOnly(true)
 
@@ -549,6 +572,7 @@ func (re RichEditDecl) Create(builder *declarative.Builder) error {
 
 /*
 if __name__ == "__main__":
+*/
 func main() {
 	var mw *walk.MainWindow
 
@@ -565,15 +589,22 @@ func main() {
 
 	re, err := NewRichEdit(mw)
 	checkErr(err)
-	// checkErr(re.SetReadOnly(true))
+	checkErr(re.SetReadOnly(false))
 
-	str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
+	//str := fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset + fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me"
 
-	for i := 0; i < 3; i++ {
-		text, styles := parseString(str)
-		re.AppendText(text, styles...)
-	}
-	re.AppendText("\n\n世界\n")
+	re.SetText("http://www.google.com/")
+	re.SetCharFormat(charformat{
+		dwMask:    CFM_LINK,
+		dwEffects: CFM_LINK,
+	}, 0, 22)
+	/*
+		for i := 0; i < 3; i++ {
+			text, styles := parseString(str)
+			re.AppendText(text, styles...)
+		}
+		re.AppendText("\n\n世界\n")
+	*/
 
 	go func() {
 		<-time.After(time.Second)
@@ -591,4 +622,3 @@ func checkErr(err error) {
 		log.Panicln(err)
 	}
 }
-*/
