@@ -1,8 +1,5 @@
 BUGS:
 
- * server tabs not closing at all now
- * DISCONNECTED state doesn't cascade
- * I don't think we're delete(servState.privmsg, ...) ever
  * channel list statusBar text not updating
 
 
@@ -19,14 +16,10 @@ BUGS:
 FEATURES:
 
  * keyboard nav or some context menus at least
+    - CTRL+T for a new nil CHATBOX_SERVER unless one exists then just switch to it
 ---------------------------------------------------------------------------------
  * JOIN needs to a create a tab only when we actually join that channel, which
 seems to be when we get TOPIC or NAMES
----------------------------------------------------------------------------------
- * 
-/disconnect
-/reconnect
-go retryConnect never stops if the server tab was closed
 ---------------------------------------------------------------------------------
  * 
 links
@@ -63,7 +56,10 @@ topic widget should allow input and send /topic or whatever
 
 
 
-
+---------------------------------------------------------------------------------
+/part without closing tab
+ - chanState tracks whether "connected" to channel?
+---------------------------------------------------------------------------------
 /msg shouldn't open a new tab if it's to services like NickServ
 ---------------------------------------------------------------------------------
 set Timeout, Name, QuitMessage, etc...
@@ -84,16 +80,9 @@ inline twitter links
  - maybe just scrape the HTML
 ---------------------------------------------------------------------------------
 replace goirc with simple channels and goroutines
+ - /reconnect is impossible for some reason to do with how goirc uses channels
 ---------------------------------------------------------------------------------
 replace walk with qt
----------------------------------------------------------------------------------
-prevent closing the last tab [✓]
-    - allow servConn.conn to be nil
-    - /server doesn't open a new tab if current tab is a nil CHATBOX_SERVER
-
-    also: CTRL+T for a new nil CHATBOX_SERVER unless one exists then just
-    switch to it
-    /exit to close application
 ---------------------------------------------------------------------------------
 
 colors
@@ -138,6 +127,8 @@ don't display messages if not sent (or at least "previous message not sent"
 system tray
 ---------------------------------------------------------------------------------
 enable_caption(0)
+---------------------------------------------------------------------------------
+irc bouncer (separate project?)
 
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 

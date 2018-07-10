@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -38,6 +39,13 @@ func init() {
 		"server": serverCmd,
 		"topic":  topicCmd,
 
+		"connect":    connectCmd,
+		"disconnect": disconnectCmd,
+		"reconnect":  reconnectCmd,
+
+		"help": helpCmd,
+		"exit": exitCmd,
+
 		"raw":  rawCmd,
 		"send": sendCmd,
 	}
@@ -46,6 +54,36 @@ func init() {
 // for debug purposes only
 func rawCmd(ctx *commandContext, args ...string) {
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
+}
+
+func helpCmd(ctx *commandContext, args ...string) {
+	// TODO(tso): print usage for individual commands
+	ctx.tab.Println(`TIPS AND TRICKS:
+
+connect to a network:
+/server irc.example.org
+
+to quit the application:
+/exit
+
+disconnect from a network without closing all your tabs:
+/disconnect
+
+disconnect from a network AND close all associated tabs:
+/quit
+or on the server connection tab:
+/close
+
+leave a channel without closing tab:
+/part
+
+leave a channel or privmsg and close tab:
+/close
+`)
+}
+
+func exitCmd(ctx *commandContext, args ...string) {
+	os.Exit(0)
 }
 
 func sendCmd(ctx *commandContext, args ...string) {
@@ -138,15 +176,106 @@ func nickCmd(ctx *commandContext, args ...string) {
 	ctx.servConn.conn.Nick(args[0])
 }
 
+func connectCmd(ctx *commandContext, args ...string) {
+	switch ctx.servState.connState {
+	case CONNECTION_EMPTY:
+		ctx.tab.Println("ERROR: no network specified (use /server)")
+	case CONNECTING, CONNECTION_START:
+		ctx.tab.Println("ERROR: connection in progress: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+	case CONNECTED:
+		ctx.tab.Println("ERROR: already connected to: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+
+	case DISCONNECTED, CONNECTION_ERROR:
+		ctx.servConn.Connect(ctx.servState)
+	}
+}
+
+func reconnectCmd(ctx *commandContext, args ...string) {
+	ctx.tab.Println(`DOESN'T WORK RIGHT NOW BUT TYPING:
+/disconnect
+/connect
+DOES WORK
+
+(EVEN THOUGH THAT'S LITERALLY WHAT THIS FUNCTION DID)
+`)
+	return
+	/*
+		switch ctx.servState.connState {
+		case CONNECTION_EMPTY:
+			ctx.tab.Println("ERROR: no network specified (use /server)")
+		case CONNECTING, CONNECTION_START:
+			ctx.tab.Println("ERROR: connection in progress: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+
+		case CONNECTED:
+			disconnectCmd(ctx, args...)
+			<-time.After(time.Second * 3)
+			fallthrough
+		case DISCONNECTED, CONNECTION_ERROR:
+			ctx.servConn.retryConnectEnabled = true
+			connectCmd(ctx, args...)
+		}
+	*/
+}
+
+func disconnectCmd(ctx *commandContext, args ...string) {
+	switch ctx.servState.connState {
+	case DISCONNECTED, CONNECTION_ERROR, CONNECTION_EMPTY:
+		return
+	case CONNECTING, CONNECTION_START, CONNECTED:
+		ctx.servConn.retryConnectEnabled = false
+		select {
+		case <-ctx.servConn.cancelRetryConnect:
+		default:
+			close(ctx.servConn.cancelRetryConnect)
+		}
+		ctx.servConn.conn.Quit(strings.Join(args, " "))
+	}
+}
+
 func quitCmd(ctx *commandContext, args ...string) {
-	ctx.servConn.retryConnectEnabled = false
-	ctx.servConn.conn.Quit(strings.Join(args, " "))
-	for _, chanState := range ctx.servState.channels {
+	disconnectCmd(ctx, args...)
+	for k, chanState := range ctx.servState.channels {
 		chanState.tab.Close()
+		delete(ctx.servState.channels, k)
 	}
-	for _, pmState := range ctx.servState.privmsgs {
+	for k, pmState := range ctx.servState.privmsgs {
 		pmState.tab.Close()
+		delete(ctx.servState.privmsgs, k)
 	}
+	if ctx.servState.channelList != nil {
+		ctx.servState.channelList.Close()
+		ctx.servState.channelList = nil
+	}
+	if len(tabs) > 1 {
+		ctx.servState.tab.Close()
+	}
+}
+
+func closeCmd(ctx *commandContext, args ...string) {
+	if ctx.tab == ctx.servState.tab {
+		quitCmd(ctx, args...)
+
+		if len(tabs) == 1 {
+			ctx.servState = &serverState{
+				connState: CONNECTION_EMPTY,
+				channels:  map[string]*channelState{},
+				privmsgs:  map[string]*privmsgState{},
+				user:      ctx.servState.user,
+				tab:       ctx.servState.tab,
+			}
+			ctx.servState.tab.Update(ctx.servState)
+		} else {
+			ctx.servState.tab.Close()
+		}
+		return
+	}
+	if ctx.chanState != nil {
+		partCmd(ctx, args...)
+		delete(ctx.servState.channels, ctx.chanState.channel)
+	} else if ctx.pmState != nil {
+		delete(ctx.servState.privmsgs, ctx.pmState.nick)
+	}
+	ctx.tab.Close()
 }
 
 func modeCmd(ctx *commandContext, args ...string) {
@@ -173,19 +302,9 @@ func topicCmd(ctx *commandContext, args ...string) {
 	}
 }
 
-func closeCmd(ctx *commandContext, args ...string) {
-	if ctx.tab == ctx.servState.tab {
-		quitCmd(ctx, args...)
-		return
-	}
-	if ctx.chanState != nil {
-		partCmd(ctx, args...)
-	}
-	ctx.tab.Close()
-}
-
 func rejoinCmd(ctx *commandContext, args ...string) {
 	if ctx.chanState != nil {
+		ctx.servConn.Part(ctx.chanState.channel, "rejoining...", ctx.servState)
 		ctx.servConn.Join(ctx.chanState.channel, ctx.servState)
 	} else {
 		ctx.tab.Println("ERROR: /rejoin only works for channels.")
@@ -236,8 +355,12 @@ func serverCmd(ctx *commandContext, args ...string) {
 		privmsgs: map[string]*privmsgState{},
 	}
 	servConn := NewServerConnection(servState, func() {})
-	servView := NewServerTab(servConn, servState)
-	servState.tab = servView
+	if len(tabs) == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY {
+		servState.tab = ctx.servState.tab
+	} else {
+		servView := NewServerTab(servConn, servState)
+		servState.tab = servView
+	}
 	servConn.Connect(servState)
 }
 

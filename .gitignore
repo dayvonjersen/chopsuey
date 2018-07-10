@@ -1,7 +1,7 @@
 *.exe
 *.sw*
-rfc2812.txt
-rfc1459.txt
+*.txt
+*.rtf
 test/
 *.exe~
 chatlogs/

@@ -41,16 +41,17 @@ func (t *tabViewCommon) HasFocus() bool {
 	return mainWindowFocused && t.Index() == tabWidget.CurrentIndex()
 }
 func (t *tabViewCommon) Close() {
+	index := t.Index()
+	for i, tab := range tabs {
+		if tab.Index() == index {
+			tabs = append(tabs[0:i], tabs[i+1:]...)
+			break
+		}
+	}
 	mw.WindowBase.Synchronize(func() {
 		mw.WindowBase.SetSuspended(true)
 		defer mw.WindowBase.SetSuspended(false)
-		index := t.Index()
-		for i, tab := range tabs {
-			if tab.Index() == index {
-				tabs = append(tabs[0:i], tabs[i+1:]...)
-				break
-			}
-		}
+
 		checkErr(tabWidget.Pages().Remove(t.tabPage))
 		t.tabPage.Dispose()
 		tabWidget.SaveState()
@@ -90,7 +91,9 @@ func (t *tabViewChatbox) Title() string {
 }
 func (t *tabViewChatbox) Focus() {
 	t.unread = 0
-	t.tabPage.SetTitle(t.Title())
+	mw.WindowBase.Synchronize(func() {
+		t.tabPage.SetTitle(t.Title())
+	})
 	statusBar.SetText(t.statusText)
 	t.textInput.SetFocus()
 	t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
@@ -225,11 +228,15 @@ func (t *tabViewChannel) Send(message string) {
 }
 
 func (t *tabViewChannel) Update(servState *serverState, chanState *channelState) {
+	t.disconnected = servState.connState != CONNECTED
+	mw.WindowBase.Synchronize(func() {
+		t.tabPage.SetTitle(t.Title())
+	})
+
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
-	t.disconnected = servState.connState != CONNECTED
 }
 
 func (t *tabViewChannel) updateNickList(chanState *channelState) {
@@ -344,11 +351,17 @@ func (t *tabViewPrivmsg) Send(message string) {
 }
 
 func (t *tabViewPrivmsg) Update(servState *serverState, pmState *privmsgState) {
+	t.disconnected = servState.connState != CONNECTED
+	if t.tabPage != nil {
+		mw.WindowBase.Synchronize(func() {
+			t.tabPage.SetTitle(t.Title())
+		})
+	}
+
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
-	t.disconnected = servState.connState != CONNECTED
 }
 
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabViewPrivmsg {
@@ -453,6 +466,7 @@ func (t *tabViewChannelList) Update(servState *serverState) {
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
+
 	if servState.connState != CONNECTED {
 		t.tabTitle = "(channels)"
 	} else {

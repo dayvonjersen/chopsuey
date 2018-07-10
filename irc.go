@@ -25,8 +25,8 @@ type serverConnection struct {
 }
 
 func (servConn *serverConnection) Connect(servState *serverState) {
+	cancel := make(chan struct{})
 	if servConn.retryConnectEnabled {
-		cancel := make(chan struct{})
 		go func() {
 			for i := 0; i < MAX_CONNECT_RETRIES; i++ {
 				select {
@@ -49,7 +49,6 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 				}
 			}
 		}()
-		servConn.cancelRetryConnect = cancel
 	} else {
 		err := servConn.conn.ConnectTo(servState.hostname)
 		if err != nil {
@@ -58,6 +57,7 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 			servState.tab.Update(servState)
 		}
 	}
+	servConn.cancelRetryConnect = cancel
 }
 
 func (servConn *serverConnection) Join(channel string, servState *serverState) {
@@ -116,6 +116,11 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		servState.tab.Update(servState)
 
 		if servConn.retryConnectEnabled {
+			connectedCallback = func() {
+				for _, channel := range servState.channels {
+					servConn.Join(channel.channel, servState)
+				}
+			}
 			servConn.Connect(servState)
 		}
 	})
