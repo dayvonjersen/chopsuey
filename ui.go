@@ -520,7 +520,12 @@ func (cl *tabViewChannelList) Clear() {
 }
 
 func (t *tabViewChannelList) Title() string { return t.tabTitle }
-func (t *tabViewChannelList) Focus()        {}
+func (t *tabViewChannelList) Focus() {
+	mw.WindowBase.Synchronize(func() {
+		t.tabPage.SetTitle(t.Title())
+		statusBar.SetText(t.statusText)
+	})
+}
 func (t *tabViewChannelList) Update(servState *serverState) {
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
@@ -541,6 +546,7 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 	cl.mdl = new(channelListModel)
 	cl.complete = false
 	cl.inProgress = false
+	cl.statusText = servState.tab.statusText
 
 	var tbl *walk.TableView
 
@@ -589,11 +595,9 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabView
 			},
 		}.Create(builder)
 		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, cl.tabPage))
-		checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Index(cl.tabPage)))
 		tabWidget.SaveState()
 		tabs = append(tabs, cl)
 	})
-	servState.tab.Update(servState)
 
 	return cl
 }

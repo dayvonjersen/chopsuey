@@ -1,8 +1,11 @@
 BUGS:
 
- * channel list statusBar text not updating
+ - bold/italic/underline toggles don't work
+    - colors.go needs a major overhaul but i'm afraid to look at what's in the
+      git stash
 
-
+ - statusBar is just really inconsistent
+    - disconnecting from one server makes all servers display "disconnected x_x"
 
  - draw issue when
     1) open /list from #channel
@@ -25,8 +28,6 @@ FEATURES:
  * links
     - make them blue and underlined at least
     - attempt to read OBJECTPOSITIONS just one more time
----------------------------------------------------------------------------------
- * nickflash
 ---------------------------------------------------------------------------------
  * topic widget should allow input and send /topic or whatever
 
@@ -68,6 +69,7 @@ replace walk with qt
 ---------------------------------------------------------------------------------
 
 colors
+>>>>>> FIX YO SHIT #()!@# 
  - write more test cases
  - strip control codes from other parts of the ui (like channel list)
  - use lots of colors in the richedit
@@ -111,6 +113,8 @@ system tray
 enable_caption(0)
 ---------------------------------------------------------------------------------
 irc bouncer (separate project?)
+---------------------------------------------------------------------------------
+tab completion for commands might be nice
 
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
