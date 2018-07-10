@@ -594,7 +594,7 @@ func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			hyrule := (*_enlink)(unsafe.Pointer(lParam))
 			// fmt.Println(hyrule.msg)
 			//if hyrule.msg != win.WM_MOUSEMOVE && hyrule.msg != 32 {
-			if hyrule.msg == 514 {
+			if hyrule.msg == win.WM_LBUTTONUP {
 				//	// printf(hyrule)
 				go re.openURL(hyrule.chrg.cpMin, hyrule.chrg.cpMax)
 				//}
@@ -632,7 +632,7 @@ func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 	if err != nil {
 		return nil, err
 	}
-	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK|ENM_MOUSEEVENTS|ENM_OBJECTPOSITIONS|ENM_KEYEVENTS))
+	re.SendMessage(EM_SETEVENTMASK, 0, uintptr(ENM_LINK)) //|ENM_MOUSEEVENTS|ENM_OBJECTPOSITIONS|ENM_KEYEVENTS))
 	re.SendMessage(EM_SETEDITSTYLE, 0, uintptr(SES_CTFALLOWEMBED|SES_EXTENDBACKCOLOR))
 	re.SendMessage(EM_AUTOURLDETECT, 1, 0)
 
