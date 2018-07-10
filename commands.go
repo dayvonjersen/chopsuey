@@ -403,12 +403,12 @@ func registerCmd(ctx *commandContext, args ...string) {
 	file := args[1]
 
 	if _, ok := clientCommands[name]; ok {
-		if alias, ok := scriptAliases[name]; !ok {
-			ctx.tab.Println("ERROR: cannot overwrite built-in client command /" + name)
-		} else {
+		if alias, ok := scriptAliases[name]; ok {
 			ctx.tab.Println("overwriting previous alias of " + alias + " for /" + name)
+		} else {
+			ctx.tab.Println("ERROR: cannot overwrite built-in client command /" + name)
+			return
 		}
-		return
 	}
 
 	scriptAliases[name] = file

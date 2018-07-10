@@ -456,11 +456,11 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 	s, e := re.TextSelection()
 	l := re.TextLength()
 	// HACK(tso): something is happening here that i don't fully understand
-	//			  TextLength() includes \n as chars but the call to SetCharFormat()
-	//			  ignores \n chars????
+	//            TextLength() includes \n as chars but the call to SetCharFormat()
+	//            ignores \n chars????
 	//            this only happened when we switched to RICHEDIT20W from RICHEDIT
-	//			  in order to support unicode but this has nothing to with character
-	//			  encoding afaict
+	//            in order to support unicode but this has nothing to with character
+	//            encoding afaict
 	// -tso, 7/10/2018 3:00:03 AM
 	if l == 0 {
 		re.linecount = 0
