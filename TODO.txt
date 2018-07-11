@@ -45,7 +45,7 @@ BUGS:
  - 322 can contain invalid channel names like * to show that the channel
    exists but is +s or something
 
- - 
+ - we should ReleaseDC() after closing tabs 
 
  - i'm basically writing future commit messages at this point instead of just
    fixing things
@@ -86,7 +86,6 @@ highlight list
 probably should compile regexp for that since its more complex
 --------------------------------------------------------------------------------
 code cleanup
- - richedit
  - colors
  - ui
  - irc

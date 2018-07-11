@@ -51,15 +51,6 @@ const (
 	fmtReverse   = "\x16" // swap background and foreground colors
 	fmtReset     = "\x0f"
 
-	//styleColor           = 3
-	styleBold            = 2
-	styleItalic          = 29
-	styleUnderline       = 31
-	styleReverse         = 22
-	styleReset           = 15
-	styleForegroundColor = 102
-	styleBackgroundColor = 98
-
 	fmtWhite     = "\x030"
 	fmtBlack     = "\x031"
 	fmtNavy      = "\x032"
@@ -139,10 +130,10 @@ func findNumber(str string, maxlen int) (number, start, end int, err error) {
 	return intval, s, e, err
 }
 
-func clearLast(styles [][]int, styleCode int, index int) ([][]int, bool) {
+func clearLast(styles [][]int, TextEffectCode int, index int) ([][]int, bool) {
 	match := false
 	for i, style := range styles {
-		if (style[0] == styleCode || styleCode == styleReset) && style[2] == 0 {
+		if (style[0] == TextEffectCode || TextEffectCode == TextEffectReset) && style[2] == 0 {
 			styles[i][2] = index
 			match = true
 		}
@@ -173,8 +164,8 @@ func parseString(str string) (text string, styles [][]int) {
 					break
 				}
 
-				styles, _ = clearLast(styles, styleForegroundColor, i)
-				styles = append(styles, []int{styleForegroundColor, i, 0, colorPaletteWindows[fg]})
+				styles, _ = clearLast(styles, TextEffectForegroundColor, i)
+				styles = append(styles, []int{TextEffectForegroundColor, i, 0, colorPaletteWindows[fg]})
 
 				if str[i] == ',' {
 					str = str[:i] + str[i+1:]
@@ -188,8 +179,8 @@ func parseString(str string) (text string, styles [][]int) {
 						break
 					}
 
-					styles, _ = clearLast(styles, styleBackgroundColor, i)
-					styles = append(styles, []int{styleBackgroundColor, i, 0, colorPaletteWindows[bg]})
+					styles, _ = clearLast(styles, TextEffectBackgroundColor, i)
+					styles = append(styles, []int{TextEffectBackgroundColor, i, 0, colorPaletteWindows[bg]})
 				}
 			} else {
 				var match bool
@@ -199,9 +190,9 @@ func parseString(str string) (text string, styles [][]int) {
 				}
 			}
 		} else {
-			styles, _ = clearLast(styles, styleReset, i)
+			styles, _ = clearLast(styles, TextEffectReset, i)
 		}
 	}
-	styles, _ = clearLast(styles, styleReset, len(str))
+	styles, _ = clearLast(styles, TextEffectReset, len(str))
 	return str, styles
 }
