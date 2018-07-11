@@ -14,6 +14,8 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
+const CHATLOG_DIR = "./chatlogs/"
+
 var (
 	mw        *walk.MainWindow
 	tabWidget *walk.TabWidget
