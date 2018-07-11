@@ -14,6 +14,11 @@ BUGS:
 
     fixes itself when you click on #channel again
 
+    - this also can happen when you /join from a privmsg
+      so it probably has to do with how the tabPage being inserted and not
+      being shown right away messes with the WM_PAINT or something
+      i really don't know
+
  - nickListBox gets resized back to nonzero when window is resized even
    though the PushButton will hide it again with 1 click maybe something like
    a "hidden" on the nickList and an event on MainWindow
@@ -34,6 +39,20 @@ BUGS:
    input:    //version tso
    expected: /version tso
    actual:   /version
+
+ - servState.user.nick just updates and doesn't wait for server confirmation
+
+ - 322 can contain invalid channel names like * to show that the channel
+   exists but is +s or something
+
+ - 
+
+ - i'm basically writing future commit messages at this point instead of just
+   fixing things
+
+ - NOTE(tso): "fixing things" would make a good default commit message
+    - also "breaking things"
+    - and just "things"
 
 ================================================================================
 
