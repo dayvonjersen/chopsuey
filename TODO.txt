@@ -1,4 +1,82 @@
+
+!! PRIORITY
+
+#1 find out why all that printing stuff we did only works in the serv tab
+   and why literally nothing shows up in chan/pm buffers now
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 BUGS:
+
+ - richedit jumps up like 20 lines or scrolls past the end find out whats
+   going on with that it has to do with when its focused or not
+   dont just spam WM_VSCROLL although thats probably the solution
 
  - colors are all kinds of fucked up and wrong/not showing up
 
