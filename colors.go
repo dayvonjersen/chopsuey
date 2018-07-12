@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -35,10 +36,10 @@ const (
 func color(text string, colors ...int) string {
 	str := ""
 	if len(colors) > 0 {
-		str = strconv.Itoa(colors[0])
+		str = fmt.Sprintf("%02d", colors[0])
 	}
 	if len(colors) > 1 {
-		str += "," + strconv.Itoa(colors[1])
+		str += fmt.Sprintf(",%02d", colors[1])
 	}
 	return fmtColor + str + text + fmtReset
 }

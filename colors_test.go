@@ -22,7 +22,7 @@ func TestFindNumber(t *testing.T) {
 		number, start, end  int
 		err                 bool
 	}{
-		// {"01", "", 1, 0, 1, false},
+		{"01", "", 1, 0, 1, false},
 		{"a11yylmao", "ayylmao", 11, 1, 2, false},
 		{"___asdfx_+++", "___asdfx_+++", 0, -1, -1, true},
 		{"72test", "test", 72, 0, 1, false},
@@ -60,24 +60,23 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "test",
 				styles: [][]int{
-					{styleForegroundColor, 0, 4, colorPaletteWindows[13]},
-					{styleBackgroundColor, 0, 4, colorPaletteWindows[3]},
+					{TextEffectForegroundColor, 0, 4, colorPaletteWindows[13]},
+					{TextEffectBackgroundColor, 0, 4, colorPaletteWindows[3]},
 				},
 			},
 		},
-
 		{
-			input: fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset, //+ fmtUnderline + fmtRed + "g" + fmtOrange + "i" + fmtYellow + "t" + fmtGreen + "h" + fmtBlue + "u" + fmtTeal + "b" + fmtPurple + ".com" + fmtReset + "/generaltso/chopsuey\r\n\r\nkill me",
+			input: fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset,
 			expected: &richtext{
-				str: "this is a test https://", //github.com/generaltso/chopsuey\r\n\r\nkill me",
+				str: "this is a test https://",
 				styles: [][]int{
-					{styleItalic, 0, 4},
-					{styleBold, 10, 23},
-					{styleForegroundColor, 10, 11, colorPaletteWindows[4]},
-					{styleForegroundColor, 11, 12, colorPaletteWindows[7]},
-					{styleForegroundColor, 12, 13, colorPaletteWindows[8]},
-					{styleForegroundColor, 13, 23, colorPaletteWindows[3]},
-					{styleUnderline, 15, 23},
+					{TextEffectItalic, 0, 4},
+					{TextEffectBold, 10, 23},
+					{TextEffectForegroundColor, 10, 11, colorPaletteWindows[4]},
+					{TextEffectForegroundColor, 11, 12, colorPaletteWindows[7]},
+					{TextEffectForegroundColor, 12, 13, colorPaletteWindows[8]},
+					{TextEffectForegroundColor, 13, 23, colorPaletteWindows[3]},
+					{TextEffectUnderline, 15, 23},
 				},
 			},
 		},
@@ -86,8 +85,8 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "test and the rest of this should be unstyled",
 				styles: [][]int{
-					{styleForegroundColor, 0, 4, colorPaletteWindows[13]},
-					{styleBackgroundColor, 0, 4, colorPaletteWindows[3]},
+					{TextEffectForegroundColor, 0, 4, colorPaletteWindows[13]},
+					{TextEffectBackgroundColor, 0, 4, colorPaletteWindows[3]},
 				},
 			},
 		},
@@ -96,9 +95,9 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "italicboldunderline",
 				styles: [][]int{
-					{styleItalic, 0, 6},
-					{styleBold, 6, 10},
-					{styleUnderline, 10, 19},
+					{TextEffectItalic, 0, 6},
+					{TextEffectBold, 6, 10},
+					{TextEffectUnderline, 10, 19},
 				},
 			},
 		},
@@ -107,9 +106,9 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "italicboldunderline",
 				styles: [][]int{
-					{styleItalic, 0, 10},
-					{styleBold, 6, 10},
-					{styleUnderline, 10, 19},
+					{TextEffectItalic, 0, 10},
+					{TextEffectBold, 6, 10},
+					{TextEffectUnderline, 10, 19},
 				},
 			},
 		},
@@ -118,7 +117,7 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "test",
 				styles: [][]int{
-					{styleForegroundColor, 0, 4, colorPaletteWindows[Purple]},
+					{TextEffectForegroundColor, 0, 4, colorPaletteWindows[Purple]},
 				},
 			},
 		},
@@ -127,24 +126,23 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "test",
 				styles: [][]int{
-					{styleForegroundColor, 0, 4, colorPaletteWindows[White]},
-					{styleBackgroundColor, 0, 4, colorPaletteWindows[Purple]},
+					{TextEffectForegroundColor, 0, 4, colorPaletteWindows[White]},
+					{TextEffectBackgroundColor, 0, 4, colorPaletteWindows[Purple]},
 				},
 			},
 		},
-
 		{
 			input: italic("this") + " is a " + bold("\x034t\x037e\x038s\x033t "+underline("https://")),
 			expected: &richtext{
 				str: "this is a test https://",
 				styles: [][]int{
-					{styleItalic, 0, 4},
-					{styleBold, 10, 23},
-					{styleForegroundColor, 10, 11, colorPaletteWindows[4]},
-					{styleForegroundColor, 11, 12, colorPaletteWindows[7]},
-					{styleForegroundColor, 12, 13, colorPaletteWindows[8]},
-					{styleForegroundColor, 13, 23, colorPaletteWindows[3]},
-					{styleUnderline, 15, 23},
+					{TextEffectItalic, 0, 4},
+					{TextEffectBold, 10, 23},
+					{TextEffectForegroundColor, 10, 11, colorPaletteWindows[4]},
+					{TextEffectForegroundColor, 11, 12, colorPaletteWindows[7]},
+					{TextEffectForegroundColor, 12, 13, colorPaletteWindows[8]},
+					{TextEffectForegroundColor, 13, 23, colorPaletteWindows[3]},
+					{TextEffectUnderline, 15, 23},
 				},
 			},
 		},
@@ -153,18 +151,17 @@ func TestParseString(t *testing.T) {
 			expected: &richtext{
 				str: "gray",
 				styles: [][]int{
-					{styleForegroundColor, 0, 4, colorPaletteWindows[15]},
+					{TextEffectForegroundColor, 0, 4, colorPaletteWindows[15]},
 				},
 			},
 		},
-
 		{
 			input: "\x031500:32\x0f \x0312NOTICE: *** Looking up your hostname...\x0f",
 			expected: &richtext{
 				str: "00:32 NOTICE: *** Looking up your hostname...",
 				styles: [][]int{
-					{styleForegroundColor, 0, 5, colorPaletteWindows[15]},
-					{styleForegroundColor, 6, 45, colorPaletteWindows[12]},
+					{TextEffectForegroundColor, 0, 5, colorPaletteWindows[15]},
+					{TextEffectForegroundColor, 6, 45, colorPaletteWindows[12]},
 				},
 			},
 		},
