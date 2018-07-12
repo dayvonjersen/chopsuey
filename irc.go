@@ -24,7 +24,7 @@ type serverConnection struct {
 }
 
 func connect(servConn *serverConnection, servState *serverState) (success bool) {
-	clientMessage(servState.tab, "connecting to: "+serverAddr(servState.hostname, servState.port)+"...")
+	Println(CLIENT_MESSAGE, servState.AllTabs(), "connecting to: "+serverAddr(servState.hostname, servState.port)+"...")
 	servState.connState = CONNECTING
 	servState.tab.Update(servState)
 
@@ -58,9 +58,9 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 					<-time.After(CONNECT_RETRY_INTERVAL)
 				}
 			}
-			servState.tab.Println(
-				// FIXME(COLOURIZE)
-				fmt.Sprintf("couldn't connect to %s:%d after %d retries.", servState.hostname, servState.port, CONNECT_RETRIES),
+			Println(CLIENT_ERROR, servState.AllTabs(),
+				fmt.Sprintf("couldn't connect to %s after %d retries.",
+					serverAddr(servState.hostname, servState.port), CONNECT_RETRIES),
 			)
 		}()
 	}
@@ -129,22 +129,28 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// FIXME(COLOURIZE)
-		str := color(now(), LightGray) + " " + color(l.Cmd+": "+strings.Join(l.Args[1:], " "), Blue)
-		// send to current tab if current tab != servertab
-		// I'm sure this is going to end up vomiting MOTD all over the first channel i join
-		servState.tab.Println(str)
+		// I'm sure this is going to end up vomiting MOTD all over me
+		dest := []tabWithInput{getCurrentTabForServer(servState)}
+		if dest[0].Index() != servState.tab.Index() {
+			dest = append(dest, servState.tab)
+		}
+
+		Println(SERVER_MESSAGE, dest, append([]string{l.Cmd}, l.Args[1:]...)...)
 	}
 
 	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
+
 		// send to current tab if current tab != channel
 		// stub
 	}
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// FIXME(COLOURIZE)
-		// always send to the current tab
-		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
+		dest := []tabWithInput{getCurrentTabForServer(servState)}
+		if dest[0].Index() != servState.tab.Index() {
+			dest = append(dest, servState.tab)
+		}
+
+		Println(SERVER_ERROR, dest, append([]string{l.Cmd}, l.Args[1:]...)...)
 	}
 
 	// WELCOME

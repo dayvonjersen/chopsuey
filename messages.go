@@ -188,11 +188,19 @@ func clientErrorMsg(text ...string) string {
 }
 
 func serverMsg(text ...string) string {
-	return color(now()+" "+strings.Join(text, " "), LightGray)
+	if len(text) < 2 {
+		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%v",
+			len(text), text)
+	}
+	return color(now()+" "+color("ERROR("+text[0]+")", White, Red)+": "+strings.Join(text[1:], " "), Red)
 }
 
 func serverErrorMsg(text ...string) string {
-	return color(now()+" "+strings.Join(text, " "), Red)
+	if len(text) < 2 {
+		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%v",
+			len(text), text)
+	}
+	return color(now()+" "+text[0]+": "+strings.Join(text[1:], " "), LightGray)
 }
 
 func joinpartMsg(text ...string) string {
