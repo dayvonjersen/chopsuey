@@ -14,14 +14,13 @@ import (
 )
 
 type serverConnection struct {
-	cfg  *goirc.Config
 	conn *goirc.Conn
 
 	retryConnectEnabled bool
 	cancelRetryConnect  chan struct{}
 
 	isupport map[string]string
-	IP       net.IP
+	ip       net.IP
 }
 
 func connect(servConn *serverConnection, servState *serverState) (success bool) {
@@ -83,6 +82,7 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 }
 
 func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
+	// goirc config
 	ident := "chopsuey"
 	name := "github.com/generaltso/chopsuey"
 	cfg := goirc.NewConfig(servState.user.nick, ident, name)
@@ -99,13 +99,14 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	cfg.Server = serverAddr(servState.hostname, servState.port)
 	conn := goirc.Client(cfg)
 
+	// return value
 	servConn := &serverConnection{
 		conn:                conn,
 		retryConnectEnabled: true,
-		cfg:                 cfg,
 		isupport:            map[string]string{},
 	}
 
+	// goirc events
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		servState.connState = CONNECTED
 		servState.tab.Update(servState)
@@ -129,7 +130,20 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
 		// FIXME(COLOURIZE)
 		str := color(now(), LightGray) + " " + color(l.Cmd+": "+strings.Join(l.Args[1:], " "), Blue)
+		// send to current tab if current tab != servertab
+		// I'm sure this is going to end up vomiting MOTD all over the first channel i join
 		servState.tab.Println(str)
+	}
+
+	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
+		// send to current tab if current tab != channel
+		// stub
+	}
+
+	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
+		// FIXME(COLOURIZE)
+		// always send to the current tab
+		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
 	}
 
 	// WELCOME
@@ -143,8 +157,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 		printServerMessage(c, l)
 	})
-	conn.HandleFunc("002", printServerMessage)
-	conn.HandleFunc("003", printServerMessage)
+
+	// MYINFO
 	conn.HandleFunc("004", func(c *goirc.Conn, l *goirc.Line) {
 		servState.networkName = l.Args[1]
 		servState.tab.Update(servState)
@@ -174,44 +188,61 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		printServerMessage(c, l)
 	})
 
+	// RPL_...
 	for _, code := range []string{
-		"251", "252", "253", "254", "255", // LUSERS
-		"375", "372", "376", // MOTD
-		"256", "257", "258", "259", // ADMIN
-		"311", "312", "313", "317", "318", "319", // WHOIS
-		"314", "369", // WHOWAS
+		// YOURHOST CREATED BOUNCE UMODEIS
+		"002", "003", "010", "221",
+		// LUSERCLIENT LUSEROP LUSERUNKNOWN LUSERCHANNELS LUSERME
+		"251", "252", "253", "254", "255",
+		// ADMINME ADMINLOC1 ADMINLOC2 ADMINEMAIL
+		"256", "257", "258", "259",
+		// TRYAGAIN
+		"263",
+		// LOCALUSERS GLOBALUSERS
+		"265", "266",
+		// NONE
+		"300",
+		// AWAY USERHOST ISON UNAWAY NOAWAY
+		"301", "302", "303", "305", "306",
+		// WHOISCERTFP WHOISUSER WHOISSERVER WHOISOPERATOR WHOWASUSER
+		"276", "311", "312", "313", "314",
+		// WHOISIDLE ENDOFWHOIS WHOISCHANNELS
+		"317", "318", "319",
+		// VERSION
+		"351",
+		// MOTDSTART MOTD ENDOFMOTD
+		"375", "372", "376",
+		// WHOWAS
+		"369",
+		// YOUREOPER REHASHING
+		"381", "382",
 	} {
 		conn.HandleFunc(code, printServerMessage)
 	}
 
-	// "is connecting from"
-	// NOTE(tso): I've never seen this message come in...
-	conn.HandleFunc("378", func(c *goirc.Conn, l *goirc.Line) {
-		if len(l.Args) == 3 && l.Args[1] == servState.user.nick {
-			s := strings.Split(l.Args[2], " ")
-			ipStr := s[len(s)-1]
-			ip := net.ParseIP(ipStr)
-			if ip != nil {
-				if ip4 := ip.To4(); ip4 != nil {
-					servConn.IP = ip4
-				}
-			}
-		}
-		printServerMessage(c, l)
-	})
-	// TODO: there are more...
-
-	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// FIXME(COLOURIZE)
-		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
+	// RPL_...
+	for _, code := range []string{
+		// CHANNELMODEIS NOTOPIC TOPICWHOTIME
+		"324", "331", "333",
+		// INVITING INVITELIST EXCEPTLIST BANLIST
+		"341", "346", "348", "367",
+		// NOTE(tso): idk if I want to display these end of list messages
+		//            same with end of whois/motd
+		//            I understand why they exist but idk.
+		// -tso 7/12/2018 4:14:48 AM
+		// ENDOFNAMES ENDOFBANLIST ENDOFINVITELIST/ENDOFEXCEPTLIST
+		"366", "368", "349",
+	} {
+		conn.HandleFunc(code, printChannelMessage)
 	}
 
-	for _, code := range []string{"401", "402", "403", "404", "405", "406", "407",
+	// ERR_...
+	for _, code := range []string{"400", "401", "402", "403", "404", "405", "406", "407",
 		"408", "409", "411", "412", "413", "414", "415", "421", "422", "423",
 		"424", "431", "432", "433", "436", "437", "441", "442", "443", "444",
 		"445", "446", "451", "461", "462", "463", "464", "465", "466", "467",
 		"471", "472", "473", "474", "475", "476", "477", "478", "481", "482",
-		"483", "484", "485", "491", "501", "502"} {
+		"483", "484", "485", "491", "501", "502", "723"} {
 		conn.HandleFunc(code, printErrorMessage)
 	}
 
@@ -320,7 +351,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		return chanState
 	}
 
-	// NAMES
+	// NAMREPLY
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[2]
 		chanState := ensureChanState(channel)
@@ -545,7 +576,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.tab.Println(color(now(), LightGrey) + fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic))
 	})
 
-	// START OF /LIST
+	// LISTSTART
 	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
 			log.Println("got 321 but servState.channelList is nil")
@@ -568,6 +599,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			}
 		*/
 		channel := args[3]
+
+		// NOTE(tso): some networks, such as snoonet put +s channels in the LIST
+		//            but hide the channel name by putting * in the channel field.
+		// -tso 7/12/2018 3:52:30 AM
+		if !isChannel(channel) {
+			return
+		}
 		users, err := strconv.Atoi(args[4])
 		if err != nil {
 			// this caught the problem before so I'm keeping it for good luck
@@ -585,7 +623,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		servState.channelList.Add(channel, users, topic)
 	})
 
-	// END OF /LIST
+	// LISTEND
 	conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
 			log.Println("got 323 but servState.channelList is nil")

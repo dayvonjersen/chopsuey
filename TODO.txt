@@ -68,6 +68,10 @@ FEATURES:
 
 
 --------------------------------------------------------------------------------
+/mode needs to be able to send just the channel to get a reply of what the
+mode is
+ditto for /topic
+--------------------------------------------------------------------------------
 first run welcome message
 --------------------------------------------------------------------------------
 new server tab abstraction
@@ -209,6 +213,9 @@ tab sort order (alphabetical to start)
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 RESOURCES:
+
+IRC:
+http://modern.ircdocs.horse/
 
 About Tab Controls | Microsoft Docs
 https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
