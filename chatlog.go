@@ -4,41 +4,31 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"time"
 )
 
-const CHATLOG_DIR = "./chatlogs/"
-
-var re = regexp.MustCompile("[/<>:\"\\|?*]")
+var invalidCharsInFilenamesRegex = regexp.MustCompile("[/<>:\"\\|?*]")
 
 func NewChatLogger(filename string) func(string) {
 	if !clientCfg.ChatLogsEnabled {
 		return func(string) {}
 	}
 
-	filename = re.ReplaceAllString(filename, "_") + ".log"
+	filename = invalidCharsInFilenamesRegex.ReplaceAllString(filename, "_") + ".log"
 
-	return func(message string) {
+	logger := func(message string) {
 		f, err := os.OpenFile(CHATLOG_DIR+filename, os.O_CREATE|os.O_APPEND, os.ModePerm)
 		checkErr(err)
 		defer f.Close()
 		io.WriteString(f, message+"\n")
 	}
 
-	/*
-		NOTE(tso): bad idea not worth it tbh
-		daily := <-time.After(0)
+	// NOTE(tso): even if it's never called, the creation of a chat logger
+	//            means that logging began, right?
+	//            this might get annoying when joining channels by accident
+	//            and having a log file written
+	// -tso 7/11/2018 7:30:49 PM
+	logger(time.Now().Format("-----------------------Mon Jan 2 15:04:05 -0700 MST 2006-----------------------"))
 
-		go func() {
-			for {
-				<-daily
-				logger(t.Format("Mon Jan 2 15:04:05 -0700 MST 2006"))
-
-				t := time.Now()
-				year, month, day := t.Date()
-				daily = time.After(time.Date(year, month, day, 23, 59, 59, 1000, t.Location()))
-			}
-		}()
-
-		return logger
-	*/
+	return logger
 }

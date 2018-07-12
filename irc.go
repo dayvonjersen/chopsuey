@@ -8,61 +8,69 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	goirc "github.com/fluffle/goirc/client"
 )
 
-const MAX_CONNECT_RETRIES = 100
-
 type serverConnection struct {
-	goircCfg *goirc.Config
-	conn     *goirc.Conn
+	conn *goirc.Conn
 
 	retryConnectEnabled bool
 	cancelRetryConnect  chan struct{}
 
 	isupport map[string]string
-	IP       net.IP
+	ip       net.IP
+}
+
+func connect(servConn *serverConnection, servState *serverState) (success bool) {
+	servState.connState = CONNECTING
+	servState.tab.Update(servState)
+
+	err := servConn.conn.Connect()
+	if err != nil {
+		servState.connState = CONNECTION_ERROR
+		servState.lastError = err
+		servState.tab.Update(servState)
+		return false
+	}
+	servState.connState = CONNECTION_START
+	servState.tab.Update(servState)
+	return true
 }
 
 func (servConn *serverConnection) Connect(servState *serverState) {
 	cancel := make(chan struct{})
-	if servConn.retryConnectEnabled {
+	servConn.cancelRetryConnect = cancel
+	if !servConn.retryConnectEnabled {
+		connect(servConn, servState)
+	} else {
 		go func() {
-			for i := 0; i < MAX_CONNECT_RETRIES; i++ {
+			for i := 0; i < CONNECT_RETRIES; i++ {
 				select {
 				case <-cancel:
 					return
 				default:
-					servState.connState = CONNECTING
-					servState.tab.Update(servState)
-
-					err := servConn.conn.ConnectTo(servState.hostname)
-					if err != nil {
-						servState.connState = CONNECTION_ERROR
-						servState.lastError = err
-						servState.tab.Update(servState)
-					} else {
-						servState.connState = CONNECTION_START
-						servState.tab.Update(servState)
+					if connect(servConn, servState) {
 						return
 					}
+					<-time.After(CONNECT_RETRY_INTERVAL)
 				}
 			}
+			servState.tab.Println(
+				// FIXME(COLOURIZE)
+				fmt.Sprintf("couldn't connect to %s:%d after %d retries.", servState.hostname, servState.port, CONNECT_RETRIES),
+			)
 		}()
-	} else {
-		err := servConn.conn.ConnectTo(servState.hostname)
-		if err != nil {
-			servState.connState = CONNECTION_ERROR
-			servState.lastError = err
-			servState.tab.Update(servState)
-		}
 	}
-	servConn.cancelRetryConnect = cancel
 }
 
+// FIXME(tso): does this need to be a member function?
+//             I think we could access servConn.conn directly and then close the tab.
+//             wait we wanted to stop closing tabs for /part
+//             fix this.
 func (servConn *serverConnection) Part(channel, reason string, servState *serverState) {
-	if channel[0] == '#' {
+	if isChannel(channel) {
 		servConn.conn.Part(channel, reason)
 	}
 	chanState, ok := servState.channels[channel]
@@ -74,26 +82,31 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 }
 
 func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
-	goircCfg := goirc.NewConfig(servState.user.nick)
-	goircCfg.Version = clientCfg.Version
+	// goirc config
+	ident := "chopsuey"
+	name := "github.com/generaltso/chopsuey"
+	cfg := goirc.NewConfig(servState.user.nick, ident, name)
+	cfg.Version = clientCfg.Version
+	cfg.QuitMessage = clientCfg.QuitMessage
 	if servState.ssl {
-		goircCfg.SSL = true
-		goircCfg.SSLConfig = &tls.Config{
+		cfg.SSL = true
+		cfg.SSLConfig = &tls.Config{
 			ServerName:         servState.hostname,
 			InsecureSkipVerify: true,
 		}
-		goircCfg.NewNick = func(n string) string { return n + "^" }
+		cfg.NewNick = func(n string) string { return n + "^" }
 	}
-	goircCfg.Server = fmt.Sprintf("%s:%d", servState.hostname, servState.port)
-	conn := goirc.Client(goircCfg)
+	cfg.Server = serverAddr(servState.hostname, servState.port)
+	conn := goirc.Client(cfg)
 
+	// return value
 	servConn := &serverConnection{
 		conn:                conn,
 		retryConnectEnabled: true,
-		goircCfg:            goircCfg,
 		isupport:            map[string]string{},
 	}
 
+	// goirc events
 	conn.HandleFunc(goirc.CONNECTED, func(c *goirc.Conn, l *goirc.Line) {
 		servState.connState = CONNECTED
 		servState.tab.Update(servState)
@@ -115,22 +128,37 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
+		// FIXME(COLOURIZE)
 		str := color(now(), LightGray) + " " + color(l.Cmd+": "+strings.Join(l.Args[1:], " "), Blue)
+		// send to current tab if current tab != servertab
+		// I'm sure this is going to end up vomiting MOTD all over the first channel i join
 		servState.tab.Println(str)
+	}
+
+	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
+		// send to current tab if current tab != channel
+		// stub
+	}
+
+	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
+		// FIXME(COLOURIZE)
+		// always send to the current tab
+		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
 	}
 
 	// WELCOME
 	conn.HandleFunc("001", func(c *goirc.Conn, l *goirc.Line) {
+		nick := l.Args[0]
 		// if nickname is already in use (433)
 		// welcome message (001) will tell us what they renamed us to
-		if l.Args[0] != servState.user.nick {
-			servState.user.nick = l.Args[0]
+		if nick != servState.user.nick {
+			servState.user.nick = nick
 			servState.tab.Update(servState)
 		}
 		printServerMessage(c, l)
 	})
-	conn.HandleFunc("002", printServerMessage)
-	conn.HandleFunc("003", printServerMessage)
+
+	// MYINFO
 	conn.HandleFunc("004", func(c *goirc.Conn, l *goirc.Line) {
 		servState.networkName = l.Args[1]
 		servState.tab.Update(servState)
@@ -160,120 +188,67 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		printServerMessage(c, l)
 	})
 
-	// LUSERS
-	conn.HandleFunc("251", printServerMessage)
-	conn.HandleFunc("252", printServerMessage)
-	conn.HandleFunc("253", printServerMessage)
-	conn.HandleFunc("254", printServerMessage)
-	conn.HandleFunc("255", printServerMessage)
-	// MOTD
-	conn.HandleFunc("375", printServerMessage)
-	conn.HandleFunc("372", printServerMessage)
-	conn.HandleFunc("376", printServerMessage)
-	// ADMIN
-	conn.HandleFunc("256", printServerMessage)
-	conn.HandleFunc("257", printServerMessage)
-	conn.HandleFunc("258", printServerMessage)
-	conn.HandleFunc("259", printServerMessage)
-	// WHOIS
-	conn.HandleFunc("311", printServerMessage)
-	conn.HandleFunc("312", printServerMessage)
-	conn.HandleFunc("313", printServerMessage)
-	conn.HandleFunc("317", printServerMessage)
-	conn.HandleFunc("318", printServerMessage)
-	conn.HandleFunc("319", printServerMessage)
-	// WHOWAS
-	conn.HandleFunc("314", printServerMessage)
-	conn.HandleFunc("369", printServerMessage)
-
-	// "is connecting from"
-	conn.HandleFunc("378", func(c *goirc.Conn, l *goirc.Line) {
-		if len(l.Args) == 3 && l.Args[1] == servState.user.nick {
-			s := strings.Split(l.Args[2], " ")
-			ipStr := s[len(s)-1]
-			ip := net.ParseIP(ipStr)
-			if ip != nil {
-				if ip4 := ip.To4(); ip4 != nil {
-					servConn.IP = ip4
-				}
-			}
-		}
-		printServerMessage(c, l)
-	})
-	// TODO: there are more...
-
-	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
+	// RPL_...
+	for _, code := range []string{
+		// YOURHOST CREATED BOUNCE UMODEIS
+		"002", "003", "010", "221",
+		// LUSERCLIENT LUSEROP LUSERUNKNOWN LUSERCHANNELS LUSERME
+		"251", "252", "253", "254", "255",
+		// ADMINME ADMINLOC1 ADMINLOC2 ADMINEMAIL
+		"256", "257", "258", "259",
+		// TRYAGAIN
+		"263",
+		// LOCALUSERS GLOBALUSERS
+		"265", "266",
+		// NONE
+		"300",
+		// AWAY USERHOST ISON UNAWAY NOAWAY
+		"301", "302", "303", "305", "306",
+		// WHOISCERTFP WHOISUSER WHOISSERVER WHOISOPERATOR WHOWASUSER
+		"276", "311", "312", "313", "314",
+		// WHOISIDLE ENDOFWHOIS WHOISCHANNELS
+		"317", "318", "319",
+		// VERSION
+		"351",
+		// MOTDSTART MOTD ENDOFMOTD
+		"375", "372", "376",
+		// WHOWAS
+		"369",
+		// YOUREOPER REHASHING
+		"381", "382",
+	} {
+		conn.HandleFunc(code, printServerMessage)
 	}
 
-	conn.HandleFunc("401", printErrorMessage)
-	conn.HandleFunc("402", printErrorMessage)
-	conn.HandleFunc("403", printErrorMessage)
-	conn.HandleFunc("404", printErrorMessage)
-	conn.HandleFunc("405", printErrorMessage)
-	conn.HandleFunc("406", printErrorMessage)
-	conn.HandleFunc("407", printErrorMessage)
-	conn.HandleFunc("408", printErrorMessage)
-	conn.HandleFunc("409", printErrorMessage)
-	conn.HandleFunc("411", printErrorMessage)
-	conn.HandleFunc("412", printErrorMessage)
-	conn.HandleFunc("413", printErrorMessage)
-	conn.HandleFunc("414", printErrorMessage)
-	conn.HandleFunc("415", printErrorMessage)
-	conn.HandleFunc("421", printErrorMessage)
-	conn.HandleFunc("422", printErrorMessage)
-	conn.HandleFunc("423", printErrorMessage)
-	conn.HandleFunc("424", printErrorMessage)
-	conn.HandleFunc("431", printErrorMessage)
-	conn.HandleFunc("432", printErrorMessage)
-	conn.HandleFunc("433", printErrorMessage)
-	conn.HandleFunc("436", printErrorMessage)
-	conn.HandleFunc("437", printErrorMessage)
-	conn.HandleFunc("441", printErrorMessage)
-	conn.HandleFunc("442", printErrorMessage)
-	conn.HandleFunc("443", printErrorMessage)
-	conn.HandleFunc("444", printErrorMessage)
-	conn.HandleFunc("445", printErrorMessage)
-	conn.HandleFunc("446", printErrorMessage)
-	conn.HandleFunc("451", printErrorMessage)
-	conn.HandleFunc("461", printErrorMessage)
-	conn.HandleFunc("462", printErrorMessage)
-	conn.HandleFunc("463", printErrorMessage)
-	conn.HandleFunc("464", printErrorMessage)
-	conn.HandleFunc("465", printErrorMessage)
-	conn.HandleFunc("466", printErrorMessage)
-	conn.HandleFunc("467", printErrorMessage)
-	conn.HandleFunc("471", printErrorMessage)
-	conn.HandleFunc("472", printErrorMessage)
-	conn.HandleFunc("473", printErrorMessage)
-	conn.HandleFunc("474", printErrorMessage)
-	conn.HandleFunc("475", printErrorMessage)
-	conn.HandleFunc("476", printErrorMessage)
-	conn.HandleFunc("477", printErrorMessage)
-	conn.HandleFunc("478", printErrorMessage)
-	conn.HandleFunc("481", printErrorMessage)
-	conn.HandleFunc("482", printErrorMessage)
-	conn.HandleFunc("483", printErrorMessage)
-	conn.HandleFunc("484", printErrorMessage)
-	conn.HandleFunc("485", printErrorMessage)
-	conn.HandleFunc("491", printErrorMessage)
-	conn.HandleFunc("501", printErrorMessage)
-	conn.HandleFunc("502", printErrorMessage)
-	// I think that's all of them... -_-'
+	// RPL_...
+	for _, code := range []string{
+		// CHANNELMODEIS NOTOPIC TOPICWHOTIME
+		"324", "331", "333",
+		// INVITING INVITELIST EXCEPTLIST BANLIST
+		"341", "346", "348", "367",
+		// NOTE(tso): idk if I want to display these end of list messages
+		//            same with end of whois/motd
+		//            I understand why they exist but idk.
+		// -tso 7/12/2018 4:14:48 AM
+		// ENDOFNAMES ENDOFBANLIST ENDOFINVITELIST/ENDOFEXCEPTLIST
+		"366", "368", "349",
+	} {
+		conn.HandleFunc(code, printChannelMessage)
+	}
 
-	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
-		// debugPrint(l)
-		if l.Args[0] == "DCC" {
-			dccHandler(servConn, l.Nick, l.Args[2])
-		}
-	})
-	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
-		// debugPrint(l)
-	})
+	// ERR_...
+	for _, code := range []string{"400", "401", "402", "403", "404", "405", "406", "407",
+		"408", "409", "411", "412", "413", "414", "415", "421", "422", "423",
+		"424", "431", "432", "433", "436", "437", "441", "442", "443", "444",
+		"445", "446", "451", "461", "462", "463", "464", "465", "466", "467",
+		"471", "472", "473", "474", "475", "476", "477", "478", "481", "482",
+		"483", "484", "485", "491", "501", "502", "723"} {
+		conn.HandleFunc(code, printErrorMessage)
+	}
 
 	printer := func(code, fmtstr string, l *goirc.Line) {
 		var (
-			tab  tabViewWithInput
+			tab  tabWithInput
 			nick string
 		)
 		if l.Args[0] == servState.user.nick {
@@ -314,15 +289,26 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		//			  give that much of a performance increase
 		// -tso 7/10/2018 6:58:36 AM
 		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, l.Args[1])
-		log.Printf("nick: %v line: %v match: %v", servState.user.nick, l.Args[1], m)
 		if m {
+			// FIXME(COLOURIZE)
 			return bold(color(" * ", Black, Yellow)) + text
 		}
 		return text
 	}
 
+	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
+		// debugPrint(l)
+		if l.Args[0] == "DCC" {
+			dccHandler(servConn, l.Nick, l.Args[2])
+		}
+	})
+	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
+		// debugPrint(l)
+	})
+
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
 		if l.Args[0] != servState.user.nick {
+			// FIXME(COLOURIZE)
 			printer("PRIVMSG", color("%s", LightGrey)+" "+highlighter(color("%s", DarkGrey), l)+" %s", l)
 		} else {
 			printer("PRIVMSG", color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", l)
@@ -331,6 +317,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
 		if l.Args[0] != servState.user.nick {
+			// FIXME(COLOURIZE)
 			printer("ACTION", color("%s", LightGrey)+highlighter(color(" *%s %s*", DarkGrey), l), l)
 		} else {
 			printer("ACTION", color("%s", LightGrey)+color(" *%s %s*", DarkGrey), l)
@@ -347,26 +334,14 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			printServerMessage(c, l)
 			return
 		}
+		// FIXME(COLOURIZE)
 		printer("NOTICE", color("%s *** %s: %s", Orange), l)
 	})
 
-	ensureChanState := func(channel string) *channelState {
-		chanState, ok := servState.channels[channel]
-		if !ok {
-			chanState = &channelState{
-				channel:  channel,
-				nickList: newNickList(),
-			}
-			chanState.tab = NewChannelTab(servConn, servState, chanState)
-			servState.channels[channel] = chanState
-		}
-		return chanState
-	}
-
-	// NAMES
+	// NAMREPLY
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[2]
-		chanState := ensureChanState(channel)
+		chanState := ensureChanState(servConn, servState, channel)
 		nicks := strings.Split(l.Args[3], " ")
 		for _, n := range nicks {
 			if n != "" {
@@ -382,13 +357,14 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if !ok {
 			// forced join
 			conn.Join(channel)
-			ensureChanState(channel)
+			ensureChanState(servConn, servState, channel)
 			return
 		}
 		if !chanState.nickList.Has(l.Nick) {
 			chanState.nickList.Add(l.Nick)
 			chanState.tab.updateNickList(chanState)
 			if !clientCfg.HideJoinParts {
+				// FIXME(COLOURIZE)
 				chanState.tab.Println(color(now(), LightGrey) + italic(color(" -> "+l.Nick+" has joined "+l.Args[0], Orange)))
 			}
 		}
@@ -408,6 +384,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			if len(l.Args) > 1 {
 				msg += " (" + l.Args[1] + ")"
 			}
+			// FIXME(COLOURIZE)
 			chanState.tab.Println(color(now(), LightGrey) + italic(color(msg, Orange)))
 		}
 	})
@@ -427,6 +404,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				chanState.nickList.Remove(l.Nick)
 				chanState.tab.updateNickList(chanState)
 				if !clientCfg.HideJoinParts {
+					// FIXME(COLOURIZE)
 					chanState.tab.Println(color(now(), LightGrey) + italic(color(msg, Orange)))
 				}
 			}
@@ -450,6 +428,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
+			// FIXME(COLOURIZE)
 			chanState.tab.Println(color(now(), LightGrey) + color(msg, Red))
 			chanState.nickList = newNickList()
 			chanState.tab.updateNickList(chanState)
@@ -458,6 +437,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
+			// FIXME(COLOURIZE)
 			chanState.tab.Println(color(now(), LightGrey) + color(msg, Orange))
 			chanState.nickList.Remove(who)
 			chanState.tab.updateNickList(chanState)
@@ -476,6 +456,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				newNick.prefix = oldNick.prefix
 				chanState.nickList.Set(oldNick.name, newNick)
 				chanState.tab.updateNickList(chanState)
+				// FIXME(COLOURIZE)
 				chanState.tab.Println(color(now(), LightGrey) + italic(color(" ** "+oldNick.name+" is now known as "+newNick.name, Orange)))
 			}
 		}
@@ -497,12 +478,14 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				op = servState.networkName
 			}
 			if len(nicks) == 0 {
+				// FIXME(COLOURIZE)
 				chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s %s", op, mode, channel), Orange)))
 				return
 			}
 
 			nickStr := fmt.Sprintf("%s", nicks)
 			nickStr = nickStr[1 : len(nickStr)-1]
+			// FIXME(COLOURIZE)
 			chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s %s", op, mode, nickStr), Orange)))
 
 			var add bool
@@ -545,19 +528,22 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			nick := channel
 			for _, chanState := range servState.channels {
 				if chanState.nickList.Has(nick) || nick == servState.user.nick {
+					// FIXME(COLOURIZE)
 					chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s", nick, mode), Orange)))
 				}
 			}
 		}
 	})
 
+	// TOPIC
 	conn.HandleFunc("332", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[1]
 		topic := l.Args[2]
 
-		chanState := ensureChanState(channel)
+		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
+		// FIXME(COLOURIZE)
 		chanState.tab.Println(color(now(), LightGrey) + " topic for " + channel + " is " + topic)
 	})
 
@@ -570,13 +556,14 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			who = who[0:i]
 		}
 
-		chanState := ensureChanState(channel)
+		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
+		// FIXME(COLOURIZE)
 		chanState.tab.Println(color(now(), LightGrey) + fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic))
 	})
 
-	// START OF /LIST
+	// LISTSTART
 	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
 			log.Println("got 321 but servState.channelList is nil")
@@ -599,6 +586,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			}
 		*/
 		channel := args[3]
+
+		// NOTE(tso): some networks, such as snoonet put +s channels in the LIST
+		//            but hide the channel name by putting * in the channel field.
+		// -tso 7/12/2018 3:52:30 AM
+		if !isChannel(channel) {
+			return
+		}
 		users, err := strconv.Atoi(args[4])
 		if err != nil {
 			// this caught the problem before so I'm keeping it for good luck
@@ -616,7 +610,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		servState.channelList.Add(channel, users, topic)
 	})
 
-	// END OF /LIST
+	// LISTEND
 	conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
 			log.Println("got 323 but servState.channelList is nil")
@@ -627,16 +621,4 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	return servConn
-}
-
-func debugPrint(l *goirc.Line) {
-	printf(&goirc.Line{
-		Nick:  l.Nick,
-		Ident: l.Ident,
-		Host:  l.Host,
-		Src:   l.Src,
-		Cmd:   l.Cmd,
-		Raw:   l.Raw,
-		Args:  l.Args,
-	})
 }

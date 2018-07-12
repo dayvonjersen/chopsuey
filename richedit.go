@@ -19,14 +19,14 @@ func init() {
 
 // NOTE(tso): These constants and struct definitions are taken from richedit.h
 //
-//			  The version of richedit.h that comes with 32-bit mingw/tdm-gcc is outdated and incomplete.
-//			  Refer to the one distributed with 64-bit versions of mingw, available online here:
-//			  https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
+//            The version of richedit.h that comes with 32-bit mingw/tdm-gcc is outdated and incomplete.
+//            Refer to the one distributed with 64-bit versions of mingw, available online here:
+//            https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
 //
-//			  I've reduced this list to just the constants this package actually uses
-//			  and might potentially use in the future.
+//            I've reduced this list to just the constants this package actually uses
+//            and might potentially use in the future.
 //
-//			  I might change them to lowercase camelCase so they're unexported in future
+//            I might change them to lowercase camelCase so they're unexported in future
 // -tso 7/11/2018 5:30:45 PM
 const (
 	CFM_BOLD        = 1
@@ -187,8 +187,8 @@ func (re *RichEdit) SetReadOnly(readOnly bool) error {
 //
 
 // NOTE(tso): it might make sense to expose these in addition to/instead of
-//			  the helper functions ColorText, BoldText, ...
-//			  because you can set multiple styles in one EM_SETCHARFORMAT
+//            the helper functions ColorText, BoldText, ...
+//            because you can set multiple styles in one EM_SETCHARFORMAT
 func (re *RichEdit) setCharFormat(charfmt _charformat, start, end int) {
 	charfmt.cbSize = uint32(unsafe.Sizeof(charfmt))
 	s, e := re.TextSelection()
@@ -255,11 +255,11 @@ func (re *RichEdit) ResetText(start, end int) {
 }
 
 // NOTE(tso): these numbers were picked based on IRC text formatting bytes
-//			  e.g. \x02 is "bold"
+//            e.g. \x02 is "bold"
 //            it's entirely arbitrary and could just as well be 0, 1, 2, 3...
 // -tso 7/11/2018 5:13:12 PM
 const (
-	//TextEffectColor = 3	  // Use TextEffectForegroundColor or TextEffectBackgroundColor
+	//TextEffectColor = 3      // Use TextEffectForegroundColor or TextEffectBackgroundColor
 	TextEffectBold      = 2
 	TextEffectItalic    = 29
 	TextEffectUnderline = 31
@@ -272,11 +272,11 @@ const (
 )
 
 // optionally apply styles with one or more int slices where
-//	- offset 0 is one of the TextEffect constants above
+//  - offset 0 is one of the TextEffect constants above
 //  - offset 1 is the starting byte offset in text for the desired effect
 //  - offset 2 is the ending byte offset in text for the desired effect
 //  - offset 3 only is required for TextEffectForegroundColor or TextEffectBackgroundColor
-//	     	   and is a 32-bit color in GGBBRR byte-order
+//                and is a 32-bit color in GGBBRR byte-order
 func (re *RichEdit) AppendText(text string, styles ...[]int) {
 	s, e := re.TextSelection()
 	l := re.TextLength()

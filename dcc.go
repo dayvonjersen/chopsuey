@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -28,7 +29,24 @@ func htonl(ip net.IP) int64 {
 	return a<<24 | b<<16 | c<<8 | d
 }
 
-func localAddr() (net.IP, error) {
+func wanIP() (net.IP, error) {
+	resp, err := http.Get("http://icanhazip.com")
+
+	if err != nil {
+		return nil, err
+	}
+
+	buf := make([]byte, 16)
+	resp.Body.Read(buf)
+
+	i := 15
+	for ; buf[i] != '\n'; i-- {
+	}
+
+	return net.ParseIP(string(buf[:i])), nil
+}
+
+func localIP() (net.IP, error) {
 	ifaceAddrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, err
@@ -51,9 +69,10 @@ func fileTransfer(servConn *serverConnection, who, filename string) {
 	checkErr(err)
 	filesize := stat.Size()
 
-	// ip, err := localAddr()
-	// checkErr(err)
-	ip := servConn.IP
+	if servConn.ip == nil {
+		servConn.ip, _ = localIP()
+	}
+	ip := servConn.ip
 
 	ln, err := net.Listen("tcp", ip.String()+":0")
 	checkErr(err)

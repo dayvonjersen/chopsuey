@@ -27,19 +27,8 @@ BUGS:
 
  - nick with prefix e.g. @channelop should be without prefix in ACTION
 
- - styling should be reset to the end of the richedit text selection after
-   being applied because sometimes it sticks and wont go away without a
-   /clear it might be how we're applying the styles and maybe the toggles
-   aren't going through but there's that len(str) oh but that's +1 great
-   another off-by-one error
-
  - unicode characters display in a shitty font make sure Universalia is
    used if the text isn't ascii  
-
- - servState.user.nick just updates and doesn't wait for server confirmation
-
- - 322 can contain invalid channel names like * to show that the channel
-   exists but is +s or something
 
  - we should ReleaseDC() after closing tabs 
 
@@ -68,6 +57,10 @@ FEATURES:
 
 
 --------------------------------------------------------------------------------
+/mode needs to be able to send just the channel to get a reply of what the
+mode is
+ditto for /topic
+--------------------------------------------------------------------------------
 first run welcome message
 --------------------------------------------------------------------------------
 new server tab abstraction
@@ -83,9 +76,6 @@ probably should compile regexp for that since its more complex
 --------------------------------------------------------------------------------
 code cleanup
  - colors
- - ui
- - irc
- - everything really...
 --------------------------------------------------------------------------------
 better scripting examples
 --------------------------------------------------------------------------------
@@ -119,11 +109,12 @@ list of reasons to replace goirc with simple channels and goroutines
 that aren't NIH:
  - /reconnect is impossible for some reason to do with how goirc uses channels
  - logger interface is inconvenient
- - no convenient way to capture unhandled IRC commands
+ - no convenient way to capture unhandled server messages 
 
 list of reasons against:
  - it works
  - has anti-flooding stuff
+ - line parsing might be harder than it looks
 --------------------------------------------------------------------------------
 replace walk with qt ... for version 2.0
 
@@ -155,6 +146,7 @@ scroll to cycle through tabs
 context menu (close)
 improve tabs in general
  - multiline, stretch-to-fit, button style
+automatic tab sort order (alphabetical to start)
 --------------------------------------------------------------------------------
 /search or /find or CTRL+F
     reduce text buffer to matches, then restore
@@ -207,6 +199,9 @@ write autojoin on exit (as an option) (config.json)
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
 RESOURCES:
+
+IRC:
+http://modern.ircdocs.horse/
 
 About Tab Controls | Microsoft Docs
 https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
