@@ -446,7 +446,11 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		t.textBuffer, err = NewRichEdit(t.tabPage)
 		checkErr(err)
-		checkErr(t.tabPage.Children().Add(t.textBuffer))
+		// WTF(tso): textBuffer (*RichEdit) is already attached
+		//           to t.tabPage (*walk.TabPage) because of walk.InitWidget but that
+		//           *doesn't happen* when you use the walk/declarative interface
+		// wtf -tso 7/12/2018 1:54:43 AM
+		// checkErr(t.tabPage.Children().Add(t.textBuffer))
 		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
 			tab:       t,
