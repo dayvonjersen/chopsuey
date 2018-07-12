@@ -106,8 +106,15 @@ func (t *tabViewChatbox) Println(msg string) {
 	text, styles := parseString(msg)
 	mw.WindowBase.Synchronize(func() {
 		t.textBuffer.AppendText("\n")
-		t.textBuffer.AppendText(text, styles...)
 		// HACK(tso): shouldn't have to clear styles like this
+		if t.textBuffer.linecount > 1 {
+			l := t.textBuffer.TextLength()
+			t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
+		}
+
+		t.textBuffer.AppendText(text, styles...)
+
+		// HACK(tso): and we shouldn't have to do it twice
 		l := t.textBuffer.TextLength()
 		t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
 		if !t.HasFocus() {
