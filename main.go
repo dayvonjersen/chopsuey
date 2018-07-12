@@ -15,6 +15,7 @@ import (
 )
 
 const CHATLOG_DIR = "./chatlogs/"
+const SCRIPTS_DIR = "./scripts/"
 
 var (
 	mw        *walk.MainWindow
