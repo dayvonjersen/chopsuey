@@ -81,7 +81,7 @@ func NewTextInput(t tabWithInput, ctx *commandContext) *MyLineEdit {
 					if cmdFn, ok := clientCommands[cmd]; ok {
 						cmdFn(ctx, args...)
 					} else {
-						t.Println("unrecognized command: " + cmd)
+						clientError(t, "unrecognized command: ", cmd)
 					}
 				}
 			} else {

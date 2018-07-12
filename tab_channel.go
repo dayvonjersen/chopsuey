@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/lxn/walk"
@@ -89,7 +88,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(chanState.channel, msg)
 		nick := chanState.nickList.Get(servState.user.nick)
-		t.Println(fmt.Sprintf(color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", now(), nick, msg))
+		privateMessage(t, nick.String(), msg)
 	}
 
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + chanState.channel)
