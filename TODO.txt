@@ -203,6 +203,8 @@ hide join/parts should be optional for every channel not a global setting
 write autojoin on exit (as an option) (config.json)
 --------------------------------------------------------------------------------
 /version
+--------------------------------------------------------------------------------
+tab sort order (alphabetical to start)
 
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 

@@ -5,8 +5,15 @@ import (
 	"log"
 	"time"
 
+	goirc "github.com/fluffle/goirc/client"
 	"github.com/kr/pretty"
 )
+
+func checkErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 func printf(args ...interface{}) {
 	s := ""
@@ -16,10 +23,8 @@ func printf(args ...interface{}) {
 	log.Print(s)
 }
 
-func checkErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
+func debugPrint(l *goirc.Line) {
+	printf(&goirc.Line{Nick: l.Nick, Ident: l.Ident, Host: l.Host, Src: l.Src, Cmd: l.Cmd, Raw: l.Raw, Args: l.Args})
 }
 
 func now() string {
