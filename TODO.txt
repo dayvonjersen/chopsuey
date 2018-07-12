@@ -1,10 +1,16 @@
 BUGS:
 
- - /list shouldn't work on a disconnected server
+ - colors are all kinds of fucked up and wrong/not showing up
+
+ - style bleed is still happening in RichEdit textBuffers
+    - now I want to try adding some zero-width characters and
+      styling them with AUTOCOLOR (need to test that AUTOCOLOR even does
+      anything on visible text)
+ 
+ - /list shouldn't work on a disconnected server (but guess what)
 
  - bold/italic/underline toggles don't work
-    - colors.go needs a major overhaul but i'm afraid to look at what's in the
-      git stash
+    - colors.go needs a major overhaul 
 
  - statusBar is just really inconsistent
     - disconnecting from one server makes all servers display "disconnected x_x"
@@ -32,27 +38,24 @@ BUGS:
 
  - we should ReleaseDC() after closing tabs 
 
- - i'm basically writing future commit messages at this point instead of just
-   fixing things
-
- - NOTE(tso): "fixing things" would make a good default commit message
-    - also "breaking things"
-    - and just "things"
-
-================================================================================
 
 FEATURES:
 
- * keyboard nav or some context menus at least
+ - keyboard nav or some context menus at least
     - CTRL+T for a new nil CHATBOX_SERVER unless one exists
     - CTRL+(Shift)+Tab to cycle through tabs 
     - CTRL+F4 to close a tab
     future:
     - Esc to hide to tray
 --------------------------------------------------------------------------------
- * topic widget should allow input and send /topic or whatever
+ - topic widget should allow input and send /topic or whatever
  - after: replace topicInput with a RichEdit to display colors and links and
    stuff
+    - *pukes*
+
+
+
+UNSORTED:
 
 
 
@@ -63,19 +66,14 @@ ditto for /topic
 --------------------------------------------------------------------------------
 first run welcome message
 --------------------------------------------------------------------------------
-new server tab abstraction
+new server tab/connection abstraction
 --------------------------------------------------------------------------------
 whitespace or something to indicate where unread messages start
 --------------------------------------------------------------------------------
 CTCP messages should appear somewhere in UI
 --------------------------------------------------------------------------------
-get rid of that printf in nickflash/highlighter
---------------------------------------------------------------------------------
 highlight list
 probably should compile regexp for that since its more complex
---------------------------------------------------------------------------------
-code cleanup
- - colors
 --------------------------------------------------------------------------------
 better scripting examples
 --------------------------------------------------------------------------------
@@ -83,8 +81,6 @@ autoload registered scripts at startup (config.json)
 --------------------------------------------------------------------------------
 /part without closing tab
  - chanState tracks whether "connected" to channel?
---------------------------------------------------------------------------------
-/msg shouldn't open a new tab if it's to services like NickServ
 --------------------------------------------------------------------------------
 split extra long text input, allow ctrl+enter, split on \n
 i heard 512 bytes was maxlen
@@ -121,24 +117,18 @@ replace walk with qt ... for version 2.0
 list of reasons:
  - I want inline images for emojis and embedding thumbnails of pictures that 
    people link to
+ - windows richedit is annoying
 --------------------------------------------------------------------------------
 
 colors
 >>>>>> FIX YO SHIT #()!@# 
+<<<<<< I MADE IT EVEN WORSE FUK U
  - write more test cases
  - strip control codes from other parts of the ui (like channel list)
- - use lots of colors in the richedit
-    - see above re: Println
  - SEND COLORS (todo) ideas:
-    \{red}                              \\\{(red|orange|yellow|‥)\}
-    ^red{text here}                     \^(red|orange|yellow|‥)
-    `red:no u`                          `(red|‥):(.*)`
-    <color red>oh god pls no</color>    <̖̲̯͈͙̜̹͇̯̻̱̦̹͇͉̠̲̗̪͉͎͙̥̠͚͕̤̬̭̙̖̳̳̤͙̺ͅ[̭̬̣͈͉̞͕͓̘̗̥̣͔̪̗̞̘̖̻͙̥̪̟̣̫̞̙̼̜͙̪̹̝̲̞͙̞͓̻̖̺̻̼̜̬͉͇̭͕̟̙͎͍̟̩̭̮̯̜̦̣̳̝̮^͓̰̹̹̭̦̙̝̦̻͎͔̥̼͖̼̥̥͇̤̲̞͖͍͕̤̲̦͕̻̭̺̩̺̮̙̞͚̻̣͈̯̭̙͈̪̙̜͔͉͈͚͈̹͖̦̹̪̮̹̖͍̼̣̗͔͉̺͚̪͕̭̼̮̗͚͓͎̣̯͉̠̞̦͎̪̮̻̙̼̼͎͔̩͇͙̲̭͚͓͕̤̖̺͕̲̣͓̥̺̼̺̺̲̻̘̠̰̦̝̩͈̲̻̰̣̭̥͎͓͔ͅͅͅͅͅ>̟̲̹̘͙͉̪͍̗̲̜̣̠̥̦̯̤͍]̜̜̖͙̜͚̟̹̭̱͕̠̖̖̮̖͈͖̝̠͖͙͙̲̻̠͎͖̦̬͎̟̭̹̠̘͈͎͙̟̹͈̟̩̥̬̳͈̭̠̬̱̘̦̱̣̱͔͓͖̖̤̺̩̮̱̳͈̙̦̩̖͎̥͓͎̞̳̹̰͔̬͍̖̝̘͍̤͚̱̯͍͖̯̥̜̖̘̤̹̜̳̘̜͕͚̟͓͙̼̼̮̩̞̥̼͎̖̻̗͖͈̱̺̝͇̪̱̬̺͚̯̜͉͕̬̳̪̦̫̫ͅͅͅͅ+̲̝̳͉̲̳̬̫̣̬͚͕̜̰̩̭͎̻͓͖̻̥̟̭͕͓̩͙͚̥̝͕̫͍̲̙̦͈̯̫̭̹̬͙̞͈͙͎̼̤͖͎̝̣͙͚̹̠̯̯̯̪̦̤̟̮̗̤̮̜̮̫̭̞͚̱͓̦̠͎̮̲͕̪̘͈̹̟͚͕̯̯͓̼̭͍̺͓̗̬̩ͅ>͉̩̹͔̬͍͍̪̹̬̼̜̬͕̠̳͖̲|̺͙̭̼̭̩̗̯̫̪̻͙̪̬̠̘͍̝̞̙̤͉͇\͈̤̮̝̼͕͕͙̹̱̭͉̭̬̣̣͔̦̰̙̘̞̝͇͚̼̭̙͔̫̝̮͍̩͖͈̠̥̰͇̼̭̼̖̝͇̗̰̩̭̰͔̳͔̞̼̲̟̞̮̩̰̜̗̯̪̦͚̞̻̗̺̥̥̣͖̲̘̦͙͍̩̹̘̳̼̱̥̬̦̤͉̥̩̥͙̘͇̗̣̼̯͍͔̭̣̟̘͓̱͍͕̮̯͚̱͇̪̤̙̙̩̹̮͈̘͎̙͇̭̱̻̬̱͇͍͚̹͔̥͉̟͔̬̜̹͈̜̦̱̮̲͇̥̫̖̳͉̪̯͉̮̪͕̰̲̳̯͓̘̠̞͎͓̻̲̩ͅͅͅͅͅ\̬̮̞͇̰͚͇̩̲̰̱͚̞̖̻̪̮̘͔̹̜̹̞̞͙͔̠̝̹̫̩̝̺͙̠̮̤̰͎̝͙̰̥̰̻̻̥̬̖̱̻͖͙͙̺̤͈̜̗̫̬̪̥̤̯̰̖̰̦̻̹̥̫ͅͅͅn͉͕͎̟+͖͕̰͎̣̲̺͍̰̖̦̪̜͎͎̺͙̦̱̤͓̙̪̜͍̰̟̰͉̫͈̭̦̮̖͎̗̹̰͍̩̞͎̫̜̙͈̦͖̫͉̩͇͍̬̫̻̪͇̦̻̰̻̪̫̝͎̣͖̝̩̲̘͚͉͈̭͖̣̱͓̗̥̖̠̫͈͉͓̣̭͚̖̞͓̰̣͍̺͙͓̤̖̰̖̭̺̤͈͓̟̗ͅͅͅ
- - UNIQUE RANDOM COLORS FOR NICKS
- - T H E M E S
-
-
-oh gosh im so excited c:
+    `red:no u`
+ - unique random colors for nicks
+ - themes
 
 --------------------------------------------------------------------------------
 middle-click to close tabs
@@ -161,7 +151,6 @@ automatic NickServ stuff
                     You can enable them in Settings
 
                     [Yes I know don't show me this again]
-                          [Thanks for telling me!]
     "
 --------------------------------------------------------------------------------
 limit message history (configurable)
