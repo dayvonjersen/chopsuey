@@ -1,10 +1,7 @@
 *.exe
+*.exe~
 *.sw*
 *.txt
-*.rtf
-test/
-*.exe~
+.stuff/
 chatlogs/
-lib/
-log/
 scripts/
