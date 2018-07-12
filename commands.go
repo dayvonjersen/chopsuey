@@ -145,6 +145,8 @@ func serverCmd(ctx *commandContext, args ...string) {
 		ctx.tab.Println("usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
 		return
 	}
+
+	// FIXME(tso): abstract opening a new server connection/tab by reusing this code
 	hostname := args[0]
 	port := 6667
 	ssl := false
@@ -159,26 +161,32 @@ func serverCmd(ctx *commandContext, args ...string) {
 			port = p
 		}
 	}
-	// FIXME(tso): abstract opening a new server connection/tab
-	servState := &serverState{
-		connState:   CONNECTION_EMPTY,
-		hostname:    hostname,
-		port:        port,
-		ssl:         ssl,
-		networkName: fmt.Sprintf("%s:%d", hostname, port),
-		user: &userState{
-			nick: ctx.servState.user.nick,
-		},
-		channels: map[string]*channelState{},
-		privmsgs: map[string]*privmsgState{},
-	}
-	servConn := NewServerConnection(servState, func() {})
+
+	servState := &serverState{}
+	// FIXME(tso): empty tab is a nightmare holy fuck
 	if len(tabs) == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY {
-		servState.tab = ctx.servState.tab
-	} else {
+		servState = ctx.servState
+	}
+
+	servState.connState = CONNECTION_EMPTY
+	servState.hostname = hostname
+	servState.port = port
+	servState.ssl = ssl
+	servState.networkName = fmt.Sprintf("%s:%d", hostname, port)
+	servState.user = &userState{
+		nick: ctx.servState.user.nick,
+	}
+	servState.channels = map[string]*channelState{}
+	servState.privmsgs = map[string]*privmsgState{}
+
+	servConn := NewServerConnection(servState, func() {})
+
+	// FIXME(tso): empty tab is a nightmare holy fuck
+	if !(len(tabs) == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY) {
 		servView := NewServerTab(servConn, servState)
 		servState.tab = servView
 	}
+
 	servConn.Connect(servState)
 }
 

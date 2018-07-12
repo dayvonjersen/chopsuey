@@ -1,0 +1,17 @@
+{
+    "autoconnect": [
+        {
+            "host": "chopstick",
+            "port": 6667,
+            "ssl": false,
+            "nick": "tso|chopsuey",
+            "autojoin": [
+                "#test"
+            ]
+        }
+    ],
+    "hidejoinparts": false,
+    "chatlogs": true,
+    "timeformat": "15:04",
+    "version": "chopsuey v0.5 https://github.com/generaltso/chopsuey"
+}

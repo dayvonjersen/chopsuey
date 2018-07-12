@@ -1,5 +1,12 @@
 BUGS:
 
+ *** EMPTY TAB JUST DOESN'T WORK 
+ panic: runtime error: invalid memory address or nil pointer dereference
+ cannot insert same widget multiple times
+ D:
+ D:
+ D: WHY DID YOU DO THIS
+
  - bold/italic/underline toggles don't work
     - colors.go needs a major overhaul but i'm afraid to look at what's in the
       git stash

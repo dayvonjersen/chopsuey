@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"time"
@@ -104,6 +105,7 @@ func main() {
 	clientCfg, err = getClientConfig()
 
 	if err != nil {
+		log.Fatalln("nice job breaking it hero.\n\n\ngit checkout master -- config.json")
 		title := "error parsing config.json"
 		msg := err.Error()
 		icon := walk.MsgBoxIconError
@@ -124,7 +126,7 @@ func main() {
 		}
 	}
 
-	// FIXME(tso): do this better.
+	// FIXME(tso): empty tab is a nightmare holy fuck
 	if len(clientCfg.AutoConnect) == 0 {
 		servState := &serverState{
 			connState: CONNECTION_EMPTY,
@@ -137,9 +139,9 @@ func main() {
 		emptyView := NewServerTab(&serverConnection{}, servState)
 		servState.tab = emptyView
 		mw.WindowBase.Synchronize(func() {
-
 			helpCmd(&commandContext{tab: emptyView})
 		})
+		servers = append(servers, servState)
 	}
 
 	// FIXME(tso): abstract opening a new server connection/tab
