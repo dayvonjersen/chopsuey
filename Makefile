@@ -1,5 +1,5 @@
 all:
-	go build && ./chopsuey.exe |& pp
+	go build && ./chopsuey.exe |& tee debug.log |& pp
 release:
 	# go get github.com/akavel/rsrc
 	rsrc -manifest chopsuey.exe.manifest -ico chopsuey.ico
