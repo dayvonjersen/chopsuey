@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 )
@@ -21,25 +21,46 @@ type clientConfig struct {
 	ChatLogsEnabled bool                `json:"chatlogs"`
 	TimeFormat      string              `json:"timeformat"`
 	Version         string              `json:"version"`
+	QuitMessage     string              `json:"quitmessage"`
 }
 
-func (cfg *connectionConfig) ServerString() string {
-	if cfg.Ssl {
-		return fmt.Sprintf("%s:+%d", cfg.Host, cfg.Port)
+func defaultClientConfig() *clientConfig {
+	return &clientConfig{
+		AutoConnect: []*connectionConfig{},
+		TimeFormat:  "15:04",
+		Version:     "chopsuey IRC " + VERSION_STRING + " github.com/generaltso/chopsuey",
+		QuitMessage: "|･ω･｀)",
 	}
-	return fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 }
 
 func getClientConfig() (*clientConfig, error) {
+	cfg := defaultClientConfig()
+
 	f, err := os.Open("config.json")
-	checkErr(err)
 	defer f.Close()
+	if err != nil {
+		return cfg, err
+	}
 
 	b, err := ioutil.ReadAll(f)
-	checkErr(err)
+	if err != nil {
+		return cfg, err
+	}
 
-	var cfg *clientConfig
 	err = json.Unmarshal(b, &cfg)
 
 	return cfg, err
+}
+
+func writeClientConfig() error {
+	f, err := os.Create("config.json")
+	if err == nil {
+		b, err := json.MarshalIndent(clientCfg, "", "    ")
+		if err != nil {
+			return err
+		}
+		io.WriteString(f, string(b))
+		f.Close()
+	}
+	return err
 }

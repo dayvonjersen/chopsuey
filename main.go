@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/fluffle/goirc/logging"
@@ -10,6 +11,8 @@ import (
 )
 
 const (
+	VERSION_STRING = "v0.5"
+
 	CHATLOG_DIR = "./chatlogs/"
 	SCRIPTS_DIR = "./scripts/"
 )
@@ -42,7 +45,7 @@ func main() {
 
 	MainWindow{
 		AssignTo: &mw,
-		Title:    "chopsuey IRC v0.5",
+		Title:    "chopsuey IRC " + VERSION_STRING,
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
@@ -93,32 +96,75 @@ func main() {
 		mainWindowFocused = false
 	})
 
-	if clientCfg, err = getClientConfig(); err == nil {
-		for _, cfg := range clientCfg.AutoConnect {
-			servState := &serverState{
-				connState:   CONNECTION_EMPTY,
-				hostname:    cfg.Host,
-				port:        cfg.Port,
-				ssl:         cfg.Ssl,
-				networkName: cfg.ServerString(),
-				user: &userState{
-					nick: cfg.Nick,
-				},
-				channels: map[string]*channelState{},
-				privmsgs: map[string]*privmsgState{},
+	clientCfg, err = getClientConfig()
+
+	if err != nil {
+		title := "error parsing config.json"
+		msg := err.Error()
+		icon := walk.MsgBoxIconError
+
+		if os.IsNotExist(err) {
+			title = "config.json not found"
+			msg = "default configuration loaded"
+			err = writeClientConfig()
+			if err == nil {
+				cwd, err2 := os.Getwd()
+				checkErr(err2)
+				msg += " and a new config.json file has been written in " + cwd
+				icon = walk.MsgBoxIconInformation
+			} else {
+				msg += " but an error was encountered while trying to write the file: " + err.Error()
 			}
-			var servConn *serverConnection
-			servConn = NewServerConnection(servState, func() {
-				for _, channel := range cfg.AutoJoin {
-					servConn.conn.Join(channel)
-				}
-			})
-			servView := NewServerTab(servConn, servState)
-			servState.tab = servView
-			servConn.Connect(servState)
+			walk.MsgBox(mw, title, msg, icon)
 		}
-	} else {
-		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
+	}
+
+	// FIXME(tso): do this better.
+	if len(clientCfg.AutoConnect) == 0 {
+		servState := &serverState{
+			connState: CONNECTION_EMPTY,
+			user: &userState{
+				nick: "nobody",
+			},
+			channels: map[string]*channelState{},
+			privmsgs: map[string]*privmsgState{},
+		}
+		emptyView := NewServerTab(&serverConnection{}, servState)
+		servState.tab = emptyView
+		mw.WindowBase.Synchronize(func() {
+
+			helpCmd(&commandContext{tab: emptyView})
+		})
+	}
+
+	// FIXME(tso): abstract opening a new server connection/tab
+	for _, cfg := range clientCfg.AutoConnect {
+		servState := &serverState{
+			connState:   CONNECTION_EMPTY,
+			hostname:    cfg.Host,
+			port:        cfg.Port,
+			ssl:         cfg.Ssl,
+			networkName: serverAddr(cfg.Host, cfg.Port),
+			user: &userState{
+				nick: cfg.Nick,
+			},
+			channels: map[string]*channelState{},
+			privmsgs: map[string]*privmsgState{},
+		}
+		var servConn *serverConnection
+		servConn = NewServerConnection(servState, func() {
+			for _, channel := range cfg.AutoJoin {
+				servConn.conn.Join(channel)
+			}
+		})
+
+		servView := NewServerTab(servConn, servState)
+		servState.tab = servView
+
+		// FIXME(tso): just use the logic from /server
+		if cfg.Host != "" && cfg.Port != 0 && cfg.Nick != "" {
+			go servConn.Connect(servState)
+		}
 	}
 
 	mw.Run()
