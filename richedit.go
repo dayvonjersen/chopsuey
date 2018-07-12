@@ -42,6 +42,7 @@ const (
 	CFM_CHARSET     = 0x08000000
 	CFM_SUBSCRIPT   = 0x00010000
 	CFM_SUPERSCRIPT = 0x00030000
+	CFE_AUTOCOLOR   = 0x40000000
 	CFM_EFFECTS     = (CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE | CFM_COLOR | CFM_STRIKEOUT | CFM_PROTECTED | CFM_LINK)
 
 	CFM_BACKCOLOR = 0x04000000
@@ -247,8 +248,8 @@ func (re *RichEdit) UnderlineText(start, end int) {
 // Removes all text effects
 func (re *RichEdit) ResetText(start, end int) {
 	charfmt := _charformat2{
-		dwMask:    CFM_EFFECTS | CFM_BACKCOLOR,
-		dwEffects: 0,
+		dwMask:    CFE_AUTOCOLOR,
+		dwEffects: CFE_AUTOCOLOR,
 	}
 	re.setCharFormat2(charfmt, start, end)
 }
