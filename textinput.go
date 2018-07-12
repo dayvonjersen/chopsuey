@@ -35,7 +35,6 @@ type tabComplete struct {
 	Index   int
 }
 
-// http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
 func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if msg == win.WM_GETDLGCODE {
 		if wParam == win.VK_TAB || wParam == win.VK_ESCAPE || wParam == win.VK_RETURN {
@@ -67,11 +66,11 @@ func NewTextInput(t tabViewWithInput, ctx *commandContext) *MyLineEdit {
 			}
 			textInput.msgHistory = append(textInput.msgHistory, text)
 			textInput.msgHistoryIndex = len(textInput.msgHistory) - 1
-			if text[0] == '/' {
+			if text[0] == '/' && len(text) > 1 {
 				parts := strings.Split(text[1:], " ")
 				cmd := parts[0]
 				if cmd[0] == '/' {
-					t.Send(cmd)
+					t.Send(text[1:])
 				} else {
 					var args []string
 					if len(parts) > 1 {

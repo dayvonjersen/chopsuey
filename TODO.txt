@@ -34,12 +34,6 @@ BUGS:
  - unicode characters display in a shitty font make sure Universalia is
    used if the text isn't ascii  
 
- - // to escape / instead of calling a command needs to append the rest of
-   the text after the not command
-   input:    //version tso
-   expected: /version tso
-   actual:   /version
-
  - servState.user.nick just updates and doesn't wait for server confirmation
 
  - 322 can contain invalid channel names like * to show that the channel
@@ -74,10 +68,6 @@ FEATURES:
 --------------------------------------------------------------------------------
 whitespace or something to indicate where unread messages start
 --------------------------------------------------------------------------------
-"started logging at 7/10/2018 5:31:47 PM" in chatlogs
-and delete all the chatlogs we have it's almost a megabyte
-maybe they should be gzipped :o
---------------------------------------------------------------------------------
 CTCP messages should appear somewhere in UI
 --------------------------------------------------------------------------------
 get rid of that printf in nickflash/highlighter
@@ -89,7 +79,6 @@ code cleanup
  - colors
  - ui
  - irc
- - commands
  - everything really...
 --------------------------------------------------------------------------------
 better scripting examples
@@ -224,7 +213,11 @@ https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyleex
 https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
 
 Useful:
+    open urls from command line in any OS:
 https://www.dwheeler.com/essays/open-files-urls.html
+
+    get tab key messages in windows:
+http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
 
 
 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
