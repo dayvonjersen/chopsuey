@@ -21,31 +21,31 @@ const (
 )
 
 func clientError(tab tabWithInput, msg ...string) {
-	Println(CLIENT_ERROR, T(tab), msg)
+	Println(CLIENT_ERROR, T(tab), msg...)
 }
 func clientMessage(tab tabWithInput, msg ...string) {
-	Println(CLIENT_MESSAGE, T(tab), msg)
+	Println(CLIENT_MESSAGE, T(tab), msg...)
 }
 func serverMessage(tab tabWithInput, msg ...string) {
-	Println(SERVER_MESSAGE, T(tab), msg)
+	Println(SERVER_MESSAGE, T(tab), msg...)
 }
 func serverError(tab tabWithInput, msg ...string) {
-	Println(SERVER_ERROR, T(tab), msg)
+	Println(SERVER_ERROR, T(tab), msg...)
 }
 func joinpartMessage(tab tabWithInput, msg ...string) {
-	Println(JOINPART_MESSAGE, T(tab), msg)
+	Println(JOINPART_MESSAGE, T(tab), msg...)
 }
 func updateMessage(tab tabWithInput, msg ...string) {
-	Println(UPDATE_MESSAGE, T(tab), msg)
+	Println(UPDATE_MESSAGE, T(tab), msg...)
 }
 func noticeMessage(tab tabWithInput, msg ...string) {
-	Println(NOTICE_MESSAGE, T(tab), msg)
+	Println(NOTICE_MESSAGE, T(tab), msg...)
 }
 func actionMessage(tab tabWithInput, msg ...string) {
-	Println(ACTION_MESSAGE, T(tab), msg)
+	Println(ACTION_MESSAGE, T(tab), msg...)
 }
 func privateMessage(tab tabWithInput, msg ...string) {
-	Println(PRIVATE_MESSAGE, T(tab), msg)
+	Println(PRIVATE_MESSAGE, T(tab), msg...)
 }
 
 func T(tab ...tabWithInput) (tabs []tabWithInput) { return } // expected type, found ILLEGAL
@@ -130,30 +130,29 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		}
 
 	case PRIVATE_MESSAGE:
-		time, nick, msg := now(), text[0], strings.Join(text[1:], " ")
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
 		logmsg := time + "<" + nick + "> " + msg
 		hl := highlight(nick, &msg)
-		if hl {
-			t.Notify()
-		}
 		colorNick(&nick)
 		for _, tab := range tabs {
+			if hl {
+				tab.Notify()
+			}
 			tab.Logln(logmsg)
 			tab.Println(parseString(privateMsg(hl, time, nick, msg)))
 		}
 
 	case ACTION_MESSAGE:
-		time, nick := now(), text[0]
-		msg := time + " *" + nick + msg + "*"
-		logmsg := msg
+		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
 		hl := highlight(nick, &msg)
-		if hl {
-			t.Notify()
-		}
 		colorNick(&nick)
 		for _, tab := range tabs {
-			tab.Logln(msg)
-			tab.Println(parseString(actionMsg(nick, text[1:]...)))
+			if hl {
+				tab.Notify()
+			}
+			tab.Logln(logmsg)
+			tab.Println(parseString(actionMsg(hl, time, nick, msg)))
 		}
 
 	default:
@@ -172,7 +171,7 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		??? default is yes...
 
 
-		also msgType %d isn't defined. add it to messages.go`, text, msgType)
+		also msgType %d isn't defined. add it to messages.go`, msg, msgType)
 
 		text, styles := parseString(strings.Join(msg, " "))
 		for _, tab := range tabs {
@@ -253,11 +252,11 @@ func highlight(nick string, msg *string) bool {
 	//            unless recompiling a new one when the nick changes will really
 	//            give that much of a performance increase
 	// -tso 7/10/2018 6:58:36 AM
-	m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(nick)+`(\b|[^\w])`, msg)
+	m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(nick)+`(\b|[^\w])`, *msg)
 	return m
 }
 
 func colorNick(nick *string) {
 	// TODO(tso): different colors for nicks
-	*nick = color(nick, DarkGrey)
+	*nick = color(*nick, DarkGrey)
 }
