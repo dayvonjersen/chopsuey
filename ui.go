@@ -101,11 +101,15 @@ func (t *tabViewChatbox) Focus() {
 }
 
 func (t *tabViewChatbox) Println(msg string) {
+	t.chatlogger(msg)
+
+	text, styles := parseString(msg)
 	mw.WindowBase.Synchronize(func() {
-		text, styles := parseString(msg)
 		t.textBuffer.AppendText("\n")
 		t.textBuffer.AppendText(text, styles...)
-		t.chatlogger(msg)
+		// HACK(tso): shouldn't have to clear styles like this
+		l := t.textBuffer.TextLength()
+		t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
 		if !t.HasFocus() {
 			t.unread++
 			t.tabPage.SetTitle(t.Title())
