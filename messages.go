@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 )
 
@@ -131,26 +132,28 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 	case PRIVATE_MESSAGE:
 		time, nick, msg := now(), text[0], strings.Join(text[1:], " ")
 		logmsg := time + "<" + nick + "> " + msg
-		if highlight(nick, &msg) { // :point_left: :ok_hand: :joy: :100: :fire:
+		hl := highlight(nick, &msg)
+		if hl {
 			t.Notify()
 		}
-		colorNick(&nick) // :point_left: :ok_hand: :joy: :100: :fire:
+		colorNick(&nick)
 		for _, tab := range tabs {
 			tab.Logln(logmsg)
-			tab.Println(parseString(privateMsg(time, nick, msg)))
+			tab.Println(parseString(privateMsg(hl, time, nick, msg)))
 		}
 
 	case ACTION_MESSAGE:
 		time, nick := now(), text[0]
 		msg := time + " *" + nick + msg + "*"
 		logmsg := msg
-		if highlight(nick, &msg) { // :point_left: :ok_hand: :joy: :100: :fire:
+		hl := highlight(nick, &msg)
+		if hl {
 			t.Notify()
 		}
-		colorNick(&nick) // :point_left: :ok_hand: :joy: :100: :fire:
+		colorNick(&nick)
 		for _, tab := range tabs {
 			tab.Logln(msg)
-			tab.Println(parseString(actionMsg(msg)))
+			tab.Println(parseString(actionMsg(nick, text[1:]...)))
 		}
 
 	default:
@@ -220,13 +223,41 @@ func noticeMsg(text ...string) string {
 		strings.Join(text, " ")
 }
 
-func actionMsg(text ...string) string {
-	return color(now(), LightGray) +
-		" " + color("*"+strings.Join(text, " ")+"*", Blue)
+func actionMsg(hl bool, text ...string) string {
+	line := color(now(), LightGray) + " "
+	if hl {
+		line += bold(color(" ..! ", Orange, Yellow))
+	}
+	return line + " " + "*" + strings.Join(text, " ") + "*"
 }
 
-func privateMsg(text ...string) string {
+func privateMsg(hl bool, text ...string) string {
+	if len(text) < 2 {
+		return fmt.Sprintf("wrong argument count for notice: want 2, got %d:\n%v", len(text), text)
+	}
 	nick := text[0]
-	return color(now(), LightGray) +
-		" " + color(nick, DarkGrey) + " " + strings.Join(text[1:], " ")
+	line := color(now(), LightGray) + " "
+	if hl {
+		line += bold(color(" ..! ", Orange, Yellow))
+	}
+	return line + nick + " " + strings.Join(text[1:], " ")
+
+}
+
+func highlight(nick string, msg *string) bool {
+	// NOTE(tso): we can modify msg in-place that's why the function signature
+	//            is like that but for now a marker next to the line is enough.
+	//            Visual choice, not a programatic one.
+	// -tso 7/12/2018 9:44:44 AM
+	// NOTE(tso): not using compiled regexp here because user's nick can change
+	//            unless recompiling a new one when the nick changes will really
+	//            give that much of a performance increase
+	// -tso 7/10/2018 6:58:36 AM
+	m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(nick)+`(\b|[^\w])`, msg)
+	return m
+}
+
+func colorNick(nick *string) {
+	// TODO(tso): different colors for nicks
+	*nick = color(nick, DarkGrey)
 }

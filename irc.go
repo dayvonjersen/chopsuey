@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -139,7 +138,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	}
 
 	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
-
+		// FIXME(COLOURIZE)
 		// send to current tab if current tab != channel
 		// stub
 	}
@@ -290,26 +289,15 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		tab.Println(fmt.Sprintf(fmtstr, now(), nick, l.Args[1]))
 	}
 
-	highlighter := func(text string, l *goirc.Line) string {
-		// NOTE(tso): not using compiled regexp here because user's nick can change
-		//			  unless recompiling a new one when the nick changes will really
-		//			  give that much of a performance increase
-		// -tso 7/10/2018 6:58:36 AM
-		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, l.Args[1])
-		if m {
-			// FIXME(COLOURIZE)
-			return bold(color(" * ", Black, Yellow)) + text
-		}
-		return text
-	}
-
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
+		// TODO(tso):
 		// debugPrint(l)
 		if l.Args[0] == "DCC" {
 			dccHandler(servConn, l.Nick, l.Args[2])
 		}
 	})
 	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
+		// TODO(tso):
 		// debugPrint(l)
 	})
 
