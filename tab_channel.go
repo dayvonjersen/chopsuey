@@ -76,6 +76,7 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
 	t := &tabChannel{}
+	tabs = append(tabs, t)
 	t.tabTitle = chanState.channel
 
 	chanState.nickList = newNickList()
@@ -199,7 +200,6 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-		tabs = append(tabs, t)
 	})
 	chanState.tab = t
 	servState.channels[chanState.channel] = chanState

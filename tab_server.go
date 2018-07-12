@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lxn/walk"
 )
@@ -61,6 +62,7 @@ func (t *tabServer) Update(servState *serverState) {
 
 func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer {
 	t := &tabServer{}
+	tabs = append(tabs, t)
 	t.tabTitle = servState.networkName
 	t.chatlogger = NewChatLogger(servState.networkName)
 
@@ -81,12 +83,14 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
+		log.Printf("tabWidget: %v", tabWidget)
+		log.Printf("tabWidget.Pages(): %v", tabWidget.Pages())
+		log.Printf("tabPage: %v", t.tabPage)
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-		tabs = append(tabs, t)
 	})
 	return t
 }

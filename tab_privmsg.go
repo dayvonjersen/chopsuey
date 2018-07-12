@@ -29,6 +29,7 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {
 	t := &tabPrivmsg{}
+	tabs = append(tabs, t)
 	t.tabTitle = pmState.nick
 
 	t.send = func(msg string) {
@@ -87,7 +88,6 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// index := tabWidget.Pages().Index(t.tabPage)
 		// checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
-		tabs = append(tabs, t)
 	})
 	pmState.tab = t
 	servState.privmsgs[pmState.nick] = pmState
