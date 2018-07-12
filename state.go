@@ -39,3 +39,31 @@ type privmsgState struct {
 	nick string
 	tab  *tabViewPrivmsg
 }
+
+func ensureChanState(servConn *serverConnection, servState *serverState, channel string) *channelState {
+	chanState, ok := servState.channels[channel]
+	if !ok {
+		chanState = &channelState{
+			channel:  channel,
+			nickList: newNickList(),
+		}
+		chanState.tab = NewChannelTab(servConn, servState, chanState)
+		servState.channels[channel] = chanState
+	}
+	return chanState
+}
+
+// ok so maybe generics might be useful sometimes
+func ensurePmState(servConn *serverConnection, servState *serverState, nick string) *privmsgState {
+	pmState, ok := servState.privmsgs[nick]
+	if !ok {
+		pmState = &privmsgState{
+			nick: nick,
+		}
+		pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
+		servState.privmsgs[nick] = pmState
+	}
+	return pmState
+}
+
+// ... is ensureServerState() our solution??? :o

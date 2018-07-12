@@ -338,23 +338,10 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		printer("NOTICE", color("%s *** %s: %s", Orange), l)
 	})
 
-	ensureChanState := func(channel string) *channelState {
-		chanState, ok := servState.channels[channel]
-		if !ok {
-			chanState = &channelState{
-				channel:  channel,
-				nickList: newNickList(),
-			}
-			chanState.tab = NewChannelTab(servConn, servState, chanState)
-			servState.channels[channel] = chanState
-		}
-		return chanState
-	}
-
 	// NAMREPLY
 	conn.HandleFunc("353", func(c *goirc.Conn, l *goirc.Line) {
 		channel := l.Args[2]
-		chanState := ensureChanState(channel)
+		chanState := ensureChanState(servConn, servState, channel)
 		nicks := strings.Split(l.Args[3], " ")
 		for _, n := range nicks {
 			if n != "" {
@@ -370,7 +357,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if !ok {
 			// forced join
 			conn.Join(channel)
-			ensureChanState(channel)
+			ensureChanState(servConn, servState, channel)
 			return
 		}
 		if !chanState.nickList.Has(l.Nick) {
@@ -553,7 +540,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		channel := l.Args[1]
 		topic := l.Args[2]
 
-		chanState := ensureChanState(channel)
+		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
 		// FIXME(COLOURIZE)
@@ -569,7 +556,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			who = who[0:i]
 		}
 
-		chanState := ensureChanState(channel)
+		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
 		// FIXME(COLOURIZE)
