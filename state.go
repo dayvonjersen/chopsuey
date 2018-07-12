@@ -24,20 +24,20 @@ type serverState struct {
 	user        *userState
 	channels    map[string]*channelState
 	privmsgs    map[string]*privmsgState
-	tab         *tabViewServer
-	channelList *tabViewChannelList
+	tab         *tabServer
+	channelList *tabChannelList
 }
 
 type channelState struct {
 	channel  string
 	topic    string
 	nickList *nickList
-	tab      *tabViewChannel
+	tab      *tabChannel
 }
 
 type privmsgState struct {
 	nick string
-	tab  *tabViewPrivmsg
+	tab  *tabPrivmsg
 }
 
 func ensureChanState(servConn *serverConnection, servState *serverState, channel string) *channelState {

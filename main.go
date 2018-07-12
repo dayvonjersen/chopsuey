@@ -34,7 +34,7 @@ var (
 
 	connections []*serverConnection
 	servers     []*serverState
-	tabs        []tabView
+	tabs        []tab
 )
 
 type debugLogger struct{}

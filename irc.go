@@ -248,7 +248,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 	printer := func(code, fmtstr string, l *goirc.Line) {
 		var (
-			tab  tabViewWithInput
+			tab  tabWithInput
 			nick string
 		)
 		if l.Args[0] == servState.user.nick {

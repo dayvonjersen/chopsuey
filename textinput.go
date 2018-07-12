@@ -44,15 +44,15 @@ func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func NewTextInput(t tabViewWithInput, ctx *commandContext) *MyLineEdit {
+func NewTextInput(t tabWithInput, ctx *commandContext) *MyLineEdit {
 	var tabPage *walk.TabPage
 	switch t.(type) {
-	case *tabViewServer:
-		tabPage = t.(*tabViewServer).tabPage
-	case *tabViewChannel:
-		tabPage = t.(*tabViewChannel).tabPage
-	case *tabViewPrivmsg:
-		tabPage = t.(*tabViewPrivmsg).tabPage
+	case *tabServer:
+		tabPage = t.(*tabServer).tabPage
+	case *tabChannel:
+		tabPage = t.(*tabChannel).tabPage
+	case *tabPrivmsg:
+		tabPage = t.(*tabPrivmsg).tabPage
 	default:
 		log.Panicf("unsupported type %T", t)
 	}

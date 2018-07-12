@@ -12,7 +12,7 @@ import (
 
 type commandContext struct {
 	servConn *serverConnection
-	tab      tabViewWithInput
+	tab      tabWithInput
 
 	servState *serverState
 	chanState *channelState
