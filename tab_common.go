@@ -14,12 +14,16 @@ type tab interface {
 }
 
 type tabWithInput interface {
-	tab
-	Send(string)
-	Logln(string)
-	Errorln(string)
-	Println(string)
-	Clear()
+	tab // inherit all from above
+
+	Send(string) // send to channel/nick
+
+	Logln(string)            // chatlogging
+	Errorln(string, [][]int) // print error to buffer
+	Println(string, [][]int) // print text to buffer
+	Notify()                 // put a * in the tab title
+
+	Clear() // clear buffer
 }
 
 type tabCommon struct {

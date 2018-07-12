@@ -71,11 +71,13 @@ func init() {
 func connectCmd(ctx *commandContext, args ...string) {
 	switch ctx.servState.connState {
 	case CONNECTION_EMPTY:
-		ctx.tab.Println("ERROR: no network specified (use /server)")
+		clientError(ctx.tab, "no network specified (use /server)")
+
 	case CONNECTING, CONNECTION_START:
-		ctx.tab.Println("ERROR: connection in progress: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+		clientError(ctx.tab, "connection in progress: "+serverAddr(ctx.servState.hostname, ctx.servState.port))
+
 	case CONNECTED:
-		ctx.tab.Println("ERROR: already connected to: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+		clientError(ctx.tab, "already connected to: "+serverAddr(ctx.servState.hostname, ctx.servState.port))
 
 	case DISCONNECTED, CONNECTION_ERROR:
 		ctx.servConn.Connect(ctx.servState)
@@ -85,7 +87,9 @@ func connectCmd(ctx *commandContext, args ...string) {
 func disconnectCmd(ctx *commandContext, args ...string) {
 	switch ctx.servState.connState {
 	case DISCONNECTED, CONNECTION_ERROR, CONNECTION_EMPTY:
+		clientError(ctx.tab, "already disconnected.")
 		return
+
 	case CONNECTING, CONNECTION_START, CONNECTED:
 		ctx.servConn.retryConnectEnabled = false
 		select {
@@ -117,7 +121,7 @@ func quitCmd(ctx *commandContext, args ...string) {
 }
 
 func reconnectCmd(ctx *commandContext, args ...string) {
-	ctx.tab.Println(`Sorry, /reconnect doesn't work right now, please do:
+	clientMessage(ctx.tab, `Sorry, /reconnect doesn't work right now, please do:
 /disconnect
 /connect`)
 	return
@@ -125,9 +129,9 @@ func reconnectCmd(ctx *commandContext, args ...string) {
 		// FIXME(tso): either find out why goirc panics when we do this or replace goirc altogether
 			switch ctx.servState.connState {
 			case CONNECTION_EMPTY:
-				ctx.tab.Println("ERROR: no network specified (use /server)")
+				clientMessage(ctx.tab, "ERROR: no network specified (use /server)")
 			case CONNECTING, CONNECTION_START:
-				ctx.tab.Println("ERROR: connection in progress: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+				clientMessage(ctx.tab, "ERROR: connection in progress: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
 
 			case CONNECTED:
 				disconnectCmd(ctx, args...)
@@ -142,7 +146,7 @@ func reconnectCmd(ctx *commandContext, args ...string) {
 
 func serverCmd(ctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		ctx.tab.Println("usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
+		clientMessage(ctx.tab, "usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
 		return
 	}
 
@@ -223,7 +227,7 @@ func closeCmd(ctx *commandContext, args ...string) {
 
 func ctcpCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		ctx.tab.Println("usage: /ctcp [nick] [message] [args...]")
+		clientMessage(ctx.tab, "usage: /ctcp [nick] [message] [args...]")
 		return
 	}
 	ctx.servConn.conn.Ctcp(args[0], args[1], args[2:]...)
@@ -231,7 +235,7 @@ func ctcpCmd(ctx *commandContext, args ...string) {
 
 func joinCmd(ctx *commandContext, args ...string) {
 	if len(args) != 1 || len(args[0]) < 2 || args[0][0] != '#' {
-		ctx.tab.Println("usage: /join [#channel]")
+		clientMessage(ctx.tab, "usage: /join [#channel]")
 		return
 	}
 	ctx.servConn.conn.Join(args[0])
@@ -239,13 +243,13 @@ func joinCmd(ctx *commandContext, args ...string) {
 
 func kickCmd(ctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		ctx.tab.Println("usage: /kick [nick] [(optional) reason...]")
+		clientMessage(ctx.tab, "usage: /kick [nick] [(optional) reason...]")
 		return
 	}
 	if ctx.chanState != nil {
 		ctx.servConn.conn.Kick(ctx.chanState.channel, args[0], args[1:]...)
 	} else {
-		ctx.tab.Println("ERROR: /kick only works for channels.")
+		clientMessage(ctx.tab, "ERROR: /kick only works for channels.")
 	}
 }
 
@@ -264,7 +268,7 @@ func listCmd(ctx *commandContext, args ...string) {
 func meCmd(ctx *commandContext, args ...string) {
 	msg := strings.Join(args, " ")
 	if len(args) == 0 {
-		ctx.tab.Println("usage: /me [message...]")
+		clientMessage(ctx.tab, "usage: /me [message...]")
 		return
 	}
 	var dest string
@@ -273,25 +277,24 @@ func meCmd(ctx *commandContext, args ...string) {
 	} else if ctx.pmState != nil {
 		dest = ctx.pmState.nick
 	} else {
-		ctx.tab.Println("ERROR: /me can only be used in channels and private messages")
+		clientError(ctx.tab, "ERROR: /me can only be used in channels and private messages")
 		return
 	}
 	ctx.servConn.conn.Action(dest, msg)
-	ctx.tab.Println(fmt.Sprintf(color("%s", LightGrey)+color(" *%s %s*", DarkGrey), now(), ctx.servState.user.nick, msg))
+	actionMessage(ctx.tab, ctx.servState.user.nick, msg)
 }
 
 func modeCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		ctx.tab.Println("usage: /mode [#channel or your nick] [mode] [nicks...]")
+		clientMessage(ctx.tab, "usage: /mode [#channel or your nick] [mode] [nicks...]")
 		return
 	}
 	ctx.servConn.conn.Mode(args[0], args[1:]...)
 }
 
 func privmsgCmd(ctx *commandContext, args ...string) {
-	// FIXME(tso): create helper functions isChannel isPrivmsg...
-	if len(args) < 2 || args[0][0] == '#' {
-		ctx.tab.Println("usage: /msg [nick] [message...]")
+	if len(args) < 2 || isChannel(args[0]) {
+		clientMessage(ctx.tab, "usage: /msg [nick] [message...]")
 		return
 	}
 	nick := args[0]
@@ -299,16 +302,18 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 
 	// FIXME(tso): always inline messages to services
 	//             probably should add an option to disable it too
-	pmState, ok := ctx.servState.privmsgs[nick]
-	if !ok {
-		pmState = &privmsgState{
-			nick: nick,
-		}
-		pmState.tab = NewPrivmsgTab(ctx.servConn, ctx.servState, pmState)
+
+	if isService(nick) {
+		noticeMessage(
+			getCurrentTabForServer(ctx.servState),
+			ctx.servState.user.nick, nick, msg)
+		return
 	}
 
+	pmState := ensurePmState(ctx.servConn, ctx.servState, nick)
+
 	ctx.servConn.conn.Privmsg(nick, msg)
-	pmState.tab.Println(fmt.Sprintf("%s <%s> %s", now(), ctx.servState.user.nick, msg))
+	privateMessage(pmState.tab, ctx.servState.user.nick, msg)
 	mw.WindowBase.Synchronize(func() {
 		checkErr(tabWidget.SetCurrentIndex(pmState.tab.Index()))
 	})
@@ -316,7 +321,7 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 
 func nickCmd(ctx *commandContext, args ...string) {
 	if len(args) != 1 {
-		ctx.tab.Println("usage: /nick [new nick]")
+		clientMessage(ctx.tab, "usage: /nick [new nick]")
 		return
 	}
 	ctx.servConn.conn.Nick(args[0])
@@ -324,19 +329,19 @@ func nickCmd(ctx *commandContext, args ...string) {
 
 func noticeCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		ctx.tab.Println("usage: /notice [#channel or nick] [message...]")
+		clientMessage(ctx.tab, "usage: /notice [#channel or nick] [message...]")
 		return
 	}
 	msg := strings.Join(args[1:], " ")
 	ctx.servConn.conn.Notice(args[0], msg)
-	ctx.tab.Println(fmt.Sprintf("%s *** %s: %s", now(), ctx.servState.user.nick, msg))
+	noticeMessage(ctx.tab, ctx.servState.user.nick, args[0], msg)
 }
 
 func partCmd(ctx *commandContext, args ...string) {
 	if ctx.chanState != nil {
 		ctx.servConn.Part(ctx.chanState.channel, strings.Join(args, " "), ctx.servState)
 	} else {
-		ctx.tab.Println("ERROR: /part only works for channels. Try /close")
+		clientError(ctx.tab, "ERROR: /part only works for channels. Try /close")
 	}
 }
 
@@ -345,25 +350,25 @@ func rejoinCmd(ctx *commandContext, args ...string) {
 		ctx.servConn.Part(ctx.chanState.channel, "rejoining...", ctx.servState)
 		ctx.servConn.conn.Join(ctx.chanState.channel)
 	} else {
-		ctx.tab.Println("ERROR: /rejoin only works for channels.")
+		clientError(ctx.tab, "ERROR: /rejoin only works for channels.")
 	}
 }
 
 func topicCmd(ctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		ctx.tab.Println("usage: /topic [new topic...]")
+		clientMessage(ctx.tab, "usage: /topic [new topic...]")
 		return
 	}
 	if ctx.chanState != nil {
 		ctx.servConn.conn.Topic(ctx.chanState.channel, args...)
 	} else {
-		ctx.tab.Println("ERROR: /topic can only be used in channels")
+		clientError(ctx.tab, "ERROR: /topic can only be used in channels")
 	}
 }
 
 func helpCmd(ctx *commandContext, args ...string) {
 	// TODO(tso): print usage for individual commands
-	ctx.tab.Println(
+	clientMessage(ctx.tab,
 		`connect to a network:
 /server irc.example.org
 
@@ -399,12 +404,12 @@ func sendCmd(ctx *commandContext, args ...string) {
 
 func scriptCmd(ctx *commandContext, args ...string) {
 	if len(args) < 0 {
-		ctx.tab.Println("usage: /script [file in " + SCRIPTS_DIR + "] [args...]")
+		clientMessage(ctx.tab, "usage: /script [file in "+SCRIPTS_DIR+"] [args...]")
 		return
 	}
 
 	if ctx.chanState == nil && ctx.pmState == nil {
-		ctx.tab.Println("ERROR: scripts only work in channels and private messages!")
+		clientMessage(ctx.tab, "ERROR: scripts only work in channels and private messages!")
 		return
 	}
 
@@ -413,14 +418,14 @@ func scriptCmd(ctx *commandContext, args ...string) {
 	f, err := os.Open(SCRIPTS_DIR + scriptFile)
 	checkErr(err)
 	if os.IsNotExist(err) {
-		ctx.tab.Println("script not found: " + scriptFile)
+		clientError(ctx.tab, "script not found: "+scriptFile)
 		return
 	}
 	{
 		finfo, err := f.Stat()
 		checkErr(err)
 		if finfo.IsDir() {
-			ctx.tab.Println("script not found: " + scriptFile)
+			clientError(ctx.tab, "script not found: "+scriptFile)
 			return
 		}
 	}
@@ -445,7 +450,7 @@ func scriptCmd(ctx *commandContext, args ...string) {
 	case ".sh":
 		bin = "bash"
 	default:
-		ctx.tab.Println("unsupported script type: " + ext)
+		clientError(ctx.tab, "unsupported script type: "+ext)
 		return
 	}
 
@@ -456,12 +461,14 @@ func scriptCmd(ctx *commandContext, args ...string) {
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 		if err := cmd.Run(); err != nil {
-			ctx.tab.Println("ERROR: " + bin + " " + strings.Join(args, " ") + "\r\nreturned: " + err.Error())
+			clientError(ctx.tab, append([]string{bin}, args...)...)
+			clientError(ctx.tab, "returned:", err.Error())
 		}
 		out := strings.TrimSpace(stdout.String())
 		err := strings.TrimSpace(stderr.String())
 		if err != "" {
-			ctx.tab.Println(bin + " " + strings.Join(args, " ") + "\r\nreturned: " + err)
+			clientError(ctx.tab, append([]string{bin}, args...)...)
+			clientError(ctx.tab, "returned:", err)
 		}
 		if out != "" {
 			ctx.tab.Send(out)
@@ -471,7 +478,7 @@ func scriptCmd(ctx *commandContext, args ...string) {
 
 func registerCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		ctx.tab.Println("usage: /register [alias] [script file]")
+		clientMessage(ctx.tab, "usage: /register [alias] [script file]")
 		return
 	}
 
@@ -480,9 +487,9 @@ func registerCmd(ctx *commandContext, args ...string) {
 
 	if _, ok := clientCommands[name]; ok {
 		if alias, ok := scriptAliases[name]; ok {
-			ctx.tab.Println("overwriting previous alias of " + alias + " for /" + name)
+			clientMessage(ctx.tab, "overwriting previous alias of "+alias+" for /"+name)
 		} else {
-			ctx.tab.Println("ERROR: cannot overwrite built-in client command /" + name)
+			clientError(ctx.tab, "cannot overwrite built-in client command /"+name)
 			return
 		}
 	}
@@ -491,23 +498,23 @@ func registerCmd(ctx *commandContext, args ...string) {
 	clientCommands[name] = func(ctx *commandContext, args ...string) {
 		scriptCmd(ctx, append([]string{file}, args...)...)
 	}
-	ctx.tab.Println("/" + name + " registered as alias to " + file)
+	clientMessage(ctx.tab, "/"+name+" registered as alias to "+file)
 }
 
 func unregisterCmd(ctx *commandContext, args ...string) {
 	if len(args) != 1 {
-		ctx.tab.Println("usage: /unregister [alias]")
+		clientMessage(ctx.tab, "usage: /unregister [alias]")
 		return
 	}
 	name := args[0]
 	alias, ok := scriptAliases[name]
 	if !ok {
-		ctx.tab.Println("ERROR: /" + name + " is not a registered alias of any script")
+		clientError(ctx.tab, "/"+name+" is not a registered alias of any script")
 		return
 	}
 	delete(scriptAliases, name)
 	delete(clientCommands, name)
-	ctx.tab.Println("/" + name + " (" + alias + ") unregistered")
+	clientMessage(ctx.tab, "/"+name+" ("+alias+") unregistered")
 }
 
 func rawCmd(ctx *commandContext, args ...string) {

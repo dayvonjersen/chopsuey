@@ -37,6 +37,34 @@ var (
 	tabs        []tab
 )
 
+func getCurrentTab() tab {
+	index := tabWidget.CurrentIndex()
+	for _, t := range tabs {
+		if t.Index() == index {
+			return t
+		}
+	}
+	return nil
+}
+
+func getCurrentTabForServer(servState *serverState) tabWithInput {
+	index := tabWidget.CurrentIndex()
+	if servState.tab.Index() == index {
+		return servState.tab
+	}
+	for _, t := range servState.channels {
+		if t.Index() == index {
+			return t
+		}
+	}
+	for _, t := range servState.privmsgs {
+		if t.Index() == index {
+			return t
+		}
+	}
+	return servState.tab
+}
+
 type debugLogger struct{}
 
 func (l *debugLogger) Debug(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
@@ -84,13 +112,7 @@ func main() {
 	tabWidget.SetPersistent(true)
 
 	focusCurrentTab := func() {
-		index := tabWidget.CurrentIndex()
-		for _, t := range tabs {
-			if t.Index() == index {
-				t.Focus()
-				return
-			}
-		}
+		getCurrentTab().Focus()
 	}
 
 	tabWidget.CurrentIndexChanged().Attach(focusCurrentTab)
