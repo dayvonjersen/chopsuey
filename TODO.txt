@@ -66,6 +66,10 @@ FEATURES:
 
 
 --------------------------------------------------------------------------------
+first run welcome message
+--------------------------------------------------------------------------------
+new server tab abstraction
+--------------------------------------------------------------------------------
 whitespace or something to indicate where unread messages start
 --------------------------------------------------------------------------------
 CTCP messages should appear somewhere in UI
@@ -90,10 +94,9 @@ autoload registered scripts at startup (config.json)
 --------------------------------------------------------------------------------
 /msg shouldn't open a new tab if it's to services like NickServ
 --------------------------------------------------------------------------------
-set Timeout, Name, QuitMessage, etc...
---------------------------------------------------------------------------------
 split extra long text input, allow ctrl+enter, split on \n
 i heard 512 bytes was maxlen
+goirc uses 450
 --------------------------------------------------------------------------------
 /ignore
 /unignore
@@ -110,11 +113,21 @@ inline twitter links
  - maybe use the API
  - maybe just scrape the HTML
 --------------------------------------------------------------------------------
-replace goirc with simple channels and goroutines
+list of reasons to replace goirc with simple channels and goroutines 
+that aren't NIH:
  - /reconnect is impossible for some reason to do with how goirc uses channels
+ - logger interface is inconvenient
+ - no convenient way to capture unhandled IRC commands
+
+list of reasons against:
+ - it works
+ - has anti-flooding stuff
 --------------------------------------------------------------------------------
-replace walk with qt
- - ... for version 2.0
+replace walk with qt ... for version 2.0
+
+list of reasons:
+ - I want inline images for emojis and embedding thumbnails of pictures that 
+   people link to
 --------------------------------------------------------------------------------
 
 colors
@@ -148,7 +161,6 @@ improve tabs in general
 --------------------------------------------------------------------------------
 settings panel which writes to config.json
 hot-loadable config.json
-autogen default config.json
 automatic NickServ stuff
  - IDEA(tso): dialog
     "Clickable links are disabled by default as a security precaution. 

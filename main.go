@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
@@ -15,6 +16,10 @@ const (
 
 	CHATLOG_DIR = "./chatlogs/"
 	SCRIPTS_DIR = "./scripts/"
+
+	CONNECT_RETRIES        = 100
+	CONNECT_RETRY_INTERVAL = time.Second
+	CONNECT_TIMEOUT        = time.Second * 30
 )
 
 var (

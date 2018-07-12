@@ -8,15 +8,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	goirc "github.com/fluffle/goirc/client"
 )
 
-const MAX_CONNECT_RETRIES = 100
-
 type serverConnection struct {
-	goircCfg *goirc.Config
-	conn     *goirc.Conn
+	cfg  *goirc.Config
+	conn *goirc.Conn
 
 	retryConnectEnabled bool
 	cancelRetryConnect  chan struct{}
@@ -25,44 +24,54 @@ type serverConnection struct {
 	IP       net.IP
 }
 
+func connect(servConn *serverConnection, servState *serverState) (success bool) {
+	servState.connState = CONNECTING
+	servState.tab.Update(servState)
+
+	err := servConn.conn.Connect()
+	if err != nil {
+		servState.connState = CONNECTION_ERROR
+		servState.lastError = err
+		servState.tab.Update(servState)
+		return false
+	}
+	servState.connState = CONNECTION_START
+	servState.tab.Update(servState)
+	return true
+}
+
 func (servConn *serverConnection) Connect(servState *serverState) {
 	cancel := make(chan struct{})
-	if servConn.retryConnectEnabled {
+	servConn.cancelRetryConnect = cancel
+	if !servConn.retryConnectEnabled {
+		connect(servConn, servState)
+	} else {
 		go func() {
-			for i := 0; i < MAX_CONNECT_RETRIES; i++ {
+			for i := 0; i < CONNECT_RETRIES; i++ {
 				select {
 				case <-cancel:
 					return
 				default:
-					servState.connState = CONNECTING
-					servState.tab.Update(servState)
-
-					err := servConn.conn.ConnectTo(servState.hostname)
-					if err != nil {
-						servState.connState = CONNECTION_ERROR
-						servState.lastError = err
-						servState.tab.Update(servState)
-					} else {
-						servState.connState = CONNECTION_START
-						servState.tab.Update(servState)
+					if connect(servConn, servState) {
 						return
 					}
+					<-time.After(CONNECT_RETRY_INTERVAL)
 				}
 			}
+			servState.tab.Println(
+				// FIXME(COLOURIZE)
+				fmt.Sprintf("couldn't connect to %s:%d after %d retries.", servState.hostname, servState.port, CONNECT_RETRIES),
+			)
 		}()
-	} else {
-		err := servConn.conn.ConnectTo(servState.hostname)
-		if err != nil {
-			servState.connState = CONNECTION_ERROR
-			servState.lastError = err
-			servState.tab.Update(servState)
-		}
 	}
-	servConn.cancelRetryConnect = cancel
 }
 
+// FIXME(tso): does this need to be a member function?
+//             I think we could access servConn.conn directly and then close the tab.
+//             wait we wanted to stop closing tabs for /part
+//             fix this.
 func (servConn *serverConnection) Part(channel, reason string, servState *serverState) {
-	if channel[0] == '#' {
+	if isChannel(channel) {
 		servConn.conn.Part(channel, reason)
 	}
 	chanState, ok := servState.channels[channel]
@@ -74,23 +83,26 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 }
 
 func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
-	goircCfg := goirc.NewConfig(servState.user.nick)
-	goircCfg.Version = clientCfg.Version
+	ident := "chopsuey"
+	name := "github.com/generaltso/chopsuey"
+	cfg := goirc.NewConfig(servState.user.nick, ident, name)
+	cfg.Version = clientCfg.Version
+	cfg.QuitMessage = clientCfg.QuitMessage
 	if servState.ssl {
-		goircCfg.SSL = true
-		goircCfg.SSLConfig = &tls.Config{
+		cfg.SSL = true
+		cfg.SSLConfig = &tls.Config{
 			ServerName:         servState.hostname,
 			InsecureSkipVerify: true,
 		}
-		goircCfg.NewNick = func(n string) string { return n + "^" }
+		cfg.NewNick = func(n string) string { return n + "^" }
 	}
-	goircCfg.Server = fmt.Sprintf("%s:%d", servState.hostname, servState.port)
-	conn := goirc.Client(goircCfg)
+	cfg.Server = serverAddr(servState.hostname, servState.port)
+	conn := goirc.Client(cfg)
 
 	servConn := &serverConnection{
 		conn:                conn,
 		retryConnectEnabled: true,
-		goircCfg:            goircCfg,
+		cfg:                 cfg,
 		isupport:            map[string]string{},
 	}
 
