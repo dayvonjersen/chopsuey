@@ -182,24 +182,24 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 }
 
 func clientMsg(text ...string) string {
-	return color(now(), LightGray) + strings.Join(text, " ")
+	return color(now(), LightGray) + " " + strings.Join(text, " ")
 }
 
 func clientErrorMsg(text ...string) string {
 	return color(now()+" "+strings.Join(text, " "), Red)
 }
 
-func serverMsg(text ...string) string {
+func serverErrorMsg(text ...string) string {
 	if len(text) < 2 {
-		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%v",
+		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%v",
 			len(text), text)
 	}
 	return color(now()+" "+color("ERROR("+text[0]+")", White, Red)+": "+strings.Join(text[1:], " "), Red)
 }
 
-func serverErrorMsg(text ...string) string {
+func serverMsg(text ...string) string {
 	if len(text) < 2 {
-		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%v",
+		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%v",
 			len(text), text)
 	}
 	return color(now()+" "+text[0]+": "+strings.Join(text[1:], " "), LightGray)
