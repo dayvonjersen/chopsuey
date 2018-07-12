@@ -16,6 +16,8 @@ type tab interface {
 type tabWithInput interface {
 	tab
 	Send(string)
+	Logln(string)
+	Errorln(string)
 	Println(string)
 	Clear()
 }

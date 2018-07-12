@@ -15,6 +15,9 @@ type tabChatbox struct {
 	chatlogger   func(string)
 }
 
+func (t *tabChatbox) Logln(msg string)   {}
+func (t *tabChatbox) Errorln(msg string) {}
+
 func (t *tabChatbox) Clear() {
 	t.textBuffer.SetText("")
 }
