@@ -10,17 +10,13 @@ type tabServer struct {
 	tabChatbox
 }
 
-// func Errorln() ???
-
-func (t *tabServer) Send(message string) {
-	// NOTE(tso): idea: send raw commands in the server tab e.g.
-	// PRIVMSG #go-nuts :hi guys
-}
+func (t *tabServer) Send(message string) {}
 
 func (t *tabServer) Update(servState *serverState) {
 	if t.tabTitle != servState.networkName {
 		t.tabTitle = servState.networkName
 	}
+
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 	})

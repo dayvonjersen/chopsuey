@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 type tabChannelList struct {
@@ -16,38 +17,42 @@ type tabChannelList struct {
 	complete, inProgress bool
 }
 
-func (cl *tabChannelList) Add(channel string, users int, topic string) {
+func (t *tabChannelList) Add(channel string, users int, topic string) {
 	item := &channelListItem{
 		channel: channel,
 		users:   users,
 		topic:   topic,
 	}
-	cl.mdl.items = append(cl.mdl.items, item)
-	if cl.complete || len(cl.mdl.items)%50 == 0 {
-		// cl.tabPage.SetSuspended(true)
-		// defer cl.tabPage.SetSuspended(false)
+	t.mdl.items = append(t.mdl.items, item)
+	if t.complete || len(t.mdl.items)%50 == 0 {
+		// t.tabPage.SetSuspended(true)
+		// defer t.tabPage.SetSuspended(false)
 		mw.WindowBase.Synchronize(func() {
-			cl.mdl.PublishRowsReset()
-			cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
+			t.mdl.PublishRowsReset()
+			t.mdl.Sort(t.mdl.sortColumn, t.mdl.sortOrder)
 		})
 	}
 }
 
-func (cl *tabChannelList) Clear() {
-	cl.mdl.items = []*channelListItem{}
-	cl.tabPage.SetSuspended(true)
-	defer cl.tabPage.SetSuspended(false)
-	cl.mdl.PublishRowsReset()
-	cl.mdl.Sort(cl.mdl.sortColumn, cl.mdl.sortOrder)
+func (t *tabChannelList) Clear() {
+	t.mdl.items = []*channelListItem{}
+	t.tabPage.SetSuspended(true)
+	defer t.tabPage.SetSuspended(false)
+	t.mdl.PublishRowsReset()
+	t.mdl.Sort(t.mdl.sortColumn, t.mdl.sortOrder)
 }
 
-func (t *tabChannelList) Title() string { return t.tabTitle }
+func (t *tabChannelList) Title() string {
+	return t.tabTitle
+}
+
 func (t *tabChannelList) Focus() {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		statusBar.SetText(t.statusText)
 	})
 }
+
 func (t *tabChannelList) Update(servState *serverState) {
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
@@ -63,29 +68,29 @@ func (t *tabChannelList) Update(servState *serverState) {
 }
 
 func NewChannelList(servConn *serverConnection, servState *serverState) *tabChannelList {
-	cl := &tabChannelList{}
-	cl.mu = &sync.Mutex{}
-	cl.mdl = new(channelListModel)
-	cl.complete = false
-	cl.inProgress = false
-	cl.statusText = servState.tab.statusText
+	t := &tabChannelList{}
+	t.mu = &sync.Mutex{}
+	t.mdl = new(channelListModel)
+	t.complete = false
+	t.inProgress = false
+	t.statusText = servState.tab.statusText
 
 	var tbl *walk.TableView
 
 	mw.WindowBase.Synchronize(func() {
 		var err error
-		cl.tabPage, err = walk.NewTabPage()
+		t.tabPage, err = walk.NewTabPage()
 		checkErr(err)
-		cl.tabTitle = "channels"
-		cl.tabPage.SetTitle(cl.tabTitle)
-		cl.tabPage.SetLayout(walk.NewVBoxLayout())
-		builder := NewBuilder(cl.tabPage)
+		t.tabTitle = "channels"
+		t.tabPage.SetTitle(t.tabTitle)
+		t.tabPage.SetLayout(walk.NewVBoxLayout())
+		builder := NewBuilder(t.tabPage)
 
 		w := float64(mw.ClientBounds().Width)
 
 		TableView{
 			AssignTo:         &tbl,
-			Model:            cl.mdl,
+			Model:            t.mdl,
 			ColumnsOrderable: true,
 			Columns: []TableViewColumn{
 				{
@@ -102,7 +107,7 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 				},
 			},
 			OnItemActivated: func() {
-				channel := cl.mdl.items[tbl.CurrentIndex()].channel
+				channel := t.mdl.items[tbl.CurrentIndex()].channel
 				servConn.conn.Join(channel)
 			},
 		}.Create(builder)
@@ -110,18 +115,18 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 			Text: "Close Tab",
 			OnClicked: func() {
 				mw.WindowBase.Synchronize(func() {
-					cl.Clear()
-					cl.Close()
+					t.Clear()
+					t.Close()
 					servState.channelList = nil
 				})
 			},
 		}.Create(builder)
-		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, cl.tabPage))
+		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, t.tabPage))
 		tabWidget.SaveState()
-		tabs = append(tabs, cl)
+		tabs = append(tabs, t)
 	})
 
-	return cl
+	return t
 }
 
 type channelListItem struct {

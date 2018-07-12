@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 type listBoxModel struct {
@@ -44,7 +45,6 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 	if t.HasFocus() {
 		statusBar.SetText(t.statusText)
 	}
-
 }
 
 func (t *tabChannel) updateNickList(chanState *channelState) {
@@ -78,16 +78,20 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
 	t := &tabChannel{}
 	t.tabTitle = chanState.channel
+
 	chanState.nickList = newNickList()
 	t.nickListToggle = &walk.PushButton{}
 	t.nickListBox = &walk.ListBox{}
 	t.nickListBoxModel = &listBoxModel{}
+
 	t.topicInput = &walk.LineEdit{}
+
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(chanState.channel, msg)
 		nick := chanState.nickList.Get(servState.user.nick)
 		t.Println(fmt.Sprintf(color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", now(), nick, msg))
 	}
+
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + chanState.channel)
 
 	mw.WindowBase.Synchronize(func() {

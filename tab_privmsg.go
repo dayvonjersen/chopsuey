@@ -32,11 +32,13 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {
 	t := &tabPrivmsg{}
 	t.tabTitle = pmState.nick
+
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(pmState.nick, msg)
 		nick := newNick(servState.user.nick)
 		t.Println(fmt.Sprintf(color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", now(), nick, msg))
 	}
+
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + pmState.nick)
 
 	mw.WindowBase.Synchronize(func() {

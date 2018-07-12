@@ -30,6 +30,7 @@ func (t *tabChatbox) Title() string {
 	}
 	return title
 }
+
 func (t *tabChatbox) Focus() {
 	t.unread = 0
 	mw.WindowBase.Synchronize(func() {
@@ -46,6 +47,7 @@ func (t *tabChatbox) Println(msg string) {
 	text, styles := parseString(msg)
 	mw.WindowBase.Synchronize(func() {
 		t.textBuffer.AppendText("\n")
+
 		// HACK(tso): shouldn't have to clear styles like this
 		if t.textBuffer.linecount > 1 {
 			l := t.textBuffer.TextLength()
@@ -57,10 +59,12 @@ func (t *tabChatbox) Println(msg string) {
 		// HACK(tso): and we shouldn't have to do it twice
 		l := t.textBuffer.TextLength()
 		t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
+
 		if !t.HasFocus() {
 			t.unread++
 			t.tabPage.SetTitle(t.Title())
 		}
+
 		if t.textInput.Focused() || !mainWindowFocused {
 			t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 		}
