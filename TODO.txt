@@ -233,25 +233,3 @@ colors there's always walk.WebView, electron, Qt, or reinventing the wheel
 clipboard manually and invent a scrollbar and waste like a solid year on that)
 
 -tso, July Sun Jul 8 07:49:26 2018 -0400
-
-RE: ui
-
-separate the concepts of messages that are written with chatbox.Println
-for better notifications in tab title/statusbar/wherever
-
-there are the following things sent to chatbox.Println:
-    1) client messages (connecting, disconnected, command usage, etc...)
-    2) error messages sent by server
-    3) server messages that aren't errors
-    4) joins/parts/topics/modes/other metadata
-    5) NOTICE
-    6) hard chats
-
-we only really want the counter for 6
-3 is kinda the same but it's distracting
-some clients notify for 4 and it's kinda annoying
-there should be a different, non-numerical indicator for 1, 2 and 5
-
-I'm glad we had this talk
-
--tso, Sat Jul 7 01:31:25 2018 -0400
