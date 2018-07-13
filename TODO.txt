@@ -256,6 +256,14 @@ tabwidget {{{
      - context menu
         - mark as read
         - close
+BETTER CONTEXT MENU IDEA OMG
+ - list
+   of
+   current
+   networks
+   and 
+   channels (and privmsgs)
+   !!
 
  - keyboard
     - ctrl+t for empty server tab
