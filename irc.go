@@ -310,13 +310,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			tab = getCurrentTabForServer(servState)
 		} else if l.Host == l.Src {
 			tab = getCurrentTabForServer(servState)
-			l.Args = append([]string{servState.networkName}, l.Args...)
+			l.Nick = servState.networkName
 		} else {
 			log.Println("********************* unhandled NOTICE:")
 			debugPrint(l)
 		}
 
-		noticeMessageWithHighlight(tab, highlighter, l.Args...)
+		noticeMessageWithHighlight(tab, highlighter, append([]string{l.Nick}, l.Args...)...)
 	})
 
 	// NAMREPLY

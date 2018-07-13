@@ -310,6 +310,7 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 	//             probably should add an option to disable it too
 
 	if isService(nick) {
+		ctx.servConn.conn.Privmsg(nick, msg)
 		noticeMessage(
 			getCurrentTabForServer(ctx.servState),
 			ctx.servState.user.nick, nick, msg)

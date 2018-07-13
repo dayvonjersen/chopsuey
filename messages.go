@@ -89,12 +89,15 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 	switch msgType {
 	case NOTICE_MESSAGE:
 		for _, tab := range tabs {
-			time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
-			tab.Logln(time + "*** NOTICE: " + nick + msg)
+			tab.Logln(now() + "*** NOTICE: " + strings.Join(msg, " "))
 
 			tab.Notify()
 
-			tab.Println(parseString(noticeMsg(hl(nick, msg), time, nick, msg)))
+			h := false
+			if len(msg) >= 3 {
+				h = hl(msg[1], strings.Join(msg[2:], " "))
+			}
+			tab.Println(parseString(noticeMsg(h, msg...)))
 		}
 
 	case PRIVATE_MESSAGE:
@@ -270,7 +273,7 @@ func noticeMsg(hl bool, text ...string) string {
 	if hl {
 		line += bold(color(" ..! ", Orange, Yellow))
 	}
-	return line + strings.Join(text[2:], " ")
+	return line + strings.Join(text[1:], " ")
 }
 
 func actionMsg(hl bool, text ...string) string {
