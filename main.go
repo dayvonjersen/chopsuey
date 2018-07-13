@@ -17,7 +17,7 @@ const (
 	CHATLOG_DIR = "./chatlogs/"
 	SCRIPTS_DIR = "./scripts/"
 
-	CONNECT_RETRIES        = 100
+	CONNECT_RETRIES        = 1
 	CONNECT_RETRY_INTERVAL = time.Second
 	CONNECT_TIMEOUT        = time.Second * 30
 )

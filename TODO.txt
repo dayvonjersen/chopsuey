@@ -21,8 +21,6 @@ CREATE NEW PROBLEMS:
 ---
 (*actual todo list) {{{
 
- - /list shouldn't work on a disconnected server (but guess what)
-
  - bold/italic/underline toggles don't work
     - colors.go needs a major overhaul 
 

@@ -101,8 +101,8 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 		}
 
 	case PRIVATE_MESSAGE:
-		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
-		logmsg := time + "<" + nick + "> " + msg
+		nick, msg := msg[0], strings.Join(msg[1:], " ")
+		logmsg := now() + "<" + nick + "> " + msg
 		h := hl(nick, msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
@@ -110,12 +110,12 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 				tab.Notify()
 			}
 			tab.Logln(logmsg)
-			tab.Println(parseString(privateMsg(h, time, nick, msg)))
+			tab.Println(parseString(privateMsg(h, nick, msg)))
 		}
 
 	case ACTION_MESSAGE:
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
-		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		h := hl(nick, msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
@@ -123,7 +123,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 				tab.Notify()
 			}
 			tab.Logln(logmsg)
-			tab.Println(parseString(actionMsg(h, time, nick, msg)))
+			tab.Println(parseString(actionMsg(h, nick, msg)))
 		}
 	default:
 		log.Println("highlighting unsupported for msgType %v", msgTypeString(msgType))
@@ -186,21 +186,21 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		}
 
 	case PRIVATE_MESSAGE:
-		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
-		logmsg := time + "<" + nick + "> " + msg
+		nick, msg := msg[0], strings.Join(msg[1:], " ")
+		logmsg := now() + "<" + nick + "> " + msg
 		colorNick(&nick)
 		for _, tab := range tabs {
 			tab.Logln(logmsg)
-			tab.Println(parseString(privateMsg(false, time, nick, msg)))
+			tab.Println(parseString(privateMsg(false, nick, msg)))
 		}
 
 	case ACTION_MESSAGE:
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
-		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		colorNick(&nick)
 		for _, tab := range tabs {
 			tab.Logln(logmsg)
-			tab.Println(parseString(actionMsg(false, time, nick, msg)))
+			tab.Println(parseString(actionMsg(false, nick, msg)))
 		}
 
 	default:
