@@ -1,5 +1,42 @@
 package main
 
+var clientState *_clientState // global instance
+type _clientState struct {
+	cfg *clientConfig
+
+	connections []*serverConnection
+	servers     []*serverState
+	tabs        []tab
+}
+
+func (clientState *_clientState) AppendTab(t tab) {
+	clientState.tabs = append(clientState.tabs, t)
+}
+
+func (clientState *_clientState) RemoveTab(t tab) {
+	index := t.Index()
+	for i, tab := range clientState.tabs {
+		if tab.Index() == index {
+			clientState.tabs = append(clientState.tabs[0:i], clientState.tabs[i+1:]...)
+			break
+		}
+	}
+}
+
+func (clientState *_clientState) NumTabs() int {
+	return len(clientState.tabs)
+}
+
+func (clientState *_clientState) CurrentTab() tab {
+	index := tabWidget.CurrentIndex()
+	for _, t := range clientState.tabs {
+		if t.Index() == index {
+			return t
+		}
+	}
+	return nil
+}
+
 type userState struct {
 	nick string
 	// other stuff like OPER...

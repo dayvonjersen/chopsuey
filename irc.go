@@ -87,8 +87,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	ident := "chopsuey"
 	name := "github.com/generaltso/chopsuey"
 	cfg := goirc.NewConfig(servState.user.nick, ident, name)
-	cfg.Version = clientCfg.Version
-	cfg.QuitMessage = clientCfg.QuitMessage
+	cfg.Version = clientState.cfg.Version
+	cfg.QuitMessage = clientState.cfg.QuitMessage
 	if servState.ssl {
 		cfg.SSL = true
 		cfg.SSLConfig = &tls.Config{

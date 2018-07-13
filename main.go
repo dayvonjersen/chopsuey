@@ -28,23 +28,7 @@ var (
 	statusBar *walk.StatusBarItem
 
 	mainWindowFocused bool = true // start focused because windows
-
-	clientCfg *clientConfig
-
-	connections []*serverConnection
-	servers     []*serverState
-	tabs        []tab
 )
-
-func getCurrentTab() tab {
-	index := tabWidget.CurrentIndex()
-	for _, t := range tabs {
-		if t.Index() == index {
-			return t
-		}
-	}
-	return nil
-}
 
 func getCurrentTabForServer(servState *serverState) tabWithInput {
 	index := tabWidget.CurrentIndex()
@@ -111,7 +95,7 @@ func main() {
 	tabWidget.SetPersistent(true)
 
 	focusCurrentTab := func() {
-		getCurrentTab().Focus()
+		clientState.CurrentTab().Focus()
 	}
 
 	tabWidget.CurrentIndexChanged().Attach(focusCurrentTab)
@@ -123,13 +107,18 @@ func main() {
 		mainWindowFocused = false
 	})
 
-	clientCfg, err = getClientConfig()
+	clientState = &_clientState{
+		connections: []*serverConnection{},
+		servers:     []*serverState{},
+		tabs:        []tab{},
+	}
+	clientState.cfg, err = getClientConfig()
 	if err != nil {
 		log.Println("error parsing config.json", err)
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
 		statusBar.SetText("error parsing config.json")
 	} else {
-		for _, cfg := range clientCfg.AutoConnect {
+		for _, cfg := range clientState.cfg.AutoConnect {
 			servState := &serverState{
 				connState:   CONNECTION_EMPTY,
 				hostname:    cfg.Host,

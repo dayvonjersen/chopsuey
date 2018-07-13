@@ -76,7 +76,7 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
 	t := &tabChannel{}
-	tabs = append(tabs, t)
+	clientState.AppendTab(t)
 	t.tabTitle = chanState.channel
 
 	chanState.nickList = newNickList()

@@ -29,7 +29,7 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {
 	t := &tabPrivmsg{}
-	tabs = append(tabs, t)
+	clientState.AppendTab(t)
 	t.tabTitle = pmState.nick
 
 	t.send = func(msg string) {

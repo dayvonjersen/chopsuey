@@ -62,7 +62,7 @@ func (t *tabServer) Update(servState *serverState) {
 
 func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer {
 	t := &tabServer{}
-	tabs = append(tabs, t)
+	clientState.AppendTab(t)
 	t.tabTitle = servState.networkName
 	t.chatlogger = NewChatLogger(servState.networkName)
 

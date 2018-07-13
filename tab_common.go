@@ -40,18 +40,15 @@ func (t *tabCommon) StatusText() string {
 	return t.statusText
 }
 
+func (t *tabCommon) Title() string { return "##################" }
+func (t *tabCommon) Focus()        {}
+
 func (t *tabCommon) HasFocus() bool {
 	return mainWindowFocused && t.Index() == tabWidget.CurrentIndex()
 }
 
 func (t *tabCommon) Close() {
-	index := t.Index()
-	for i, tab := range tabs {
-		if tab.Index() == index {
-			tabs = append(tabs[0:i], tabs[i+1:]...)
-			break
-		}
-	}
+	clientState.RemoveTab(t)
 	mw.WindowBase.Synchronize(func() {
 		mw.WindowBase.SetSuspended(true)
 		defer mw.WindowBase.SetSuspended(false)

@@ -29,7 +29,7 @@ func debugPrint(l *goirc.Line) {
 }
 
 func now() string {
-	return time.Now().Format(clientCfg.TimeFormat)
+	return time.Now().Format(clientState.cfg.TimeFormat)
 }
 
 func serverAddr(hostname string, port int) string {
