@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -328,7 +329,9 @@ func (re *RichEdit) openURL(min, max int32) {
 	url := string(utf16.Decode(textRange.text))
 
 	cmd := exec.Command("cmd", "/c", "start", url)
-	checkErr(cmd.Run())
+	if err := cmd.Run(); err != nil {
+		log.Println("cmd /c start", url, "returned error:\n", err)
+	}
 }
 
 func (re *RichEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
