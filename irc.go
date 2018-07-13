@@ -252,20 +252,22 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		conn.HandleFunc(code, printErrorMessage)
 	}
 
-	getTab := func(l *goirc.Line) tabWithInput {
-		if l.Args[0] == servState.user.nick {
-			nick := l.Nick
+	getMessageParams := func(l *goirc.Line) (t tabWithInput, nick, msg string) {
+		nick = l.Nick
+		dest := l.Args[0]
+		msg = l.Args[1]
 
+		if dest == servState.user.nick {
 			if l.Ident == "service" || isService(nick) {
-				return getCurrentTabForServer(servState)
+				return getCurrentTabForServer(servState), nick, msg
 			} else {
-				pmState := ensurePmState(servConn, servState, l.Nick)
-				return pmState.tab
+				pmState := ensurePmState(servConn, servState, nick)
+				return pmState.tab, nick, msg
 			}
-		} else {
-			chanState := ensureChanState(servConn, servState, l.Args[0])
-			return chanState.tab
 		}
+		chanState := ensureChanState(servConn, servState, dest)
+		nick = chanState.nickList.Get(nick).String()
+		return chanState.tab, nick, msg
 	}
 
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
@@ -281,11 +283,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
-		privateMessage(getTab(l), l.Args[1])
+		t, nick, msg := getMessageParams(l)
+		privateMessage(t, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
-		actionMessage(getTab(l), l.Args[1])
+		t, nick, msg := getMessageParams(l)
+		actionMessage(t, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
@@ -295,6 +299,9 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			tab = chanState.tab
 		} else if l.Args[0] == servState.user.nick {
 			tab = getCurrentTabForServer(servState)
+		} else if l.Host == l.Src {
+			tab = getCurrentTabForServer(servState)
+			l.Args = append([]string{servState.networkName}, l.Args...)
 		} else {
 			log.Println("********************* unhandled NOTICE:")
 			debugPrint(l)

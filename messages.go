@@ -121,7 +121,6 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		}
 
 	case NOTICE_MESSAGE:
-
 		for _, tab := range tabs {
 			tab.Notify()
 			tab.Logln("*** NOTICE: " + strings.Join(msg, " "))
