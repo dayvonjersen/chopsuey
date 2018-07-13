@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -128,7 +129,6 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// I'm sure this is going to end up vomiting MOTD all over me
 		dest := []tabWithInput{getCurrentTabForServer(servState)}
 		if dest[0].Index() != servState.tab.Index() {
 			dest = append(dest, servState.tab)
@@ -270,6 +270,15 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		return chanState.tab, nick, msg
 	}
 
+	highlighter := func(nick, msg string) bool {
+		if servState.user.nick == nick {
+			return false
+		}
+
+		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, msg)
+		return m
+	}
+
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
 		// TODO(tso):
 		// debugPrint(l)
@@ -284,12 +293,12 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
 		t, nick, msg := getMessageParams(l)
-		privateMessage(t, nick, msg)
+		privateMessageWithHighlight(t, highlighter, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
 		t, nick, msg := getMessageParams(l)
-		actionMessage(t, nick, msg)
+		actionMessageWithHighlight(t, highlighter, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
@@ -307,7 +316,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			debugPrint(l)
 		}
 
-		noticeMessage(tab, l.Args...)
+		noticeMessageWithHighlight(tab, highlighter, l.Args...)
 	})
 
 	// NAMREPLY

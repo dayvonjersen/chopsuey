@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 )
 
@@ -19,6 +18,30 @@ const (
 	ACTION_MESSAGE
 	PRIVATE_MESSAGE
 )
+
+func msgTypeString(t int) string {
+	switch t {
+	case CLIENT_MESSAGE:
+		return "CLIENT_MESSAGE"
+	case CLIENT_ERROR:
+		return "CLIENT_ERROR"
+	case SERVER_MESSAGE:
+		return "SERVER_MESSAGE"
+	case SERVER_ERROR:
+		return "SERVER_ERROR"
+	case JOINPART_MESSAGE:
+		return "JOINPART_MESSAGE"
+	case UPDATE_MESSAGE:
+		return "UPDATE_MESSAGE"
+	case NOTICE_MESSAGE:
+		return "NOTICE_MESSAGE"
+	case ACTION_MESSAGE:
+		return "ACTION_MESSAGE"
+	case PRIVATE_MESSAGE:
+		return "PRIVATE_MESSAGE"
+	}
+	return "(unknown)"
+}
 
 func clientError(tab tabWithInput, msg ...string) {
 	Println(CLIENT_ERROR, T(tab), msg...)
@@ -48,33 +71,65 @@ func privateMessage(tab tabWithInput, msg ...string) {
 	Println(PRIVATE_MESSAGE, T(tab), msg...)
 }
 
+type highlighterFn func(nick, msg string) bool
+
+func noticeMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+	PrintlnWithHighlight(NOTICE_MESSAGE, hl, T(tab), msg...)
+}
+func actionMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+	PrintlnWithHighlight(ACTION_MESSAGE, hl, T(tab), msg...)
+}
+func privateMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+	PrintlnWithHighlight(PRIVATE_MESSAGE, hl, T(tab), msg...)
+}
+
 func T(tabs ...tabWithInput) []tabWithInput { return tabs } // expected type, found ILLEGAL
+
+func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, msg ...string) {
+	switch msgType {
+	case NOTICE_MESSAGE:
+		for _, tab := range tabs {
+			time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+			tab.Logln(time + "*** NOTICE: " + nick + msg)
+
+			tab.Notify()
+
+			tab.Println(parseString(noticeMsg(hl(nick, msg), time, nick, msg)))
+		}
+
+	case PRIVATE_MESSAGE:
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		logmsg := time + "<" + nick + "> " + msg
+		h := hl(nick, msg)
+		colorNick(&nick)
+		for _, tab := range tabs {
+			if h {
+				tab.Notify()
+			}
+			tab.Logln(logmsg)
+			tab.Println(parseString(privateMsg(h, time, nick, msg)))
+		}
+
+	case ACTION_MESSAGE:
+		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		h := hl(nick, msg)
+		colorNick(&nick)
+		for _, tab := range tabs {
+			if h {
+				tab.Notify()
+			}
+			tab.Logln(logmsg)
+			tab.Println(parseString(actionMsg(h, time, nick, msg)))
+		}
+	default:
+		log.Println("highlighting unsupported for msgType %v", msgTypeString(msgType))
+	}
+}
 
 func Println(msgType int, tabs []tabWithInput, msg ...string) {
 	if len(msg) == 0 {
-		log.Printf("tried to print an empty line of type %v", func(t int) string {
-			switch t {
-			case CLIENT_MESSAGE:
-				return "CLIENT_MESSAGE"
-			case CLIENT_ERROR:
-				return "CLIENT_ERROR"
-			case SERVER_MESSAGE:
-				return "SERVER_MESSAGE"
-			case SERVER_ERROR:
-				return "SERVER_ERROR"
-			case JOINPART_MESSAGE:
-				return "JOINPART_MESSAGE"
-			case UPDATE_MESSAGE:
-				return "UPDATE_MESSAGE"
-			case NOTICE_MESSAGE:
-				return "NOTICE_MESSAGE"
-			case ACTION_MESSAGE:
-				return "ACTION_MESSAGE"
-			case PRIVATE_MESSAGE:
-				return "PRIVATE_MESSAGE"
-			}
-			return "(unknown)"
-		}(msgType))
+		log.Printf("tried to print an empty line of type %v", msgTypeString(msgType))
 		return
 	}
 
@@ -124,33 +179,25 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		for _, tab := range tabs {
 			tab.Notify()
 			tab.Logln("*** NOTICE: " + strings.Join(msg, " "))
-			tab.Println(parseString(noticeMsg(msg...)))
+			tab.Println(parseString(noticeMsg(false, msg...)))
 		}
 
 	case PRIVATE_MESSAGE:
 		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
 		logmsg := time + "<" + nick + "> " + msg
-		hl := highlight(nick, &msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
-			if hl {
-				tab.Notify()
-			}
 			tab.Logln(logmsg)
-			tab.Println(parseString(privateMsg(hl, time, nick, msg)))
+			tab.Println(parseString(privateMsg(false, time, nick, msg)))
 		}
 
 	case ACTION_MESSAGE:
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
 		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
-		hl := highlight(nick, &msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
-			if hl {
-				tab.Notify()
-			}
 			tab.Logln(logmsg)
-			tab.Println(parseString(actionMsg(hl, time, nick, msg)))
+			tab.Println(parseString(actionMsg(false, time, nick, msg)))
 		}
 
 	default:
@@ -210,16 +257,20 @@ func joinpartMsg(text ...string) string {
 }
 
 func updateMsg(text ...string) string {
-	return color(now(), LightGray) + italic(color(strings.Join(append([]string{"..."}, text...), " "), Orange))
+	return color(now(), LightGray) + color(strings.Join(append([]string{"..."}, text...), " "), Orange)
 }
 
-func noticeMsg(text ...string) string {
+func noticeMsg(hl bool, text ...string) string {
 	if len(text) < 3 {
 		return fmt.Sprintf("wrong argument count for notice: want 3, got %d:\n%v", len(text), text)
 	}
-	return color(now(), LightGray) +
-		color("NOTICE", White, Orange) + "(" + text[0] + "->" + text[1] + "): " +
-		strings.Join(text, " ")
+	line := color(now(), LightGray) +
+		color("NOTICE", White, Orange) +
+		color("("+text[0]+"->"+text[1]+"): ", Orange)
+	if hl {
+		line += bold(color(" ..! ", Orange, Yellow))
+	}
+	return line + strings.Join(text[2:], " ")
 }
 
 func actionMsg(hl bool, text ...string) string {
@@ -241,19 +292,6 @@ func privateMsg(hl bool, text ...string) string {
 	}
 	return line + nick + " " + strings.Join(text[1:], " ")
 
-}
-
-func highlight(nick string, msg *string) bool {
-	// NOTE(tso): we can modify msg in-place that's why the function signature
-	//            is like that but for now a marker next to the line is enough.
-	//            Visual choice, not a programatic one.
-	// -tso 7/12/2018 9:44:44 AM
-	// NOTE(tso): not using compiled regexp here because user's nick can change
-	//            unless recompiling a new one when the nick changes will really
-	//            give that much of a performance increase
-	// -tso 7/10/2018 6:58:36 AM
-	m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(nick)+`(\b|[^\w])`, *msg)
-	return m
 }
 
 func colorNick(nick *string) {
