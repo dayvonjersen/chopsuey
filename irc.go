@@ -24,7 +24,7 @@ type serverConnection struct {
 }
 
 func connect(servConn *serverConnection, servState *serverState) (success bool) {
-	Println(CLIENT_MESSAGE, servState.AllTabs(), "connecting to: "+serverAddr(servState.hostname, servState.port)+"...")
+	Println(CLIENT_MESSAGE, servState.AllTabs(), "connecting to:", serverAddr(servState.hostname, servState.port), "...")
 	servState.connState = CONNECTING
 	servState.tab.Update(servState)
 
@@ -344,7 +344,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if !chanState.nickList.Has(l.Nick) {
 			chanState.nickList.Add(l.Nick)
 			chanState.tab.updateNickList(chanState)
-			joinpartMessage(chanState.tab, " -> ", l.Nick, " has joined ", l.Args[0])
+			joinpartMessage(chanState.tab, "->", l.Nick, "has joined", l.Args[0])
 		}
 	})
 
@@ -358,7 +358,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 		chanState.nickList.Remove(l.Nick)
 		chanState.tab.updateNickList(chanState)
-		msg := []string{" <- ", l.Nick, " has left ", l.Args[0]}
+		msg := []string{"<-", l.Nick, "has left", l.Args[0]}
 		if len(l.Args) > 1 {
 			msg = append(msg, " ("+l.Args[1]+")")
 		}
@@ -518,8 +518,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
-		msg := " topic for " + channel + " is " + topic
-		updateMessage(chanState.tab, msg)
+		updateMessage(chanState.tab, "topic for", channel, "is", topic)
 	})
 
 	conn.HandleFunc(goirc.TOPIC, func(c *goirc.Conn, l *goirc.Line) {
@@ -534,8 +533,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
-		msg := fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic)
-		updateMessage(chanState.tab, msg)
+		updateMessage(chanState.tab, who, "has changed the topic for", channel, "to", topic)
 	})
 
 	// LISTSTART

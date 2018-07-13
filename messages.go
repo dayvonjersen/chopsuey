@@ -89,7 +89,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 	switch msgType {
 	case NOTICE_MESSAGE:
 		for _, tab := range tabs {
-			tab.Logln(now() + "*** NOTICE: " + strings.Join(msg, " "))
+			tab.Logln(now() + " *** NOTICE: " + strings.Join(msg, " "))
 
 			tab.Notify()
 
@@ -102,7 +102,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 
 	case PRIVATE_MESSAGE:
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
-		logmsg := now() + "<" + nick + "> " + msg
+		logmsg := now() + " <" + nick + "> " + msg
 		h := hl(nick, msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
@@ -181,13 +181,13 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 	case NOTICE_MESSAGE:
 		for _, tab := range tabs {
 			tab.Notify()
-			tab.Logln("*** NOTICE: " + strings.Join(msg, " "))
+			tab.Logln(now() + " *** NOTICE: " + strings.Join(msg, " "))
 			tab.Println(parseString(noticeMsg(false, msg...)))
 		}
 
 	case PRIVATE_MESSAGE:
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
-		logmsg := now() + "<" + nick + "> " + msg
+		logmsg := now() + " <" + nick + "> " + msg
 		colorNick(&nick)
 		for _, tab := range tabs {
 			tab.Logln(logmsg)
@@ -239,7 +239,7 @@ func clientErrorMsg(text ...string) string {
 
 func serverErrorMsg(text ...string) string {
 	if len(text) < 2 {
-		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%v",
+		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%#v",
 			len(text), text)
 	}
 	return color(now(), Red) + " " +
@@ -249,18 +249,18 @@ func serverErrorMsg(text ...string) string {
 
 func serverMsg(text ...string) string {
 	if len(text) < 2 {
-		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%v",
+		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%#v",
 			len(text), text)
 	}
-	return color(now()+" "+text[0]+": "+strings.Join(text[1:], " "), LightGray)
+	return color(now()+" "+text[0]+": "+strings.Join(text[1:], " "), DarkGray)
 }
 
 func joinpartMsg(text ...string) string {
-	return color(now(), LightGray) + italic(color(strings.Join(text, " "), Orange))
+	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), Orange))
 }
 
 func updateMsg(text ...string) string {
-	return color(now(), LightGray) + color(strings.Join(append([]string{"..."}, text...), " "), Orange)
+	return color(now(), LightGray) + " " + color(strings.Join(append([]string{"..."}, text...), " "), LightGrey)
 }
 
 func noticeMsg(hl bool, text ...string) string {
@@ -299,5 +299,6 @@ func privateMsg(hl bool, text ...string) string {
 
 func colorNick(nick *string) {
 	// TODO(tso): different colors for nicks
+	// TODO(tso): npm install left-pad
 	*nick = color(*nick, DarkGrey)
 }
