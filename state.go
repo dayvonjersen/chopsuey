@@ -28,6 +28,17 @@ type serverState struct {
 	channelList *tabChannelList
 }
 
+func (servState *serverState) AllTabs() []tabWithInput {
+	ret := []tabWithInput{servState.tab}
+	for _, chanState := range servState.channels {
+		ret = append(ret, chanState.tab)
+	}
+	for _, pmState := range servState.privmsgs {
+		ret = append(ret, pmState.tab)
+	}
+	return ret
+}
+
 type channelState struct {
 	channel  string
 	topic    string

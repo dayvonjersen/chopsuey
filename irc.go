@@ -24,6 +24,7 @@ type serverConnection struct {
 }
 
 func connect(servConn *serverConnection, servState *serverState) (success bool) {
+	Println(CLIENT_MESSAGE, servState.AllTabs(), "connecting to: "+serverAddr(servState.hostname, servState.port)+"...")
 	servState.connState = CONNECTING
 	servState.tab.Update(servState)
 
@@ -57,9 +58,9 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 					<-time.After(CONNECT_RETRY_INTERVAL)
 				}
 			}
-			servState.tab.Println(
-				// FIXME(COLOURIZE)
-				fmt.Sprintf("couldn't connect to %s:%d after %d retries.", servState.hostname, servState.port, CONNECT_RETRIES),
+			Println(CLIENT_ERROR, servState.AllTabs(),
+				fmt.Sprintf("couldn't connect to %s after %d retries.",
+					serverAddr(servState.hostname, servState.port), CONNECT_RETRIES),
 			)
 		}()
 	}
@@ -128,22 +129,27 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// FIXME(COLOURIZE)
-		str := color(now(), LightGray) + " " + color(l.Cmd+": "+strings.Join(l.Args[1:], " "), Blue)
-		// send to current tab if current tab != servertab
-		// I'm sure this is going to end up vomiting MOTD all over the first channel i join
-		servState.tab.Println(str)
+		dest := []tabWithInput{getCurrentTabForServer(servState)}
+		if dest[0].Index() != servState.tab.Index() {
+			dest = append(dest, servState.tab)
+		}
+
+		Println(SERVER_MESSAGE, dest, append([]string{l.Cmd}, l.Args[1:]...)...)
 	}
 
 	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
+		// FIXME(COLOURIZE)
 		// send to current tab if current tab != channel
 		// stub
 	}
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// FIXME(COLOURIZE)
-		// always send to the current tab
-		servState.tab.Println(color(now(), LightGray) + " " + color("ERROR("+l.Cmd+")", White, Red) + ": " + color(strings.Join(l.Args[1:], " "), Red))
+		dest := []tabWithInput{getCurrentTabForServer(servState)}
+		if dest[0].Index() != servState.tab.Index() {
+			dest = append(dest, servState.tab)
+		}
+
+		Println(SERVER_ERROR, dest, append([]string{l.Cmd}, l.Args[1:]...)...)
 	}
 
 	// WELCOME
@@ -246,96 +252,71 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		conn.HandleFunc(code, printErrorMessage)
 	}
 
-	printer := func(code, fmtstr string, l *goirc.Line) {
-		var (
-			tab  tabWithInput
-			nick string
-		)
-		if l.Args[0] == servState.user.nick {
-			nick = l.Nick
+	getMessageParams := func(l *goirc.Line) (t tabWithInput, nick, msg string) {
+		nick = l.Nick
+		dest := l.Args[0]
+		msg = l.Args[1]
 
-			// NOTE(tso): inline NOTICEs from services etc here.
-			if l.Ident == "service" {
-				tab = servState.tab
+		if dest == servState.user.nick {
+			if l.Ident == "service" || isService(nick) {
+				return getCurrentTabForServer(servState), nick, msg
 			} else {
-				pmState, ok := servState.privmsgs[l.Nick]
-				if !ok {
-					pmState = &privmsgState{
-						nick: l.Nick,
-					}
-					pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
-				}
-				tab = pmState.tab
+				pmState := ensurePmState(servConn, servState, nick)
+				return pmState.tab, nick, msg
 			}
-		} else {
-			chanState, ok := servState.channels[l.Args[0]]
-			if ok {
-				nick = chanState.nickList.Get(l.Nick).String()
-			} else {
-				log.Println("got", code, " but user not on channel")
-				chanState = &channelState{
-					channel: l.Args[0],
-				}
-				chanState.tab = NewChannelTab(servConn, servState, chanState)
-			}
-			tab = chanState.tab
 		}
-		tab.Println(fmt.Sprintf(fmtstr, now(), nick, l.Args[1]))
+		chanState := ensureChanState(servConn, servState, dest)
+		nick = chanState.nickList.Get(nick).String()
+		return chanState.tab, nick, msg
 	}
 
-	highlighter := func(text string, l *goirc.Line) string {
-		// NOTE(tso): not using compiled regexp here because user's nick can change
-		//			  unless recompiling a new one when the nick changes will really
-		//			  give that much of a performance increase
-		// -tso 7/10/2018 6:58:36 AM
-		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, l.Args[1])
-		if m {
-			// FIXME(COLOURIZE)
-			return bold(color(" * ", Black, Yellow)) + text
+	highlighter := func(nick, msg string) bool {
+		if servState.user.nick == nick {
+			return false
 		}
-		return text
+
+		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, msg)
+		return m
 	}
 
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
+		// TODO(tso):
 		// debugPrint(l)
 		if l.Args[0] == "DCC" {
 			dccHandler(servConn, l.Nick, l.Args[2])
 		}
 	})
 	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
+		// TODO(tso):
 		// debugPrint(l)
 	})
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
-		if l.Args[0] != servState.user.nick {
-			// FIXME(COLOURIZE)
-			printer("PRIVMSG", color("%s", LightGrey)+" "+highlighter(color("%s", DarkGrey), l)+" %s", l)
-		} else {
-			printer("PRIVMSG", color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", l)
-		}
+		t, nick, msg := getMessageParams(l)
+		privateMessageWithHighlight(t, highlighter, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
-		if l.Args[0] != servState.user.nick {
-			// FIXME(COLOURIZE)
-			printer("ACTION", color("%s", LightGrey)+highlighter(color(" *%s %s*", DarkGrey), l), l)
-		} else {
-			printer("ACTION", color("%s", LightGrey)+color(" *%s %s*", DarkGrey), l)
-		}
+		t, nick, msg := getMessageParams(l)
+		actionMessageWithHighlight(t, highlighter, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
-		if l.Host == l.Src {
-			// servers commonly send these NOTICEs when connecting:
-			//
-			// :irc.example.org NOTICE AUTH :*** Looking up your hostname...
-			// :irc.example.org NOTICE AUTH :*** Found your hostname
-			//
-			printServerMessage(c, l)
-			return
+		var tab tabWithInput = servState.tab
+		if isChannel(l.Args[0]) {
+			chanState := ensureChanState(servConn, servState, l.Args[0])
+			tab = chanState.tab
+		} else if l.Args[0] == servState.user.nick {
+			tab = getCurrentTabForServer(servState)
+		} else if l.Host == l.Src {
+			tab = getCurrentTabForServer(servState)
+			l.Args = append([]string{servState.networkName}, l.Args...)
+		} else {
+			log.Println("********************* unhandled NOTICE:")
+			debugPrint(l)
 		}
-		// FIXME(COLOURIZE)
-		printer("NOTICE", color("%s *** %s: %s", Orange), l)
+
+		noticeMessageWithHighlight(tab, highlighter, l.Args...)
 	})
 
 	// NAMREPLY
@@ -363,10 +344,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if !chanState.nickList.Has(l.Nick) {
 			chanState.nickList.Add(l.Nick)
 			chanState.tab.updateNickList(chanState)
-			if !clientCfg.HideJoinParts {
-				// FIXME(COLOURIZE)
-				chanState.tab.Println(color(now(), LightGrey) + italic(color(" -> "+l.Nick+" has joined "+l.Args[0], Orange)))
-			}
+			joinpartMessage(chanState.tab, " -> ", l.Nick, " has joined ", l.Args[0])
 		}
 	})
 
@@ -374,19 +352,17 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		channel := l.Args[0]
 		chanState, ok := servState.channels[channel]
 		if !ok {
-			log.Println("got PART but user not on channel:", l.Args[0])
+			log.Println("got PART but user not on channel:")
+			debugPrint(l)
 			return
 		}
 		chanState.nickList.Remove(l.Nick)
 		chanState.tab.updateNickList(chanState)
-		if !clientCfg.HideJoinParts {
-			msg := " <- " + l.Nick + " has left " + l.Args[0]
-			if len(l.Args) > 1 {
-				msg += " (" + l.Args[1] + ")"
-			}
-			// FIXME(COLOURIZE)
-			chanState.tab.Println(color(now(), LightGrey) + italic(color(msg, Orange)))
+		msg := []string{" <- ", l.Nick, " has left ", l.Args[0]}
+		if len(l.Args) > 1 {
+			msg = append(msg, " ("+l.Args[1]+")")
 		}
+		joinpartMessage(chanState.tab, msg...)
 	})
 
 	conn.HandleFunc(goirc.QUIT, func(c *goirc.Conn, l *goirc.Line) {
@@ -395,20 +371,19 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			reason = strings.TrimPrefix(reason, "Quit:")
 		}
 		reason = strings.TrimSpace(reason)
-		msg := " <- " + l.Nick + " has quit"
+		msg := []string{" <- ", l.Nick, " has quit"}
 		if reason != "" {
-			msg += ": " + reason
+			msg = append(msg, ": "+reason)
 		}
+		dest := []tabWithInput{}
 		for _, chanState := range servState.channels {
 			if chanState.nickList.Has(l.Nick) {
 				chanState.nickList.Remove(l.Nick)
 				chanState.tab.updateNickList(chanState)
-				if !clientCfg.HideJoinParts {
-					// FIXME(COLOURIZE)
-					chanState.tab.Println(color(now(), LightGrey) + italic(color(msg, Orange)))
-				}
+				dest = append(dest, chanState.tab)
 			}
 		}
+		Println(JOINPART_MESSAGE, T(dest...), msg...)
 	})
 
 	conn.HandleFunc(goirc.KICK, func(c *goirc.Conn, l *goirc.Line) {
@@ -420,6 +395,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState, ok := servState.channels[channel]
 		if !ok {
 			log.Println("got KICK but user not on channel:", channel)
+			debugPrint(l)
 			return
 		}
 
@@ -428,8 +404,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
-			// FIXME(COLOURIZE)
-			chanState.tab.Println(color(now(), LightGrey) + color(msg, Red))
+			updateMessage(chanState.tab, msg)
 			chanState.nickList = newNickList()
 			chanState.tab.updateNickList(chanState)
 		} else {
@@ -437,8 +412,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
-			// FIXME(COLOURIZE)
-			chanState.tab.Println(color(now(), LightGrey) + color(msg, Orange))
+			updateMessage(chanState.tab, msg)
 			chanState.nickList.Remove(who)
 			chanState.tab.updateNickList(chanState)
 		}
@@ -456,8 +430,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				newNick.prefix = oldNick.prefix
 				chanState.nickList.Set(oldNick.name, newNick)
 				chanState.tab.updateNickList(chanState)
-				// FIXME(COLOURIZE)
-				chanState.tab.Println(color(now(), LightGrey) + italic(color(" ** "+oldNick.name+" is now known as "+newNick.name, Orange)))
+				msg := " ** " + oldNick.name + " is now known as " + newNick.name
+				updateMessage(chanState.tab, msg)
 			}
 		}
 	})
@@ -468,25 +442,26 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		mode := l.Args[1]
 		nicks := l.Args[2:]
 
-		if channel[0] == '#' {
+		if isChannel(channel) {
 			chanState, ok := servState.channels[channel]
 			if !ok {
 				log.Println("got MODE but user not on channel:", channel)
+				debugPrint(l)
 				return
 			}
 			if op == "" {
 				op = servState.networkName
 			}
 			if len(nicks) == 0 {
-				// FIXME(COLOURIZE)
-				chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s %s", op, mode, channel), Orange)))
+				msg := fmt.Sprintf(" ** %s sets mode %s %s", op, mode, channel)
+				updateMessage(chanState.tab, msg)
 				return
 			}
 
 			nickStr := fmt.Sprintf("%s", nicks)
 			nickStr = nickStr[1 : len(nickStr)-1]
-			// FIXME(COLOURIZE)
-			chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s %s", op, mode, nickStr), Orange)))
+			msg := fmt.Sprintf(" ** %s sets mode %s %s", op, mode, nickStr)
+			updateMessage(chanState.tab, msg)
 
 			var add bool
 			var idx int
@@ -528,8 +503,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			nick := channel
 			for _, chanState := range servState.channels {
 				if chanState.nickList.Has(nick) || nick == servState.user.nick {
-					// FIXME(COLOURIZE)
-					chanState.tab.Println(color(now(), LightGrey) + italic(color(fmt.Sprintf(" ** %s sets mode %s", nick, mode), Orange)))
+					msg := fmt.Sprintf(" ** %s sets mode %s", nick, mode)
+					updateMessage(chanState.tab, msg)
 				}
 			}
 		}
@@ -543,8 +518,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
-		// FIXME(COLOURIZE)
-		chanState.tab.Println(color(now(), LightGrey) + " topic for " + channel + " is " + topic)
+		msg := " topic for " + channel + " is " + topic
+		updateMessage(chanState.tab, msg)
 	})
 
 	conn.HandleFunc(goirc.TOPIC, func(c *goirc.Conn, l *goirc.Line) {
@@ -559,8 +534,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState := ensureChanState(servConn, servState, channel)
 		chanState.topic = topic
 		chanState.tab.Update(servState, chanState)
-		// FIXME(COLOURIZE)
-		chanState.tab.Println(color(now(), LightGrey) + fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic))
+		msg := fmt.Sprintf(" %s has changed the topic for %s to %s", who, channel, topic)
+		updateMessage(chanState.tab, msg)
 	})
 
 	// LISTSTART

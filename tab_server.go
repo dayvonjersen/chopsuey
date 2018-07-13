@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lxn/walk"
 )
@@ -23,23 +24,24 @@ func (t *tabServer) Update(servState *serverState) {
 
 	switch servState.connState {
 	case CONNECTION_EMPTY:
+		t.disconnected = true
 		t.statusText = "not connected to any network"
-		t.disconnected = true
 	case DISCONNECTED:
+		t.disconnected = true
 		t.statusText = "disconnected x_x"
-		t.Println(now() + " " + t.statusText)
-		t.disconnected = true
+		Println(CLIENT_ERROR, T(servState.AllTabs()...), t.statusText)
 	case CONNECTING:
+		t.disconnected = true
 		t.statusText = "connecting to " + servState.networkName + "..."
-		t.Println(now() + " " + t.statusText)
-		t.disconnected = true
+		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), t.statusText)
 	case CONNECTION_ERROR:
-		t.statusText = "couldn't connect: " + servState.lastError.Error()
-		t.Println(now() + " ERROR: " + t.statusText)
 		t.disconnected = true
+		t.statusText = "couldn't connect: " + servState.lastError.Error()
+		Println(CLIENT_ERROR, T(servState.AllTabs()...), t.statusText)
 	case CONNECTION_START:
-		t.statusText = "connected to " + servState.networkName
 		t.disconnected = false
+		t.statusText = "connected to " + servState.networkName
+		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), t.statusText)
 	case CONNECTED:
 		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
 		t.disconnected = false
@@ -60,6 +62,7 @@ func (t *tabServer) Update(servState *serverState) {
 
 func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer {
 	t := &tabServer{}
+	tabs = append(tabs, t)
 	t.tabTitle = servState.networkName
 	t.chatlogger = NewChatLogger(servState.networkName)
 
@@ -80,12 +83,14 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
+		log.Printf("tabWidget: %v", tabWidget)
+		log.Printf("tabWidget.Pages(): %v", tabWidget.Pages())
+		log.Printf("tabPage: %v", t.tabPage)
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-		tabs = append(tabs, t)
 	})
 	return t
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 	"time"
 
@@ -36,6 +35,34 @@ var (
 	servers     []*serverState
 	tabs        []tab
 )
+
+func getCurrentTab() tab {
+	index := tabWidget.CurrentIndex()
+	for _, t := range tabs {
+		if t.Index() == index {
+			return t
+		}
+	}
+	return nil
+}
+
+func getCurrentTabForServer(servState *serverState) tabWithInput {
+	index := tabWidget.CurrentIndex()
+	if servState.tab.Index() == index {
+		return servState.tab
+	}
+	for _, ch := range servState.channels {
+		if ch.tab.Index() == index {
+			return ch.tab
+		}
+	}
+	for _, pm := range servState.privmsgs {
+		if pm.tab.Index() == index {
+			return pm.tab
+		}
+	}
+	return servState.tab
+}
 
 type debugLogger struct{}
 
@@ -84,13 +111,7 @@ func main() {
 	tabWidget.SetPersistent(true)
 
 	focusCurrentTab := func() {
-		index := tabWidget.CurrentIndex()
-		for _, t := range tabs {
-			if t.Index() == index {
-				t.Focus()
-				return
-			}
-		}
+		getCurrentTab().Focus()
 	}
 
 	tabWidget.CurrentIndexChanged().Attach(focusCurrentTab)
@@ -103,74 +124,33 @@ func main() {
 	})
 
 	clientCfg, err = getClientConfig()
-
 	if err != nil {
-		log.Fatalln("nice job breaking it hero.\n\n\ngit checkout master -- config.json")
-		title := "error parsing config.json"
-		msg := err.Error()
-		icon := walk.MsgBoxIconError
-
-		if os.IsNotExist(err) {
-			title = "config.json not found"
-			msg = "default configuration loaded"
-			err = writeClientConfig()
-			if err == nil {
-				cwd, err2 := os.Getwd()
-				checkErr(err2)
-				msg += " and a new config.json file has been written in " + cwd
-				icon = walk.MsgBoxIconInformation
-			} else {
-				msg += " but an error was encountered while trying to write the file: " + err.Error()
+		log.Println("error parsing config.json", err)
+		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
+		statusBar.SetText("error parsing config.json")
+	} else {
+		for _, cfg := range clientCfg.AutoConnect {
+			servState := &serverState{
+				connState:   CONNECTION_EMPTY,
+				hostname:    cfg.Host,
+				port:        cfg.Port,
+				ssl:         cfg.Ssl,
+				networkName: serverAddr(cfg.Host, cfg.Port),
+				user: &userState{
+					nick: cfg.Nick,
+				},
+				channels: map[string]*channelState{},
+				privmsgs: map[string]*privmsgState{},
 			}
-			walk.MsgBox(mw, title, msg, icon)
-		}
-	}
-
-	// FIXME(tso): empty tab is a nightmare holy fuck
-	if len(clientCfg.AutoConnect) == 0 {
-		servState := &serverState{
-			connState: CONNECTION_EMPTY,
-			user: &userState{
-				nick: "nobody",
-			},
-			channels: map[string]*channelState{},
-			privmsgs: map[string]*privmsgState{},
-		}
-		emptyView := NewServerTab(&serverConnection{}, servState)
-		servState.tab = emptyView
-		mw.WindowBase.Synchronize(func() {
-			helpCmd(&commandContext{tab: emptyView})
-		})
-		servers = append(servers, servState)
-	}
-
-	// FIXME(tso): abstract opening a new server connection/tab
-	for _, cfg := range clientCfg.AutoConnect {
-		servState := &serverState{
-			connState:   CONNECTION_EMPTY,
-			hostname:    cfg.Host,
-			port:        cfg.Port,
-			ssl:         cfg.Ssl,
-			networkName: serverAddr(cfg.Host, cfg.Port),
-			user: &userState{
-				nick: cfg.Nick,
-			},
-			channels: map[string]*channelState{},
-			privmsgs: map[string]*privmsgState{},
-		}
-		var servConn *serverConnection
-		servConn = NewServerConnection(servState, func() {
-			for _, channel := range cfg.AutoJoin {
-				servConn.conn.Join(channel)
-			}
-		})
-
-		servView := NewServerTab(servConn, servState)
-		servState.tab = servView
-
-		// FIXME(tso): just use the logic from /server
-		if cfg.Host != "" && cfg.Port != 0 && cfg.Nick != "" {
-			go servConn.Connect(servState)
+			var servConn *serverConnection
+			servConn = NewServerConnection(servState, func() {
+				for _, channel := range cfg.AutoJoin {
+					servConn.conn.Join(channel)
+				}
+			})
+			servView := NewServerTab(servConn, servState)
+			servState.tab = servView
+			servConn.Connect(servState)
 		}
 	}
 

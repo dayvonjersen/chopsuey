@@ -10,13 +10,12 @@ type tabChatbox struct {
 	tabCommon
 	unread       int
 	disconnected bool
+	error        bool
+	notify       bool
 	textBuffer   *RichEdit
 	textInput    *MyLineEdit
 	chatlogger   func(string)
 }
-
-func (t *tabChatbox) Logln(msg string)   {}
-func (t *tabChatbox) Errorln(msg string) {}
 
 func (t *tabChatbox) Clear() {
 	t.textBuffer.SetText("")
@@ -28,14 +27,26 @@ func (t *tabChatbox) Title() string {
 	if t.unread > 0 && !t.HasFocus() {
 		title = fmt.Sprintf("%s [%d]", title, t.unread)
 	}
+	if t.notify {
+		title = " * " + title
+	}
+	if t.error {
+		title = "/!\\ " + title
+	}
 	if t.disconnected {
 		title = "(" + title + ")"
 	}
 	return title
 }
 
+func (t *tabChatbox) Notify() {
+	t.notify = true
+}
+
 func (t *tabChatbox) Focus() {
 	t.unread = 0
+	t.error = false
+	t.notify = false
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 	})
@@ -44,10 +55,18 @@ func (t *tabChatbox) Focus() {
 	t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 }
 
-func (t *tabChatbox) Println(msg string) {
-	t.chatlogger(msg)
+func (t *tabChatbox) Logln(text string) {
+	t.chatlogger(text)
+}
 
-	text, styles := parseString(msg)
+func (t *tabChatbox) Errorln(text string, styles [][]int) {
+	t.error = true
+	statusBar.SetText(text)
+	// TODO(tso): set status bar icon
+	t.Println(text, styles)
+}
+
+func (t *tabChatbox) Println(text string, styles [][]int) {
 	mw.WindowBase.Synchronize(func() {
 		t.textBuffer.AppendText("\n")
 

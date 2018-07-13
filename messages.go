@@ -1,6 +1,8 @@
+// here be dragons
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
@@ -11,69 +13,192 @@ const (
 	SERVER_MESSAGE
 	SERVER_ERROR
 	JOINPART_MESSAGE
+	UPDATE_MESSAGE
 	NOTICE_MESSAGE
 	ACTION_MESSAGE
 	PRIVATE_MESSAGE
 )
 
-func Println(tab tabWithInput, msgType int, text ...string) {
-	if len(text) == 0 {
-		log.Printf("tried to print an empty line of type %v", func(t int) string {
-			switch t {
-			case CLIENT_MESSAGE:
-				return "CLIENT_MESSAGE"
-			case CLIENT_ERROR:
-				return "CLIENT_ERROR"
-			case SERVER_MESSAGE:
-				return "SERVER_MESSAGE"
-			case SERVER_ERROR:
-				return "SERVER_ERROR"
-			case JOINPART_MESSAGE:
-				return "JOINPART_MESSAGE"
-			case NOTICE_MESSAGE:
-				return "NOTICE_MESSAGE"
-			case ACTION_MESSAGE:
-				return "ACTION_MESSAGE"
-			case PRIVATE_MESSAGE:
-				return "PRIVATE_MESSAGE"
+func msgTypeString(t int) string {
+	switch t {
+	case CLIENT_MESSAGE:
+		return "CLIENT_MESSAGE"
+	case CLIENT_ERROR:
+		return "CLIENT_ERROR"
+	case SERVER_MESSAGE:
+		return "SERVER_MESSAGE"
+	case SERVER_ERROR:
+		return "SERVER_ERROR"
+	case JOINPART_MESSAGE:
+		return "JOINPART_MESSAGE"
+	case UPDATE_MESSAGE:
+		return "UPDATE_MESSAGE"
+	case NOTICE_MESSAGE:
+		return "NOTICE_MESSAGE"
+	case ACTION_MESSAGE:
+		return "ACTION_MESSAGE"
+	case PRIVATE_MESSAGE:
+		return "PRIVATE_MESSAGE"
+	}
+	return "(unknown)"
+}
+
+func clientError(tab tabWithInput, msg ...string) {
+	Println(CLIENT_ERROR, T(tab), msg...)
+}
+func clientMessage(tab tabWithInput, msg ...string) {
+	Println(CLIENT_MESSAGE, T(tab), msg...)
+}
+func serverMessage(tab tabWithInput, msg ...string) {
+	Println(SERVER_MESSAGE, T(tab), msg...)
+}
+func serverError(tab tabWithInput, msg ...string) {
+	Println(SERVER_ERROR, T(tab), msg...)
+}
+func joinpartMessage(tab tabWithInput, msg ...string) {
+	Println(JOINPART_MESSAGE, T(tab), msg...)
+}
+func updateMessage(tab tabWithInput, msg ...string) {
+	Println(UPDATE_MESSAGE, T(tab), msg...)
+}
+func noticeMessage(tab tabWithInput, msg ...string) {
+	Println(NOTICE_MESSAGE, T(tab), msg...)
+}
+func actionMessage(tab tabWithInput, msg ...string) {
+	Println(ACTION_MESSAGE, T(tab), msg...)
+}
+func privateMessage(tab tabWithInput, msg ...string) {
+	Println(PRIVATE_MESSAGE, T(tab), msg...)
+}
+
+type highlighterFn func(nick, msg string) bool
+
+func noticeMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+	PrintlnWithHighlight(NOTICE_MESSAGE, hl, T(tab), msg...)
+}
+func actionMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+	PrintlnWithHighlight(ACTION_MESSAGE, hl, T(tab), msg...)
+}
+func privateMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+	PrintlnWithHighlight(PRIVATE_MESSAGE, hl, T(tab), msg...)
+}
+
+func T(tabs ...tabWithInput) []tabWithInput { return tabs } // expected type, found ILLEGAL
+
+func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, msg ...string) {
+	switch msgType {
+	case NOTICE_MESSAGE:
+		for _, tab := range tabs {
+			time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+			tab.Logln(time + "*** NOTICE: " + nick + msg)
+
+			tab.Notify()
+
+			tab.Println(parseString(noticeMsg(hl(nick, msg), time, nick, msg)))
+		}
+
+	case PRIVATE_MESSAGE:
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		logmsg := time + "<" + nick + "> " + msg
+		h := hl(nick, msg)
+		colorNick(&nick)
+		for _, tab := range tabs {
+			if h {
+				tab.Notify()
 			}
-			return "(unknown)"
-		}(msgType))
+			tab.Logln(logmsg)
+			tab.Println(parseString(privateMsg(h, time, nick, msg)))
+		}
+
+	case ACTION_MESSAGE:
+		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		h := hl(nick, msg)
+		colorNick(&nick)
+		for _, tab := range tabs {
+			if h {
+				tab.Notify()
+			}
+			tab.Logln(logmsg)
+			tab.Println(parseString(actionMsg(h, time, nick, msg)))
+		}
+	default:
+		log.Println("highlighting unsupported for msgType %v", msgTypeString(msgType))
+	}
+}
+
+func Println(msgType int, tabs []tabWithInput, msg ...string) {
+	if len(msg) == 0 {
+		log.Printf("tried to print an empty line of type %v", msgTypeString(msgType))
 		return
 	}
 
 	switch msgType {
 	case CLIENT_MESSAGE:
-		tab.Println(clientMsg(text...))
+		for _, tab := range tabs {
+			tab.Println(parseString(clientMsg(msg...)))
+		}
 
 	case CLIENT_ERROR:
-		tab.Errorln(clientErrorMsg(text...))
-
-	case SERVER_ERROR:
-		tab.Logln(strings.Join(text, " "))
-		tab.Errorln(serverErrorMsg(text...))
+		for _, tab := range tabs {
+			tab.Errorln(parseString(clientErrorMsg(msg...)))
+		}
 
 	case SERVER_MESSAGE:
-		tab.Logln(strings.Join(text, " "))
-		tab.Println(serverMsg(text...))
+		text, styles := parseString(serverMsg(msg...))
+		for _, tab := range tabs {
+			tab.Logln(text)
+			tab.Println(text, styles)
+		}
+
+	case SERVER_ERROR:
+		text, styles := parseString(serverErrorMsg(msg...))
+		for _, tab := range tabs {
+			tab.Logln(text)
+			tab.Errorln(text, styles)
+		}
 
 	case JOINPART_MESSAGE:
 		if !clientCfg.HideJoinParts {
-			tab.Logln(strings.Join(text, " "))
-			tab.Println(joinpartMsg(text...))
+			text, styles := parseString(joinpartMsg(msg...))
+			for _, tab := range tabs {
+				tab.Logln(text)
+				tab.Println(text, styles)
+			}
+		}
+
+	case UPDATE_MESSAGE:
+		// TODO(tso): option to hide?
+		text, styles := parseString(joinpartMsg(msg...))
+		for _, tab := range tabs {
+			tab.Logln(text)
+			tab.Println(text, styles)
 		}
 
 	case NOTICE_MESSAGE:
-		tab.Logln("*** NOTICE: " + strings.Join(text, " "))
-		tab.Println(noticeMsg(text...))
+		for _, tab := range tabs {
+			tab.Notify()
+			tab.Logln("*** NOTICE: " + strings.Join(msg, " "))
+			tab.Println(parseString(noticeMsg(false, msg...)))
+		}
 
 	case PRIVATE_MESSAGE:
-		tab.Logln("<" + text[0] + "> " + strings.Join(text[1:], " "))
-		tab.Println(privateMsg(text...))
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		logmsg := time + "<" + nick + "> " + msg
+		colorNick(&nick)
+		for _, tab := range tabs {
+			tab.Logln(logmsg)
+			tab.Println(parseString(privateMsg(false, time, nick, msg)))
+		}
 
 	case ACTION_MESSAGE:
-		tab.Logln("*" + strings.Join(text, " ") + "*")
-		tab.Println(actionMsg(text...))
+		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
+		time, nick, msg := now(), msg[0], strings.Join(msg[1:], " ")
+		colorNick(&nick)
+		for _, tab := range tabs {
+			tab.Logln(logmsg)
+			tab.Println(parseString(actionMsg(false, time, nick, msg)))
+		}
 
 	default:
 		log.Printf(`
@@ -91,46 +216,85 @@ func Println(tab tabWithInput, msgType int, text ...string) {
 		??? default is yes...
 
 
-		also msgType %d isn't defined. add it to messages.go`, text, msgType)
+		also msgType %d isn't defined. add it to messages.go`, msg, msgType)
 
-		tab.Logln(strings.Join(text, " "))
-		tab.Println(strings.Join(text, " "))
+		text, styles := parseString(strings.Join(msg, " "))
+		for _, tab := range tabs {
+			tab.Logln(text)
+			tab.Println(text, styles)
+		}
 	}
 }
 
 func clientMsg(text ...string) string {
-	return color(now(), LightGray) + strings.Join(text, " ")
+	return color(now(), LightGray) + " " + strings.Join(text, " ")
 }
 
 func clientErrorMsg(text ...string) string {
 	return color(now()+" "+strings.Join(text, " "), Red)
 }
 
-func serverMsg(text ...string) string {
-	return color(now()+" "+strings.Join(text, " "), LightGray)
+func serverErrorMsg(text ...string) string {
+	if len(text) < 2 {
+		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%v",
+			len(text), text)
+	}
+	return color(now(), Red) + " " +
+		color("ERROR("+text[0]+")", White, Red) + " " +
+		color(strings.Join(text[1:], " "), Red)
 }
 
-func serverErrorMsg(text ...string) string {
-	return color(now()+" "+strings.Join(text, " "), Red)
+func serverMsg(text ...string) string {
+	if len(text) < 2 {
+		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%v",
+			len(text), text)
+	}
+	return color(now()+" "+text[0]+": "+strings.Join(text[1:], " "), LightGray)
 }
 
 func joinpartMsg(text ...string) string {
 	return color(now(), LightGray) + italic(color(strings.Join(text, " "), Orange))
 }
 
-func noticeMsg(text ...string) string {
-	return color(now(), LightGray) +
-		" " + color("***", White, Orange) +
-		" " + strings.Join(text, " ")
+func updateMsg(text ...string) string {
+	return color(now(), LightGray) + color(strings.Join(append([]string{"..."}, text...), " "), Orange)
 }
 
-func actionMsg(text ...string) string {
-	return color(now(), LightGray) +
-		" " + color("*"+strings.Join(text, " ")+"*", Blue)
+func noticeMsg(hl bool, text ...string) string {
+	if len(text) < 3 {
+		return fmt.Sprintf("wrong argument count for notice: want 3, got %d:\n%v", len(text), text)
+	}
+	line := color(now(), LightGray) +
+		color("NOTICE", White, Orange) +
+		color("("+text[0]+"->"+text[1]+"): ", Orange)
+	if hl {
+		line += bold(color(" ..! ", Orange, Yellow))
+	}
+	return line + strings.Join(text[2:], " ")
 }
 
-func privateMsg(text ...string) string {
+func actionMsg(hl bool, text ...string) string {
+	line := color(now(), LightGray) + " "
+	if hl {
+		line += bold(color(" ..! ", Orange, Yellow))
+	}
+	return line + " " + "*" + strings.Join(text, " ") + "*"
+}
+
+func privateMsg(hl bool, text ...string) string {
+	if len(text) < 2 {
+		return fmt.Sprintf("wrong argument count for notice: want 2, got %d:\n%v", len(text), text)
+	}
 	nick := text[0]
-	return color(now(), LightGray) +
-		" " + color(nick, DarkGrey) + " " + strings.Join(text[1:], " ")
+	line := color(now(), LightGray) + " "
+	if hl {
+		line += bold(color(" ..! ", Orange, Yellow))
+	}
+	return line + nick + " " + strings.Join(text[1:], " ")
+
+}
+
+func colorNick(nick *string) {
+	// TODO(tso): different colors for nicks
+	*nick = color(*nick, DarkGrey)
 }

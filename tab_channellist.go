@@ -69,6 +69,7 @@ func (t *tabChannelList) Update(servState *serverState) {
 
 func NewChannelList(servConn *serverConnection, servState *serverState) *tabChannelList {
 	t := &tabChannelList{}
+	tabs = append(tabs, t)
 	t.mu = &sync.Mutex{}
 	t.mdl = new(channelListModel)
 	t.complete = false
@@ -123,7 +124,6 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 		}.Create(builder)
 		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, t.tabPage))
 		tabWidget.SaveState()
-		tabs = append(tabs, t)
 	})
 
 	return t

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/lxn/walk"
@@ -77,6 +76,7 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
 	t := &tabChannel{}
+	tabs = append(tabs, t)
 	t.tabTitle = chanState.channel
 
 	chanState.nickList = newNickList()
@@ -89,7 +89,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 	t.send = func(msg string) {
 		servConn.conn.Privmsg(chanState.channel, msg)
 		nick := chanState.nickList.Get(servState.user.nick)
-		t.Println(fmt.Sprintf(color("%s", LightGrey)+" "+color("%s", DarkGrey)+" %s", now(), nick, msg))
+		privateMessage(t, nick.String(), msg)
 	}
 
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + chanState.channel)
@@ -200,7 +200,6 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-		tabs = append(tabs, t)
 	})
 	chanState.tab = t
 	servState.channels[chanState.channel] = chanState
