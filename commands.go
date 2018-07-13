@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -131,7 +130,7 @@ func reconnectCmd(ctx *commandContext, args ...string) {
 			case CONNECTION_EMPTY:
 				clientMessage(ctx.tab, "ERROR: no network specified (use /server)")
 			case CONNECTING, CONNECTION_START:
-				clientMessage(ctx.tab, "ERROR: connection in progress: " + fmt.Sprintf("%s:%d", ctx.servState.hostname, ctx.servState.port))
+				clientMessage(ctx.tab, "ERROR: connection in progress: " + serverAddr(ctx.servState.hostname, ctx.servState.port))
 
 			case CONNECTED:
 				disconnectCmd(ctx, args...)
@@ -176,7 +175,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 	servState.hostname = hostname
 	servState.port = port
 	servState.ssl = ssl
-	servState.networkName = fmt.Sprintf("%s:%d", hostname, port)
+	servState.networkName = serverAddr(hostname, port)
 	servState.user = &userState{
 		nick: ctx.servState.user.nick,
 	}
