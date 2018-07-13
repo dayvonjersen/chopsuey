@@ -249,20 +249,26 @@ func kickCmd(ctx *commandContext, args ...string) {
 	if ctx.chanState != nil {
 		ctx.servConn.conn.Kick(ctx.chanState.channel, args[0], args[1:]...)
 	} else {
-		clientMessage(ctx.tab, "ERROR: /kick only works for channels.")
+		clientError(ctx.tab, "/kick only works for channels.")
 	}
 }
 
 func listCmd(ctx *commandContext, args ...string) {
-	if ctx.servState.channelList == nil {
-		ctx.servState.channelList = NewChannelList(ctx.servConn, ctx.servState)
+	if ctx.servState.connState != CONNECTED {
+		clientError(ctx.tab, "Can't LIST: not connected to any network")
+		return
 	}
-	if ctx.servState.channelList.complete {
-		ctx.servState.channelList.Clear()
+	if ctx.servState.channelList != nil {
+		if ctx.servState.channelList.complete {
+			clientMessage(ctx.tab, "refreshing LIST...")
+			ctx.servState.channelList.Clear()
+		}
+		if ctx.servState.channelList.inProgress {
+			clientMessage(ctx.tab, ctx.servState.networkName, "is still sending results!")
+			return
+		}
 	}
-	if !ctx.servState.channelList.inProgress {
-		ctx.servConn.conn.Raw("LIST")
-	}
+	ctx.servConn.conn.Raw("LIST")
 }
 
 func meCmd(ctx *commandContext, args ...string) {

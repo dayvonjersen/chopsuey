@@ -541,14 +541,17 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	// LISTSTART
 	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
-			log.Println("got 321 but servState.channelList is nil")
-			return
+			servState.channelList = NewChannelList(servConn, servState)
 		}
 		servState.channelList.inProgress = true
 	})
 
 	// LIST
 	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
+		if servState.channelList == nil {
+			return
+		}
+
 		args := strings.SplitN(l.Raw, " ", 6)
 		/*
 			args = []string{
@@ -576,10 +579,6 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 		topic := strings.TrimSpace(args[5][1:])
 
-		if servState.channelList == nil {
-			servState.channelList = NewChannelList(servConn, servState)
-		}
-
 		servState.channelList.mu.Lock()
 		defer servState.channelList.mu.Unlock()
 		servState.channelList.Add(channel, users, topic)
@@ -588,9 +587,9 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	// LISTEND
 	conn.HandleFunc("323", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
-			log.Println("got 323 but servState.channelList is nil")
 			return
 		}
+
 		servState.channelList.inProgress = false
 		servState.channelList.complete = true
 	})
