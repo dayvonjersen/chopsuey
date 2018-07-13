@@ -1,6 +1,8 @@
 BUGS:
 
- - colors are all kinds of fucked up and wrong/not showing up
+ - richedit jumps up like 20 lines or scrolls past the end find out whats
+   going on with that it has to do with when its focused or not
+   dont just spam WM_VSCROLL although thats probably the solution
 
  - style bleed is still happening in RichEdit textBuffers
     - now I want to try adding some zero-width characters and

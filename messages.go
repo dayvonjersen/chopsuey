@@ -48,10 +48,9 @@ func privateMessage(tab tabWithInput, msg ...string) {
 	Println(PRIVATE_MESSAGE, T(tab), msg...)
 }
 
-func T(tab ...tabWithInput) (tabs []tabWithInput) { return } // expected type, found ILLEGAL
+func T(tabs ...tabWithInput) []tabWithInput { return tabs } // expected type, found ILLEGAL
 
 func Println(msgType int, tabs []tabWithInput, msg ...string) {
-
 	if len(msg) == 0 {
 		log.Printf("tried to print an empty line of type %v", func(t int) string {
 			switch t {
@@ -194,7 +193,9 @@ func serverErrorMsg(text ...string) string {
 		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%v",
 			len(text), text)
 	}
-	return color(now()+" "+color("ERROR("+text[0]+")", White, Red)+": "+strings.Join(text[1:], " "), Red)
+	return color(now(), Red) + " " +
+		color("ERROR("+text[0]+")", White, Red) + " " +
+		color(strings.Join(text[1:], " "), Red)
 }
 
 func serverMsg(text ...string) string {
