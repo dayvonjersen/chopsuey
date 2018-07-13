@@ -1,5 +1,7 @@
-BUGS:
 
+richedit {{{
+
+FIX PROBLEMS:
  - richedit jumps up like 20 lines or scrolls past the end find out whats
    going on with that it has to do with when its focused or not
    dont just spam WM_VSCROLL although thats probably the solution
@@ -8,7 +10,17 @@ BUGS:
     - now I want to try adding some zero-width characters and
       styling them with AUTOCOLOR (need to test that AUTOCOLOR even does
       anything on visible text)
+
+CREATE NEW PROBLEMS:
+ - /search or /find or CTRL+F
+    - perfect world: reduce text buffer to matches, then restore
+    - real world: jump to selection
  
+ - selection automatically goes to clipboard
+}}}
+---
+(*actual todo list) {{{
+
  - /list shouldn't work on a disconnected server (but guess what)
 
  - bold/italic/underline toggles don't work
@@ -17,6 +29,33 @@ BUGS:
  - statusBar is just really inconsistent
     - disconnecting from one server makes all servers display "disconnected x_x"
 
+ - nick with prefix e.g. @channelop should be without prefix in ACTION
+
+ - unicode characters display in a shitty font make sure Universalia is
+   used if the text isn't ascii  
+
+ - whitespace or something to indicate where unread messages start
+
+ - CTCP messages should appear somewhere in UI
+
+ - /part without closing tab
+     - chanState tracks whether "connected" to channel?
+
+ - split extra long text input
+     - maxlen is 450..512
+     - ctrl+enter inserts \n
+     - split on \n, send multiple lines
+     - dialog box: warn about sending > 2 lines
+
+ - don't log lines if DISCONNECTED
+
+ - don't display lines if not sent
+    - e.g. cannot send to channel (+m)
+}}}
+---
+walk {{{
+
+PROBLEMS:
  - draw issue when
     1) open /list from #channel
     2) click to channel list tab
@@ -33,163 +72,208 @@ BUGS:
    though the PushButton will hide it again with 1 click maybe something like
    a "hidden" on the nickList and an event on MainWindow
 
- - nick with prefix e.g. @channelop should be without prefix in ACTION
-
- - unicode characters display in a shitty font make sure Universalia is
-   used if the text isn't ascii  
-
  - we should ReleaseDC() after closing tabs 
 
+EXPLORE A NEW WORLD OF OPPORTUNITY:
+ - keyboard nav 
+  
+ - system tray icon
+     - hide to tray
+     - notifications balloons for highlight (if !mainWindowFocused)
 
-FEATURES:
+ - figure out how to make the window flash orange in the task bar
 
- - keyboard nav or some context menus at least
-    - CTRL+T for a new nil CHATBOX_SERVER unless one exists
-    - CTRL+(Shift)+Tab to cycle through tabs 
-    - CTRL+F4 to close a tab
-    future:
-    - Esc to hide to tray
---------------------------------------------------------------------------------
+ - enable_caption(0)
+
+ - transparency?
+}}}
+---
+new feature {{{
+
  - topic widget should allow input and send /topic or whatever
- - after: replace topicInput with a RichEdit to display colors and links and
-   stuff
-    - *pukes*
+   after: replace topicInput with a RichEdit to display colors and links 
 
+ - highlight list
+    - probably should compile regexp for that since its more complex
+    - needs dialog, maybe just use TextEdit
+    - support for patterns
 
+ - word filter
+    - e.g. "fuck" => "****"
+    - or 4chan style "fam" => "desu"
 
-UNSORTED:
+ - limit scrollback to n lines
 
+ - load chatlog on join
+}}}
+---
+big project/refactor {{{
 
+ - new server tab/connection abstraction
 
---------------------------------------------------------------------------------
-/mode needs to be able to send just the channel to get a reply of what the
-mode is
-ditto for /topic
---------------------------------------------------------------------------------
-first run welcome message
---------------------------------------------------------------------------------
-new server tab/connection abstraction
---------------------------------------------------------------------------------
-whitespace or something to indicate where unread messages start
---------------------------------------------------------------------------------
-CTCP messages should appear somewhere in UI
---------------------------------------------------------------------------------
-highlight list
-probably should compile regexp for that since its more complex
---------------------------------------------------------------------------------
-better scripting examples
---------------------------------------------------------------------------------
-autoload registered scripts at startup (config.json)
---------------------------------------------------------------------------------
-/part without closing tab
- - chanState tracks whether "connected" to channel?
---------------------------------------------------------------------------------
-split extra long text input, allow ctrl+enter, split on \n
-i heard 512 bytes was maxlen
-goirc uses 450
---------------------------------------------------------------------------------
-/ignore
-/unignore
---------------------------------------------------------------------------------
-/invite
---------------------------------------------------------------------------------
-/kickban
---------------------------------------------------------------------------------
-/send 
-proper file transfers with a Save As dialog and everything
-unrelated: maybe turn tsobot into a XDCC bot
---------------------------------------------------------------------------------
-inline twitter links
- - maybe use the API
- - maybe just scrape the HTML
---------------------------------------------------------------------------------
-list of reasons to replace goirc with simple channels and goroutines 
-that aren't NIH:
- - /reconnect is impossible for some reason to do with how goirc uses channels
- - logger interface is inconvenient
- - no convenient way to capture unhandled server messages 
+ - make empty server tab possible
+}}}
+---
+commands {{{
 
-list of reasons against:
- - it works
- - has anti-flooding stuff
- - line parsing might be harder than it looks
---------------------------------------------------------------------------------
-replace walk with qt ... for version 2.0
+ - usage text and descriptions for all commands in a map.
 
-list of reasons:
- - I want inline images for emojis and embedding thumbnails of pictures that 
-   people link to
- - windows richedit is annoying
---------------------------------------------------------------------------------
+ - /mode needs to be able to send just the channel e.g. MODE #test
+   to get a reply of what the mode is
+   expected: /mode #channel
+             Mode for #channel is +CSnpstz
+             /mode tso
+             tso (221: +Sirx)
 
-colors
->>>>>> FIX YO SHIT #()!@# 
-<<<<<< I MADE IT EVEN WORSE FUK U
+ - ditto for /topic
+   expected: /topic
+             Topic for #channel is "words" set by tso at 7/12/2018 11:54:18 PM
+
+ - /welcome
+    - first run welcome message
+    - ascii art logo
+    - contact + link to github
+    - getting started
+      /server irc.example.org +
+      /join #channel
+      hi
+    - /help for more information
+
+ - tab completion for commands
+
+need dialog box for better management of lists:
+ - /ignore
+    - /unignore
+ - /invite
+    - /uninvite
+ - /kickban
+
+easy:
+ - /whois
+ - /version
+ - /away
+ - /unaway
+}}}
+---
+improvements {{{
+
+ - better scripting examples
+    - useful/common things: rainbow text, automatic translation, emoticons
+}}}
+---
+config {{{
+
+ - autoload registered scripts at startup
+
+ - settings dialog
+ 
+ - write to config.json
+     - save current state as autojoin on exit (optional)
+
+ - automatic NickServ stuff
+
+ - hidejoinparts per channel(with list) or global
+
+ - ignore list
+
+ - highlight list
+    - disable highlight
+}}}
+---
+dcc {{{
+
+ - /send 
+
+ - file transfers tab
+ 
+ - Save As dialog on recv
+
+ unrelated: maybe turn tsobot into a XDCC bot
+}}}
+---
+extensions {{{
+
+ - inline twitter links
+}}}
+---
+bikeshedding {{{
+
+ - replace goirc with simple channels and goroutines
+    yay:
+         - /reconnect is impossible for some reason
+         - logger interface is inconvenient
+         - no convenient way to capture unhandled server messages 
+
+    nay:
+         - it works
+         - has anti-flooding stuff
+         - line parsing might be harder than it looks
+
+ - replace walk with qt 
+    ... for version 2.0
+
+    yay:
+         - inline images for emojis and embedding thumbnails 
+         - richedit is hella annoying
+
+    nay:
+        - walk is hella comfy
+        
+ - irc bouncer (separate project)
+     - use public/private key pairs for authentication or something
+     - basically just a relay/proxy that PING/PONGs when the user isn't connected
+     - stores messages while user isn't connected, dumps (user configurable
+       amount) on reconnect
+     - autoreply or maybe just (Away)!
+     - *** this sort of thing might be against IRC network rules need to look into
+       what the policy is and/or how znc does it so well
+       or just use znc
+}}}
+---
+colors {{{
+
  - write more test cases
+
  - strip control codes from other parts of the ui (like channel list)
- - SEND COLORS (todo) ideas:
-    `red:no u`
+
+ - SEND COLORS
+    - shorthand `red:no u`
+    - ctrl+k inserts \x03
+    - ctrl+b inserts \x02
+    - etc...
+    - NOTE(tso): you can already send control codes with scripting
+
  - unique random colors for nicks
+
  - themes
+}}}
+---
+tabwidget {{{
 
---------------------------------------------------------------------------------
-middle-click to close tabs
-scroll to cycle through tabs
-context menu (close)
-improve tabs in general
- - multiline, stretch-to-fit, button style
-automatic tab sort order (alphabetical to start)
---------------------------------------------------------------------------------
-/search or /find or CTRL+F
-    reduce text buffer to matches, then restore
---------------------------------------------------------------------------------
-/whois command (write to current tab)
---------------------------------------------------------------------------------
-settings panel which writes to config.json
-hot-loadable config.json
-automatic NickServ stuff
- - IDEA(tso): dialog
-    "Clickable links are disabled by default as a security precaution. 
-                    You can enable them in Settings
+ - mouse
+     - middle-click to close tabs
+     - scroll to cycle through tabs
+     - context menu
+        - mark as read
+        - close
 
-                    [Yes I know don't show me this again]
-    "
---------------------------------------------------------------------------------
-limit message history (configurable)
---------------------------------------------------------------------------------
-don't log messages if offline
-don't display messages if not sent (or at least "previous message not sent"
-!Undelivered
---------------------------------------------------------------------------------
-system tray
- - icon
- - hide to tray
- - notifications on nickflash && !mainWindowFocused
---------------------------------------------------------------------------------
-enable_caption(0)
- - transparency while we're at it? maybe that's too much...
---------------------------------------------------------------------------------
-irc bouncer (separate project?)
- - use public/private key pairs for authentication or something
- - basically just a relay/proxy that PING/PONGs when the user isn't connected
- - stores messages while user isn't connected, dumps (user configurable
-   amount) on reconnect
- - autoreply or maybe just (Away)!
- - *** this sort of thing might be against IRC network rules need to look into
-   what the policy is and/or how znc does it so well
-   or just use znc
---------------------------------------------------------------------------------
-tab completion for commands might be nice
---------------------------------------------------------------------------------
-hide join/parts should be optional for every channel not a global setting
---------------------------------------------------------------------------------
-write autojoin on exit (as an option) (config.json)
---------------------------------------------------------------------------------
-/version
+ - keyboard
+    - ctrl+t for empty server tab
+    - ctrl+tab to 
+        
+ - windows styles
+     - multiline
+     - stretch-to-fit
+     - button style
 
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+ - automatic tab sort order 
+    - alphabetical
+    - most activity
+}}}
 
-RESOURCES:
+░░░
+
+RESOURCES: {{{
 
 IRC:
 http://modern.ircdocs.horse/
@@ -219,10 +303,11 @@ https://www.dwheeler.com/essays/open-files-urls.html
     get tab key messages in windows:
 http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
 
+}}}
 
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒
 
-ADDENDUM:
+ADDENDUM: {{{
 
 RE: inserting images in RichEdit
 
@@ -233,3 +318,11 @@ colors there's always walk.WebView, electron, Qt, or reinventing the wheel
 clipboard manually and invent a scrollbar and waste like a solid year on that)
 
 -tso, July Sun Jul 8 07:49:26 2018 -0400
+}}}
+
+
+
+
+
+
+# vim: tw=70 ft=help fdm=marker fmr={{{,}}} fdl=0 fen:
