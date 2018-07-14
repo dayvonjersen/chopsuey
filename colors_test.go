@@ -30,7 +30,7 @@ func TestFindNumber(t *testing.T) {
 		{"\x031500:32\x0f \x0312NOTICE: *** Looking up your hostname...\x0f",
 			"\x0300:32\x0f \x0312NOTICE: *** Looking up your hostname...\x0f", 15, 1, 2, false},
 	} {
-		n, s, e, err := findNumber(test.strBefore, 1)
+		n, s, e, err := findNumber([]rune(test.strBefore), 1)
 		var after string
 		if test.start == -1 && test.end == -1 {
 			after = test.strBefore
@@ -50,6 +50,11 @@ func TestFindNumber(t *testing.T) {
 	}
 }
 
+type richtext struct {
+	str    string  // stripped of all control characters
+	styles [][]int // style type, start offset, end offset, color value
+}
+
 func TestParseString(t *testing.T) {
 	for _, test := range []struct {
 		input    string
@@ -66,7 +71,7 @@ func TestParseString(t *testing.T) {
 			},
 		},
 		{
-			input: fmtItalic + "this" + fmtReset + " is a " + fmtBold + "\x034t\x037e\x038s\x033t " + fmtUnderline + "https://" + fmtReset,
+			input: string(fmtItalic) + "this" + string(fmtReset) + " is a " + string(fmtBold) + "\x034t\x037e\x038s\x033t " + string(fmtUnderline) + "https://" + string(fmtReset),
 			expected: &richtext{
 				str: "this is a test https://",
 				styles: [][]int{
@@ -91,7 +96,7 @@ func TestParseString(t *testing.T) {
 			},
 		},
 		{
-			input: fmtItalic + "italic" + fmtItalic + fmtBold + "bold" + fmtBold + fmtUnderline + "underline" + fmtUnderline,
+			input: string(fmtItalic) + "italic" + string(fmtItalic) + string(fmtBold) + "bold" + string(fmtBold) + string(fmtUnderline) + "underline" + string(fmtUnderline),
 			expected: &richtext{
 				str: "italicboldunderline",
 				styles: [][]int{
@@ -102,7 +107,7 @@ func TestParseString(t *testing.T) {
 			},
 		},
 		{
-			input: fmtItalic + "italic" + fmtBold + "bold" + fmtItalic + fmtBold + fmtUnderline + "underline" + fmtUnderline,
+			input: string(fmtItalic) + "italic" + string(fmtBold) + "bold" + string(fmtItalic) + string(fmtBold) + string(fmtUnderline) + "underline" + string(fmtUnderline),
 			expected: &richtext{
 				str: "italicboldunderline",
 				styles: [][]int{
@@ -165,6 +170,25 @@ func TestParseString(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: "\x031世界",
+			expected: &richtext{
+				str: "世界",
+				styles: [][]int{
+					{TextEffectForegroundColor, 0, 2, colorPaletteWindows[1]},
+				},
+			},
+		},
+		{
+			input: "\x031世\x032界",
+			expected: &richtext{
+				str: "世界",
+				styles: [][]int{
+					{TextEffectForegroundColor, 0, 1, colorPaletteWindows[1]},
+					{TextEffectForegroundColor, 1, 2, colorPaletteWindows[2]},
+				},
+			},
+		},
 	} {
 		text, styles := parseString(test.input)
 		actual := &richtext{text, styles}
@@ -173,7 +197,18 @@ func TestParseString(t *testing.T) {
 			_printf(test.expected)
 			fmt.Println("\nactual:")
 			_printf(actual)
-			t.Error("whoosp")
+			t.Fail()
 		}
+	}
+}
+
+func TestUTF8Conversion(t *testing.T) {
+	str := "hello世界"
+	runes := []rune(str)
+	str2 := string(runes)
+	if str2 != str {
+		fmt.Printf("expected: %s %v\n", str, []byte(str))
+		fmt.Printf("  actual: %s %v\n", str2, runes)
+		t.Fail()
 	}
 }
