@@ -352,7 +352,18 @@ func meCmd(ctx *commandContext, args ...string) {
 }
 
 func modeCmd(ctx *commandContext, args ...string) {
-	if len(args) < 2 {
+	// NOTE(tso): /mode
+	// /mode                -> channel is assumed to be chanState.channel
+	// /mode nick           -> channel is assumed to be chanState.channel
+	// /mode #channel       -> chanState can be nil and not be current channel
+	// /mode ±abcd          -> channel is assumed to be chanState.channel
+	// /mode ±abcd #channel -> chanState can be nil and not be current channel
+	// /mode ±abcd #channel1 #channel2 ... -> invalid
+	// /mode ±abcd nick1 nick2...          -> valid
+	// @_@
+	// -tso 7/14/2018 8:42:22 AM
+
+	if len(args) < 1 {
 		usage(ctx, "mode")
 		return
 	}
