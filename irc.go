@@ -138,9 +138,27 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	}
 
 	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
-		// FIXME(COLOURIZE)
-		// send to current tab if current tab != channel
-		// stub
+		debugPrint(l)
+		channel := l.Args[0]
+		msg := strings.Join(l.Args[1:], " ")
+
+		// Q: well why didnt you register separate handlers for this?
+		// A: because where they're going is all the same
+		// A->A: well then you should just abstract that part, idiot.
+		switch l.Cmd {
+		case "324":
+			msg = "Mode for " + l.Args[1] + " is " + l.Args[2]
+		default:
+			msg = color("UNHANDLED CODE("+l.Cmd+")", White, Purple) + ": " + msg
+		}
+
+		var tab tabWithInput
+		if chanState, ok := servState.channels[channel]; ok {
+			tab = chanState.tab
+		} else {
+			tab = getCurrentTabForServer(servState)
+		}
+		clientMessage(tab, msg)
 	}
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
