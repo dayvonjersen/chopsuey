@@ -58,6 +58,7 @@ func init() {
 		"send": sendCmd,
 
 		// scripting
+		"call":       scriptCmd,
 		"script":     scriptCmd,
 		"register":   registerCmd,
 		"unregister": unregisterCmd,
@@ -422,11 +423,11 @@ func scriptCmd(ctx *commandContext, args ...string) {
 	scriptFile := filepath.Base(args[0])
 
 	f, err := os.Open(SCRIPTS_DIR + scriptFile)
-	checkErr(err)
 	if os.IsNotExist(err) {
 		clientError(ctx.tab, "script not found: "+scriptFile)
 		return
 	}
+	checkErr(err)
 	{
 		finfo, err := f.Stat()
 		checkErr(err)
