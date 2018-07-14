@@ -43,7 +43,7 @@ func isChannel(channel string) bool {
 
 func isService(nick string) bool {
 	switch strings.ToLower(nick) {
-	case "nickserv", "chanserv", "hostserv":
+	case "nickserv", "chanserv", "hostserv", "funserv":
 		return true
 	}
 	return false

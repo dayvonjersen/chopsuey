@@ -106,9 +106,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 		h := hl(nick, msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
-			if h {
-				tab.Notify(h)
-			}
+			tab.Notify(h)
 			tab.Logln(logmsg)
 			tab.Println(parseString(privateMsg(h, nick, msg)))
 		}
@@ -119,9 +117,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 		h := hl(nick, msg)
 		colorNick(&nick)
 		for _, tab := range tabs {
-			if h {
-				tab.Notify(h)
-			}
+			tab.Notify(h)
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(h, nick, msg)))
 		}

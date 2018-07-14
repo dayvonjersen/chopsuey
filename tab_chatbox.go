@@ -23,7 +23,6 @@ func (t *tabChatbox) Clear() {
 
 func (t *tabChatbox) Title() string {
 	title := t.tabTitle
-	// add nickflash here
 	if t.unread > 0 && !t.HasFocus() {
 		title = fmt.Sprintf("%s [%d]", title, t.unread)
 	}
