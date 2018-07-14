@@ -24,7 +24,7 @@ type serverConnection struct {
 }
 
 func connect(servConn *serverConnection, servState *serverState) (success bool) {
-	Println(CLIENT_MESSAGE, servState.AllTabs(), "connecting to:", serverAddr(servState.hostname, servState.port), "...")
+	Println(CLIENT_MESSAGE, servState.AllTabs(), now(), "connecting to:", serverAddr(servState.hostname, servState.port), "...")
 	servState.connState = CONNECTING
 	servState.tab.Update(servState)
 

@@ -31,19 +31,19 @@ func (t *tabServer) Update(servState *serverState) {
 	case DISCONNECTED:
 		t.disconnected = true
 		t.statusText = "disconnected x_x"
-		Println(CLIENT_ERROR, T(servState.AllTabs()...), t.statusText)
+		Println(CLIENT_ERROR, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTING:
 		t.disconnected = true
 		t.statusText = "connecting to " + servState.networkName + "..."
-		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), t.statusText)
+		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTION_ERROR:
 		t.disconnected = true
 		t.statusText = "couldn't connect: " + servState.lastError.Error()
-		Println(CLIENT_ERROR, T(servState.AllTabs()...), t.statusText)
+		Println(CLIENT_ERROR, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTION_START:
 		t.disconnected = false
 		t.statusText = "connected to " + servState.networkName
-		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), t.statusText)
+		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTED:
 		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
 		t.disconnected = false

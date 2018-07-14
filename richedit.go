@@ -292,9 +292,16 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 		re.linecount = 0
 		if text == "\n" { // HACK(tso): hey while we're here, counting lines...
 			return
+			// clarification:
+			//                   (tabChatbox.Println always appends a "\n" *before* appending new text
+			//                   so that the end of the buffer is always flush with the edge
+			//                   but you don't want to do that for the first line in the buffer
+			//                   this if statement should actually be in that file, but linecount isn't
+			//                   "public" though I could just change it to Linecount or better yet LineCount
+			//                   but it shouldn't even have to exist at all
+			// -tso 7/14/2018 7:09:42 AM
 		}
 	}
-	re.linecount += strings.Count(text, "\n")
 	re.SetTextSelection(l, l)
 	re.ReplaceSelectedText(text, false)
 	for _, style := range styles {
@@ -317,6 +324,18 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 		}
 	}
 	re.SetTextSelection(s, e)
+	re.linecount += strings.Count(text, "\n") // HACK(tso): but number of new lines in the selection we just added doesnt matter? I'm so confused...
+	// XXX HACK FIXME(tso): actually, styles still aren't applied correctly
+	//                      if there are *any* newlines in text we add with
+	//                      this function.
+	//
+	//                      it's not hard for _me_ to remember either to
+	//                      a) never AppendText with multiple newlines and/or
+	//                      b) never use any style information with such text
+	//
+	//                      but it's clearly not right and it's a landmine for
+	//                      anyone else who might want to use this.
+	// -tso 7/14/2018 7:10:52 AM
 }
 
 func (re *RichEdit) openURL(min, max int32) {

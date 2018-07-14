@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -18,11 +19,68 @@ type commandContext struct {
 	pmState   *privmsgState
 }
 
-type clientCommand func(ctx *commandContext, args ...string)
+type (
+	clientCommand    func(ctx *commandContext, args ...string)
+	clientCommandDoc struct {
+		usage, desc string
+	}
+)
 
 var (
-	clientCommands map[string]clientCommand
-	scriptAliases  = map[string]string{}
+	clientCommands   map[string]clientCommand
+	clientCommandDox = map[string]clientCommandDoc{
+		// connectivity
+		"connect":    clientCommandDoc{"/connect", "(if disconnected) reconnect to server\nspecify server with /server"},
+		"disconnect": clientCommandDoc{"/disconnect", "disconnect from server and do not try to reconnect"},
+		"quit":       clientCommandDoc{"/quit", "disconnect from server and close all associated tabs"},
+		"reconnect":  clientCommandDoc{"/recover", bold(color("broken", Red)) + " use /disconnect and /connect instead"},
+		"server": clientCommandDoc{"/server [host]  [+][port (default 6667, ssl 6697)]",
+			"open a connection to an irc network, to use ssl prefix port number with +"},
+
+		// other core functionality
+		"clear": clientCommandDoc{"/clear", "remove all text from the current buffer"},
+		"close": clientCommandDoc{"/close [part or quit message]",
+			"closes current tab with optional part or quit message\nif on a channel, same as /part\nif on a server same as /quit"},
+		"ctcp": clientCommandDoc{"/ctcp [nick] [message] [args...]", "send a CTCP message to nick with optional arguments"},
+		"join": clientCommandDoc{"/join [#channel]", "join a channel"},
+		"kick": clientCommandDoc{"/kick [nick] [(optional) reason...]", "remove a user from a channel (if you have op)"},
+		"list": clientCommandDoc{"/list", "opens a tab with all the channels on the server"},
+		"me":   clientCommandDoc{"/me [message...]", "*tso slaps you around with a big trout*"},
+		"mode": clientCommandDoc{"/mode [#channel or your nick] [mode] [nicks...]",
+			"set one or more modes for a channel or one or more nicks"},
+		"msg":  clientCommandDoc{"/msg [nick] [message...]", "opens a new tab and send a private message"},
+		"nick": clientCommandDoc{"/nick [new nick]", "change your handle"},
+		"notice": clientCommandDoc{"/notice [#channel or nick] [message...]",
+			"sends a NOTICE. please dont send NOTICEs to channels..."},
+		"part":   clientCommandDoc{"/part [message...]", "(doesnt close tab) leave a channel with optional message"},
+		"rejoin": clientCommandDoc{"/rejoin", "join a channel you have left (either by being kicked or having parted)"},
+		"topic":  clientCommandDoc{"/topic [new topic...]", "set or view the topic for the channel"},
+
+		// stubs
+		"help": clientCommandDoc{"/help [command]", "..."},
+		"exit": clientCommandDoc{"/exit", "SHUT\nIT\nDOWN"},
+
+		// experimental/WIP
+		"send": clientCommandDoc{"/send [nick] [filepath (optional)]",
+			"offer to send a file to a user, if no file is specified a dialog will open to pick one\n" +
+				"please note that file transfers dont work in all clients\n" +
+				"and file sharing may be prohibited by the network you are on"},
+
+		// scripting
+		"script": clientCommandDoc{"/script [file in " + SCRIPTS_DIR + "] [args...]",
+			"run an external program and send its output as a message in the current context\n" +
+				"recognized filetypes (" + bold("iff you have the associated interpreter installed") + "):\n" +
+				"go, php, perl, python, ruby, and bash"},
+		"register": clientCommandDoc{"/register [alias] [script file]",
+			"alias a script to a command you can call directly e.g.\n" +
+				"/register mycommand cool_script.pl\nmakes\n" +
+				"/mycommand hey guys\nsynonymous with\n/script cool_script.pl hey guys"},
+		"unregister": clientCommandDoc{"/unregister [alias]", "unalias a command registered with /register"},
+
+		// debugging
+		"raw": clientCommandDoc{"/raw [irc command]", "send a raw command to server e.g. JOIN #channel"},
+	}
+	scriptAliases = map[string]string{}
 )
 
 func init() {
@@ -35,20 +93,21 @@ func init() {
 		"server":     serverCmd,
 
 		// other core functionality
-		"clear":  clearCmd,
-		"close":  closeCmd,
-		"ctcp":   ctcpCmd,
-		"join":   joinCmd,
-		"kick":   kickCmd,
-		"list":   listCmd,
-		"me":     meCmd,
-		"mode":   modeCmd,
-		"msg":    privmsgCmd,
-		"nick":   nickCmd,
-		"notice": noticeCmd,
-		"part":   partCmd,
-		"rejoin": rejoinCmd,
-		"topic":  topicCmd,
+		"clear":   clearCmd,
+		"close":   closeCmd,
+		"ctcp":    ctcpCmd,
+		"join":    joinCmd,
+		"kick":    kickCmd,
+		"list":    listCmd,
+		"me":      meCmd,
+		"mode":    modeCmd,
+		"msg":     privmsgCmd,
+		"privmsg": privmsgCmd,
+		"nick":    nickCmd,
+		"notice":  noticeCmd,
+		"part":    partCmd,
+		"rejoin":  rejoinCmd,
+		"topic":   topicCmd,
 
 		// stubs
 		"help": helpCmd,
@@ -66,6 +125,10 @@ func init() {
 		// debugging
 		"raw": rawCmd,
 	}
+}
+
+func usage(ctx *commandContext, cmd string) {
+	clientMessage(ctx.tab, clientCommandDox[cmd].usage)
 }
 
 func connectCmd(ctx *commandContext, args ...string) {
@@ -121,9 +184,7 @@ func quitCmd(ctx *commandContext, args ...string) {
 }
 
 func reconnectCmd(ctx *commandContext, args ...string) {
-	clientMessage(ctx.tab, `Sorry, /reconnect doesn't work right now, please do:
-/disconnect
-/connect`)
+	usage(ctx, "reconnect")
 	return
 	/*
 		// FIXME(tso): either find out why goirc panics when we do this or replace goirc altogether
@@ -146,7 +207,7 @@ func reconnectCmd(ctx *commandContext, args ...string) {
 
 func serverCmd(ctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		clientMessage(ctx.tab, "usage: /server [host] [port (default 6667)]\r\n  ssl: /server [host] +[port (default 6697)]")
+		usage(ctx, "server")
 		return
 	}
 
@@ -227,7 +288,7 @@ func closeCmd(ctx *commandContext, args ...string) {
 
 func ctcpCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		clientMessage(ctx.tab, "usage: /ctcp [nick] [message] [args...]")
+		usage(ctx, "ctcp")
 		return
 	}
 	ctx.servConn.conn.Ctcp(args[0], args[1], args[2:]...)
@@ -235,7 +296,7 @@ func ctcpCmd(ctx *commandContext, args ...string) {
 
 func joinCmd(ctx *commandContext, args ...string) {
 	if len(args) != 1 || len(args[0]) < 2 || args[0][0] != '#' {
-		clientMessage(ctx.tab, "usage: /join [#channel]")
+		usage(ctx, "join")
 		return
 	}
 	ctx.servConn.conn.Join(args[0])
@@ -243,7 +304,7 @@ func joinCmd(ctx *commandContext, args ...string) {
 
 func kickCmd(ctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		clientMessage(ctx.tab, "usage: /kick [nick] [(optional) reason...]")
+		usage(ctx, "kick")
 		return
 	}
 	if ctx.chanState != nil {
@@ -274,7 +335,7 @@ func listCmd(ctx *commandContext, args ...string) {
 func meCmd(ctx *commandContext, args ...string) {
 	msg := strings.Join(args, " ")
 	if len(args) == 0 {
-		clientMessage(ctx.tab, "usage: /me [message...]")
+		usage(ctx, "me")
 		return
 	}
 	var dest string
@@ -292,7 +353,7 @@ func meCmd(ctx *commandContext, args ...string) {
 
 func modeCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		clientMessage(ctx.tab, "usage: /mode [#channel or your nick] [mode] [nicks...]")
+		usage(ctx, "mode")
 		return
 	}
 	ctx.servConn.conn.Mode(args[0], args[1:]...)
@@ -300,7 +361,7 @@ func modeCmd(ctx *commandContext, args ...string) {
 
 func privmsgCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 || isChannel(args[0]) {
-		clientMessage(ctx.tab, "usage: /msg [nick] [message...]")
+		usage(ctx, "msg")
 		return
 	}
 	nick := args[0]
@@ -328,7 +389,7 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 
 func nickCmd(ctx *commandContext, args ...string) {
 	if len(args) != 1 {
-		clientMessage(ctx.tab, "usage: /nick [new nick]")
+		usage(ctx, "nick")
 		return
 	}
 	ctx.servConn.conn.Nick(args[0])
@@ -336,7 +397,7 @@ func nickCmd(ctx *commandContext, args ...string) {
 
 func noticeCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		clientMessage(ctx.tab, "usage: /notice [#channel or nick] [message...]")
+		usage(ctx, "notice")
 		return
 	}
 	msg := strings.Join(args[1:], " ")
@@ -363,7 +424,7 @@ func rejoinCmd(ctx *commandContext, args ...string) {
 
 func topicCmd(ctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		clientMessage(ctx.tab, "usage: /topic [new topic...]")
+		usage(ctx, "topic")
 		return
 	}
 	if ctx.chanState != nil {
@@ -374,28 +435,53 @@ func topicCmd(ctx *commandContext, args ...string) {
 }
 
 func helpCmd(ctx *commandContext, args ...string) {
-	// TODO(tso): print usage for individual commands
-	clientMessage(ctx.tab,
-		`connect to a network:
-/server irc.example.org
+	if len(args) > 0 {
+		for n, cmd := range args {
+			if n > 0 {
+				clientMessage(ctx.tab, "\n")
+			}
+			cmd = strings.Trim(cmd, "/")
+			if dox, ok := clientCommandDox[cmd]; ok {
+				clientMessage(ctx.tab, dox.desc)
+				clientMessage(ctx.tab, "usage:", dox.usage)
+			} else {
+				clientError(ctx.tab, "no such command:", cmd)
+				clientMessage(ctx.tab, "use /help with no arguments for list of available commands")
+			}
+		}
+	} else {
+		clientMessage(ctx.tab, "\n", bold(color("COMMANDS:", Blue)))
+		clientMessage(ctx.tab, color("type /help [command] for a short description.", LightGrey))
+		yaymaps := []string{}
+		padlen := 0
+		for cmd := range clientCommandDox {
+			yaymaps = append(yaymaps, cmd)
+			if len(cmd) > padlen {
+				padlen = len(cmd)
+			}
+		}
+		sort.Strings(yaymaps)
+		for _, cmd := range yaymaps {
+			usage := strings.SplitN(clientCommandDox[cmd].usage, " ", 2)
+			clientMessage(ctx.tab, append([]string{usage[0] + strings.Repeat(" ", padlen-len(cmd))}, usage[1:]...)...)
+		}
+		clientMessage(ctx.tab, "\n")
+		if len(scriptAliases) > 0 {
+			clientMessage(ctx.tab,
+				color("SCRIPT ALIASES:", Blue)+"\n"+
+					color("to remove an alias type /unregister [alias]", LightGrey))
 
-to quit the application:
-/exit
-
-disconnect from a network without closing all your tabs:
-/disconnect
-
-disconnect from a network AND close all associated tabs:
-/quit
-or on the server connection tab:
-/close
-
-leave a channel without closing tab:
-/part
-
-leave a channel or privmsg and close tab:
-/close
-`)
+			yaymaps := []string{}
+			for alias := range scriptAliases {
+				yaymaps = append(yaymaps, alias)
+			}
+			sort.Strings(yaymaps)
+			for _, alias := range yaymaps {
+				clientMessage(ctx.tab, "/"+alias, "=>", scriptAliases[alias])
+			}
+			clientMessage(ctx.tab, "\n")
+		}
+	}
 }
 
 func exitCmd(ctx *commandContext, args ...string) {
@@ -411,7 +497,7 @@ func sendCmd(ctx *commandContext, args ...string) {
 
 func scriptCmd(ctx *commandContext, args ...string) {
 	if len(args) < 0 {
-		clientMessage(ctx.tab, "usage: /script [file in "+SCRIPTS_DIR+"] [args...]")
+		usage(ctx, "script")
 		return
 	}
 
@@ -485,7 +571,7 @@ func scriptCmd(ctx *commandContext, args ...string) {
 
 func registerCmd(ctx *commandContext, args ...string) {
 	if len(args) < 2 {
-		clientMessage(ctx.tab, "usage: /register [alias] [script file]")
+		usage(ctx, "register")
 		return
 	}
 
@@ -510,7 +596,7 @@ func registerCmd(ctx *commandContext, args ...string) {
 
 func unregisterCmd(ctx *commandContext, args ...string) {
 	if len(args) != 1 {
-		clientMessage(ctx.tab, "usage: /unregister [alias]")
+		usage(ctx, "register")
 		return
 	}
 	name := args[0]

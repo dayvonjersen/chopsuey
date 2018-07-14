@@ -229,11 +229,11 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 }
 
 func clientMsg(text ...string) string {
-	return color(now(), LightGray) + " " + strings.Join(text, " ")
+	return strings.Join(text, " ")
 }
 
 func clientErrorMsg(text ...string) string {
-	return color(now()+" "+strings.Join(text, " "), Red)
+	return color(strings.Join(text, " "), Red)
 }
 
 func serverErrorMsg(text ...string) string {
