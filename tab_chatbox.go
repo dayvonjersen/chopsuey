@@ -24,13 +24,13 @@ func (t *tabChatbox) Clear() {
 func (t *tabChatbox) Title() string {
 	title := t.tabTitle
 	if t.unread > 0 && !t.HasFocus() {
-		title = fmt.Sprintf("%s [%d]", title, t.unread)
+		title = fmt.Sprintf("%s %d", title, t.unread)
 	}
 	if t.notify {
-		title = " * " + title
+		title = "* " + title
 	}
 	if t.error {
-		title = " ! " + title
+		title = "! " + title
 	}
 	if t.disconnected {
 		title = "(" + title + ")"
