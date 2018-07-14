@@ -46,6 +46,20 @@ BUGS(uncategorized): {{{
 
     -tso 7/13/2018 10:27:54 PM
 
+ - jump to wrong tab on /close
+    - [Network A] [channel 1] [channel 2] ... [Network B] [channel]
+                                  ^you are here
+
+      after /close:
+
+      actual:
+      [Network A] [channel 1]             ... [Network B] [channel]
+                                                              ^you are here
+
+      expected:                                                              
+      [Network A] [channel 1]             ... [Network B] [channel]
+                      ^you are here
+
 }}}
 
 richedit {{{
