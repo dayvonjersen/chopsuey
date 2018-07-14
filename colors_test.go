@@ -196,6 +196,16 @@ func TestParseString(t *testing.T) {
 				styles: [][]int{},
 			},
 		},
+
+		{
+			input: "\x031test\x03\x0f",
+			expected: &richtext{
+				str: "test",
+				styles: [][]int{
+					{TextEffectForegroundColor, 0, 4, colorPaletteWindows[1]},
+				},
+			},
+		},
 	} {
 		text, styles := parseString(test.input)
 		actual := &richtext{text, styles}
@@ -267,6 +277,10 @@ func TestStripFmtChars(t *testing.T) {
 		},
 		{
 			input:    "test\x02\x0f",
+			expected: "test",
+		},
+		{
+			input:    "\x031test\x03\x0f",
 			expected: "test",
 		},
 	} {
