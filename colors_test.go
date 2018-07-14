@@ -189,6 +189,13 @@ func TestParseString(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: "test\x03\x0f",
+			expected: &richtext{
+				str:    "test",
+				styles: [][]int{},
+			},
+		},
 	} {
 		text, styles := parseString(test.input)
 		actual := &richtext{text, styles}
@@ -253,6 +260,14 @@ func TestStripFmtChars(t *testing.T) {
 		{
 			input:    "\x031世\x032界",
 			expected: "世界",
+		},
+		{
+			input:    "test\x03\x0f",
+			expected: "test",
+		},
+		{
+			input:    "test\x02\x0f",
+			expected: "test",
 		},
 	} {
 		actual := stripFmtChars(test.input)

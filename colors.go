@@ -162,7 +162,7 @@ func parseString(str string) (text string, styles [][]int) {
 			if fmtCode == fmtColor {
 				fg, s, e, err := findNumber(runes[i:], 1)
 				if err != nil || s != 0 || e > 1 {
-					break
+					continue
 				}
 
 				runes = append(runes[:s+i], runes[e+1+i:]...)
@@ -234,7 +234,7 @@ func stripFmtChars(str string) string {
 		if fmtCode == fmtColor {
 			_, s, e, err := findNumber(runes[i:], 1)
 			if err != nil || s != 0 || e > 1 {
-				break
+				continue
 			}
 
 			runes = append(runes[:s+i], runes[e+1+i:]...)
