@@ -55,11 +55,6 @@ FIX PROBLEMS:
    going on with that it has to do with when its focused or not
    dont just spam WM_VSCROLL although thats probably the solution
 
- - style bleed is still happening in RichEdit textBuffers
-    - now I want to try adding some zero-width characters and
-      styling them with AUTOCOLOR (need to test that AUTOCOLOR even does
-      anything on visible text)
-
 CREATE NEW PROBLEMS:
  - /search or /find or CTRL+F
     - perfect world: reduce text buffer to matches, then restore
@@ -69,9 +64,6 @@ CREATE NEW PROBLEMS:
 }}}
 ---
 (*actual todo list) {{{
-
- - bold/italic/underline toggles don't work
-    - colors.go needs a major overhaul 
 
  - nick with prefix e.g. @channelop should be without prefix in ACTION
 

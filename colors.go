@@ -7,13 +7,9 @@ import (
 	"strings"
 )
 
-// FIXME(tso): these are supposed to work like toggles
-//             e.g. " \x1f italics ON \x1f italics OFF "
-//             we shouldn't have to hard reset formatting at end
-// -tso 7/14/2018 2:19:06 AM
-func italic(text string) string    { return string(fmtItalic) + text + string(fmtReset) }
-func bold(text string) string      { return string(fmtBold) + text + string(fmtReset) }
-func underline(text string) string { return string(fmtUnderline) + text + string(fmtReset) }
+func italic(text string) string    { return string(fmtItalic) + text + string(fmtItalic) }
+func bold(text string) string      { return string(fmtBold) + text + string(fmtBold) }
+func underline(text string) string { return string(fmtUnderline) + text + string(fmtUnderline) }
 
 const (
 	White     = 0

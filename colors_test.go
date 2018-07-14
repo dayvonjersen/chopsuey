@@ -201,14 +201,3 @@ func TestParseString(t *testing.T) {
 		}
 	}
 }
-
-func TestUTF8Conversion(t *testing.T) {
-	str := "hello世界"
-	runes := []rune(str)
-	str2 := string(runes)
-	if str2 != str {
-		fmt.Printf("expected: %s %v\n", str, []byte(str))
-		fmt.Printf("  actual: %s %v\n", str2, runes)
-		t.Fail()
-	}
-}
