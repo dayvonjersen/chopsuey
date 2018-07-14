@@ -91,7 +91,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 		for _, tab := range tabs {
 			tab.Logln(now() + " *** NOTICE: " + strings.Join(msg, " "))
 
-			tab.Notify()
+			tab.Notify(true) // always put a * for NOTICE
 
 			h := false
 			if len(msg) >= 3 {
@@ -107,7 +107,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 		colorNick(&nick)
 		for _, tab := range tabs {
 			if h {
-				tab.Notify()
+				tab.Notify(h)
 			}
 			tab.Logln(logmsg)
 			tab.Println(parseString(privateMsg(h, nick, msg)))
@@ -120,7 +120,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 		colorNick(&nick)
 		for _, tab := range tabs {
 			if h {
-				tab.Notify()
+				tab.Notify(h)
 			}
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(h, nick, msg)))
@@ -180,7 +180,7 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 
 	case NOTICE_MESSAGE:
 		for _, tab := range tabs {
-			tab.Notify()
+			tab.Notify(true)
 			tab.Logln(now() + " *** NOTICE: " + strings.Join(msg, " "))
 			tab.Println(parseString(noticeMsg(false, msg...)))
 		}
@@ -190,6 +190,7 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		logmsg := now() + " <" + nick + "> " + msg
 		colorNick(&nick)
 		for _, tab := range tabs {
+			tab.Notify(false)
 			tab.Logln(logmsg)
 			tab.Println(parseString(privateMsg(false, nick, msg)))
 		}
@@ -199,6 +200,7 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		colorNick(&nick)
 		for _, tab := range tabs {
+			tab.Notify(false)
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(false, nick, msg)))
 		}
@@ -223,6 +225,7 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 
 		text, styles := parseString(strings.Join(msg, " "))
 		for _, tab := range tabs {
+			tab.Notify(false)
 			tab.Logln(text)
 			tab.Println(text, styles)
 		}

@@ -31,7 +31,7 @@ func (t *tabChatbox) Title() string {
 		title = " * " + title
 	}
 	if t.error {
-		title = "/!\\ " + title
+		title = " ! " + title
 	}
 	if t.disconnected {
 		title = "(" + title + ")"
@@ -39,8 +39,15 @@ func (t *tabChatbox) Title() string {
 	return title
 }
 
-func (t *tabChatbox) Notify() {
-	t.notify = true
+// TODO(tso): think of a better name than UpdateMessageCounterAndPossiblyNickFlashSlashHighlight
+func (t *tabChatbox) Notify(asterisk bool) {
+	if asterisk {
+		t.notify = true
+	}
+	if !t.HasFocus() {
+		t.unread++
+		t.tabPage.SetTitle(t.Title())
+	}
 }
 
 func (t *tabChatbox) Focus() {
@@ -81,11 +88,6 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 		// HACK(tso): and we shouldn't have to do it twice
 		l := t.textBuffer.TextLength()
 		t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
-
-		if !t.HasFocus() {
-			t.unread++
-			t.tabPage.SetTitle(t.Title())
-		}
 
 		if t.textInput.Focused() || !mainWindowFocused {
 			t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)

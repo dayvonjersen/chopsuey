@@ -21,7 +21,8 @@ type tabWithInput interface {
 	Logln(string)            // chatlogging
 	Errorln(string, [][]int) // print error to buffer
 	Println(string, [][]int) // print text to buffer
-	Notify()                 // put a * in the tab title
+	// TODO(tso): better name for Notify/t.notify/asterisk what are words
+	Notify(bool) // put a * in the tab title
 
 	Clear() // clear buffer
 }
