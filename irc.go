@@ -516,7 +516,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		topic := l.Args[2]
 
 		chanState := ensureChanState(servConn, servState, channel)
-		chanState.topic = topic
+		chanState.topic = stripFmtChars(topic)
 		chanState.tab.Update(servState, chanState)
 		updateMessage(chanState.tab, "topic for", channel, "is", topic)
 	})
@@ -531,7 +531,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 
 		chanState := ensureChanState(servConn, servState, channel)
-		chanState.topic = topic
+		chanState.topic = stripFmtChars(topic)
 		chanState.tab.Update(servState, chanState)
 		updateMessage(chanState.tab, who, "has changed the topic for", channel, "to", topic)
 	})
@@ -575,7 +575,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			checkErr(err)
 			debugPrint(l)
 		}
-		topic := strings.TrimSpace(args[5][1:])
+		topic := stripFmtChars(strings.TrimSpace(args[5][1:]))
 
 		servState.channelList.mu.Lock()
 		defer servState.channelList.mu.Unlock()

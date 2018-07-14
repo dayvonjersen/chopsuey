@@ -205,3 +205,53 @@ func parseString(str string) (text string, styles [][]int) {
 
 	return string(runes), styles
 }
+
+func stripFmtChars(str string) string {
+	if strings.IndexAny(str, fmtCharsString) == -1 {
+		return str
+	}
+
+	runes := []rune(str)
+
+	i := 0
+	for {
+		if i > len(runes)-1 {
+			break
+		}
+		r := runes[i]
+		if !matchRune(r, fmtCharsRunes) {
+			i++
+			continue
+		}
+
+		fmtCode := r
+
+		runes = append(runes[:i], runes[i+1:]...)
+
+		if len(runes) == 0 {
+			break
+		}
+		if fmtCode == fmtColor {
+			_, s, e, err := findNumber(runes[i:], 1)
+			if err != nil || s != 0 || e > 1 {
+				break
+			}
+
+			runes = append(runes[:s+i], runes[e+1+i:]...)
+
+			if runes[i] == ',' {
+				runes = append(runes[:i], runes[i+1:]...)
+
+				_, s, e, err := findNumber(runes[i:], 1)
+				if err != nil || s != 0 || e > 1 {
+					continue
+				}
+
+				runes = append(runes[:s+i], runes[e+1+i:]...)
+
+			}
+		}
+	}
+
+	return string(runes)
+}

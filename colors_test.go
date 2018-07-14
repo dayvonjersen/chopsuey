@@ -201,3 +201,68 @@ func TestParseString(t *testing.T) {
 		}
 	}
 }
+
+func TestStripFmtChars(t *testing.T) {
+	for _, test := range []struct {
+		input, expected string
+	}{
+		{
+			input:    "\x0313,3test",
+			expected: "test",
+		},
+		{
+			input:    string(fmtItalic) + "this" + string(fmtReset) + " is a " + string(fmtBold) + "\x034t\x037e\x038s\x033t " + string(fmtUnderline) + "https://" + string(fmtReset),
+			expected: "this is a test https://",
+		},
+		{
+			input:    "\x0313,3test\x0f and the rest of this should be unstyled",
+			expected: "test and the rest of this should be unstyled",
+		},
+		{
+			input:    string(fmtItalic) + "italic" + string(fmtItalic) + string(fmtBold) + "bold" + string(fmtBold) + string(fmtUnderline) + "underline" + string(fmtUnderline),
+			expected: "italicboldunderline",
+		},
+		{
+			input:    string(fmtItalic) + "italic" + string(fmtBold) + "bold" + string(fmtItalic) + string(fmtBold) + string(fmtUnderline) + "underline" + string(fmtUnderline),
+			expected: "italicboldunderline",
+		},
+		{
+			input:    color("test", Purple),
+			expected: "test",
+		},
+		{
+			input:    color("test", White, Purple),
+			expected: "test",
+		},
+		{
+			input:    italic("this") + " is a " + bold("\x034t\x037e\x038s\x033t "+underline("https://")),
+			expected: "this is a test https://",
+		},
+		{
+			input:    color("gray", LightGrey),
+			expected: "gray",
+		},
+		{
+			input:    "\x031500:32\x0f \x0312NOTICE: *** Looking up your hostname...\x0f",
+			expected: "00:32 NOTICE: *** Looking up your hostname...",
+		},
+		{
+			input:    "\x031世界",
+			expected: "世界",
+		},
+		{
+			input:    "\x031世\x032界",
+			expected: "世界",
+		},
+	} {
+		actual := stripFmtChars(test.input)
+
+		if actual != test.expected {
+			fmt.Println("expected:")
+			_printf(test.expected)
+			fmt.Println("\nactual:")
+			_printf(actual)
+			t.Fail()
+		}
+	}
+}

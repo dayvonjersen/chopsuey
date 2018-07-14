@@ -298,8 +298,6 @@ colors {{{
 
  - write more test cases
 
- - strip control codes from other parts of the ui (like channel list)
-
  - SEND COLORS
     - shorthand `red:no u`
     - ctrl+k inserts \x03
