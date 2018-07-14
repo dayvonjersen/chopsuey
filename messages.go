@@ -43,49 +43,49 @@ func msgTypeString(t int) string {
 	return "(unknown)"
 }
 
-func clientError(tab tabWithInput, msg ...string) {
+func clientError(tab tabWithTextBuffer, msg ...string) {
 	Println(CLIENT_ERROR, T(tab), msg...)
 }
-func clientMessage(tab tabWithInput, msg ...string) {
+func clientMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(CLIENT_MESSAGE, T(tab), msg...)
 }
-func serverMessage(tab tabWithInput, msg ...string) {
+func serverMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(SERVER_MESSAGE, T(tab), msg...)
 }
-func serverError(tab tabWithInput, msg ...string) {
+func serverError(tab tabWithTextBuffer, msg ...string) {
 	Println(SERVER_ERROR, T(tab), msg...)
 }
-func joinpartMessage(tab tabWithInput, msg ...string) {
+func joinpartMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(JOINPART_MESSAGE, T(tab), msg...)
 }
-func updateMessage(tab tabWithInput, msg ...string) {
+func updateMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(UPDATE_MESSAGE, T(tab), msg...)
 }
-func noticeMessage(tab tabWithInput, msg ...string) {
+func noticeMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(NOTICE_MESSAGE, T(tab), msg...)
 }
-func actionMessage(tab tabWithInput, msg ...string) {
+func actionMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(ACTION_MESSAGE, T(tab), msg...)
 }
-func privateMessage(tab tabWithInput, msg ...string) {
+func privateMessage(tab tabWithTextBuffer, msg ...string) {
 	Println(PRIVATE_MESSAGE, T(tab), msg...)
 }
 
 type highlighterFn func(nick, msg string) bool
 
-func noticeMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+func noticeMessageWithHighlight(tab tabWithTextBuffer, hl highlighterFn, msg ...string) {
 	PrintlnWithHighlight(NOTICE_MESSAGE, hl, T(tab), msg...)
 }
-func actionMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+func actionMessageWithHighlight(tab tabWithTextBuffer, hl highlighterFn, msg ...string) {
 	PrintlnWithHighlight(ACTION_MESSAGE, hl, T(tab), msg...)
 }
-func privateMessageWithHighlight(tab tabWithInput, hl highlighterFn, msg ...string) {
+func privateMessageWithHighlight(tab tabWithTextBuffer, hl highlighterFn, msg ...string) {
 	PrintlnWithHighlight(PRIVATE_MESSAGE, hl, T(tab), msg...)
 }
 
-func T(tabs ...tabWithInput) []tabWithInput { return tabs } // expected type, found ILLEGAL
+func T(tabs ...tabWithTextBuffer) []tabWithTextBuffer { return tabs } // expected type, found ILLEGAL
 
-func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, msg ...string) {
+func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffer, msg ...string) {
 	switch msgType {
 	case NOTICE_MESSAGE:
 		for _, tab := range tabs {
@@ -126,7 +126,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithInput, ms
 	}
 }
 
-func Println(msgType int, tabs []tabWithInput, msg ...string) {
+func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 	if len(msg) == 0 {
 		log.Printf("tried to print an empty line of type %v", msgTypeString(msgType))
 		return

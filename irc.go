@@ -129,7 +129,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		dest := []tabWithInput{servState.CurrentTab()}
+		dest := []tabWithTextBuffer{servState.CurrentTab()}
 		if dest[0].Index() != servState.tab.Index() {
 			dest = append(dest, servState.tab)
 		}
@@ -152,7 +152,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			msg = color("UNHANDLED CODE("+l.Cmd+")", White, Purple) + ": " + msg
 		}
 
-		var tab tabWithInput
+		var tab tabWithTextBuffer
 		if chanState, ok := servState.channels[channel]; ok {
 			tab = chanState.tab
 		} else {
@@ -162,7 +162,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	}
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		dest := []tabWithInput{servState.CurrentTab()}
+		dest := []tabWithTextBuffer{servState.CurrentTab()}
 		if dest[0].Index() != servState.tab.Index() {
 			dest = append(dest, servState.tab)
 		}
@@ -270,7 +270,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		conn.HandleFunc(code, printErrorMessage)
 	}
 
-	getMessageParams := func(l *goirc.Line) (t tabWithInput, nick, msg string) {
+	getMessageParams := func(l *goirc.Line) (t tabWithTextBuffer, nick, msg string) {
 		nick = l.Nick
 		dest := l.Args[0]
 		msg = l.Args[1]
@@ -321,7 +321,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
-		var tab tabWithInput = servState.tab
+		var tab tabWithTextBuffer = servState.tab
 		if isChannel(l.Args[0]) {
 			chanState := ensureChanState(servConn, servState, l.Args[0])
 			tab = chanState.tab
@@ -394,7 +394,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if reason != "" {
 			msg = append(msg, "("+reason+")")
 		}
-		dest := []tabWithInput{}
+		dest := []tabWithTextBuffer{}
 		for _, chanState := range servState.channels {
 			if chanState.nickList.Has(l.Nick) {
 				chanState.nickList.Remove(l.Nick)

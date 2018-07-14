@@ -17,6 +17,10 @@ type tabWithInput interface {
 	tab // inherit all from above
 
 	Send(string) // send to channel/nick
+}
+
+type tabWithTextBuffer interface {
+	tab
 
 	Logln(string)            // chatlogging
 	Errorln(string, [][]int) // print error to buffer

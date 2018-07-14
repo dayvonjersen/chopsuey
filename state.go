@@ -65,8 +65,8 @@ type serverState struct {
 	channelList *tabChannelList
 }
 
-func (servState *serverState) AllTabs() []tabWithInput {
-	ret := []tabWithInput{servState.tab}
+func (servState *serverState) AllTabs() []tabWithTextBuffer {
+	ret := []tabWithTextBuffer{servState.tab}
 	for _, chanState := range servState.channels {
 		ret = append(ret, chanState.tab)
 	}
@@ -76,7 +76,7 @@ func (servState *serverState) AllTabs() []tabWithInput {
 	return ret
 }
 
-func (servState *serverState) CurrentTab() tabWithInput {
+func (servState *serverState) CurrentTab() tabWithTextBuffer {
 	index := tabWidget.CurrentIndex()
 	if servState.tab.Index() == index {
 		return servState.tab

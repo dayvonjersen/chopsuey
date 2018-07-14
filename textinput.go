@@ -44,15 +44,21 @@ func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func NewTextInput(t tabWithInput, ctx *commandContext) *MyLineEdit {
+func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 	var tabPage *walk.TabPage
+	var sendFn func(string)
 	switch t.(type) {
 	case *tabServer:
 		tabPage = t.(*tabServer).tabPage
+		sendFn = func(str string) {
+			clientError(t, "cannot send messages to a SERVER!!", "\nnot sent:", color(str, LightGrey))
+		}
 	case *tabChannel:
 		tabPage = t.(*tabChannel).tabPage
+		sendFn = t.(*tabChannel).Send
 	case *tabPrivmsg:
 		tabPage = t.(*tabPrivmsg).tabPage
+		sendFn = t.(*tabPrivmsg).Send
 	default:
 		log.Panicf("unsupported type %T", t)
 	}
@@ -70,7 +76,7 @@ func NewTextInput(t tabWithInput, ctx *commandContext) *MyLineEdit {
 				parts := strings.Split(text[1:], " ")
 				cmd := parts[0]
 				if cmd[0] == '/' {
-					t.Send(text[1:])
+					sendFn(text[1:])
 				} else {
 					var args []string
 					if len(parts) > 1 {
@@ -85,7 +91,7 @@ func NewTextInput(t tabWithInput, ctx *commandContext) *MyLineEdit {
 					}
 				}
 			} else {
-				t.Send(text)
+				sendFn(text)
 			}
 			textInput.SetText("")
 		} else if key == walk.KeyUp {

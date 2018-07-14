@@ -12,7 +12,7 @@ import (
 
 type commandContext struct {
 	servConn *serverConnection
-	tab      tabWithInput
+	tab      tabWithTextBuffer
 
 	servState *serverState
 	chanState *channelState
@@ -575,7 +575,14 @@ func scriptCmd(ctx *commandContext, args ...string) {
 			clientError(ctx.tab, "returned:", err)
 		}
 		if out != "" {
-			ctx.tab.Send(out)
+			switch ctx.tab.(type) {
+			case *tabChannel:
+				ctx.tab.(*tabChannel).Send(out)
+			case *tabPrivmsg:
+				ctx.tab.(*tabPrivmsg).Send(out)
+			default:
+				clientMessage(ctx.tab, color("OUTPUT("+scriptFile+")", White, Green)+":", out)
+			}
 		}
 	}()
 }
