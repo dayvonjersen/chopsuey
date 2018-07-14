@@ -76,6 +76,24 @@ func (servState *serverState) AllTabs() []tabWithInput {
 	return ret
 }
 
+func (servState *serverState) CurrentTab() tabWithInput {
+	index := tabWidget.CurrentIndex()
+	if servState.tab.Index() == index {
+		return servState.tab
+	}
+	for _, ch := range servState.channels {
+		if ch.tab.Index() == index {
+			return ch.tab
+		}
+	}
+	for _, pm := range servState.privmsgs {
+		if pm.tab.Index() == index {
+			return pm.tab
+		}
+	}
+	return servState.tab
+}
+
 type channelState struct {
 	channel  string
 	topic    string

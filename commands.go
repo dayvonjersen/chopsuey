@@ -384,7 +384,7 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 	if isService(nick) {
 		ctx.servConn.conn.Privmsg(nick, msg)
 		noticeMessage(
-			getCurrentTabForServer(ctx.servState),
+			ctx.servState.CurrentTab(),
 			ctx.servState.user.nick, nick, msg)
 		return
 	}

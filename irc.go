@@ -129,7 +129,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	printServerMessage := func(c *goirc.Conn, l *goirc.Line) {
-		dest := []tabWithInput{getCurrentTabForServer(servState)}
+		dest := []tabWithInput{servState.CurrentTab()}
 		if dest[0].Index() != servState.tab.Index() {
 			dest = append(dest, servState.tab)
 		}
@@ -156,13 +156,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if chanState, ok := servState.channels[channel]; ok {
 			tab = chanState.tab
 		} else {
-			tab = getCurrentTabForServer(servState)
+			tab = servState.CurrentTab()
 		}
 		clientMessage(tab, msg)
 	}
 
 	printErrorMessage := func(c *goirc.Conn, l *goirc.Line) {
-		dest := []tabWithInput{getCurrentTabForServer(servState)}
+		dest := []tabWithInput{servState.CurrentTab()}
 		if dest[0].Index() != servState.tab.Index() {
 			dest = append(dest, servState.tab)
 		}
@@ -277,7 +277,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 		if dest == servState.user.nick {
 			if l.Ident == "service" || isService(nick) {
-				return getCurrentTabForServer(servState), nick, msg
+				return servState.CurrentTab(), nick, msg
 			} else {
 				pmState := ensurePmState(servConn, servState, nick)
 				return pmState.tab, nick, msg
@@ -326,9 +326,9 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			chanState := ensureChanState(servConn, servState, l.Args[0])
 			tab = chanState.tab
 		} else if l.Args[0] == servState.user.nick {
-			tab = getCurrentTabForServer(servState)
+			tab = servState.CurrentTab()
 		} else if l.Host == l.Src {
-			tab = getCurrentTabForServer(servState)
+			tab = servState.CurrentTab()
 			l.Nick = servState.networkName
 		} else {
 			log.Println("********************* unhandled NOTICE:")

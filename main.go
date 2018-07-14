@@ -30,24 +30,6 @@ var (
 	mainWindowFocused bool = true // start focused because windows
 )
 
-func getCurrentTabForServer(servState *serverState) tabWithInput {
-	index := tabWidget.CurrentIndex()
-	if servState.tab.Index() == index {
-		return servState.tab
-	}
-	for _, ch := range servState.channels {
-		if ch.tab.Index() == index {
-			return ch.tab
-		}
-	}
-	for _, pm := range servState.privmsgs {
-		if pm.tab.Index() == index {
-			return pm.tab
-		}
-	}
-	return servState.tab
-}
-
 type debugLogger struct{}
 
 func (l *debugLogger) Debug(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
