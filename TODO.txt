@@ -244,11 +244,36 @@ extensions {{{
 ---
 bikeshedding {{{
 
+ - testing
+     - it would be nice if we could test the UI 
+       without having to connect to a network 
+         - one of each type of tab opens up 
+         - each with examples of every type of information it can display in
+           all states
+         - just for the sake of designing
+         - doesn't have any logic
+         - separate application
+         - would probably have to split project into subpackages (yuck)
+           - no wait we could do what we did when testing richedit
+             // +build ignore
+             
+             go build testapp.go *:not(main) # wait this isn't css
+
+     - it would be nice if we could test the logic by faking a connection e.g.
+       by sending raw IRC lines e.g.
+       ":host@nowhere PRIVMSG #fakechannelfortesting :test\n"
+       on a simple channel or something so there's nothing complicated about
+       mocking a connection if only it were that easy
+
  - replace goirc with simple channels and goroutines
     yay:
          - /reconnect is impossible for some reason
          - logger interface is inconvenient
          - no convenient way to capture unhandled server messages 
+         - it would be trivial to mock connections by just sending raw IRC
+           lines on the recv chan
+
+           in fact I'll add it to the irc subpackage right now.
 
     nay:
          - it works
@@ -274,6 +299,7 @@ bikeshedding {{{
      - *** this sort of thing might be against IRC network rules need to look into
        what the policy is and/or how znc does it so well
        or just use znc
+
 }}}
 ---
 colors {{{

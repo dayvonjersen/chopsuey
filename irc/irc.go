@@ -5,7 +5,39 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
+	"time"
 )
+
+func MockConnection(filename string) (send, recv chan string, done chan struct{}) {
+	done = make(chan struct{})
+	send, recv = make(chan string), make(chan string)
+
+	go func() {
+		f, err := os.Open(filename)
+		checkErr(err)
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		for {
+			select {
+			case <-send:
+				// do nothing
+			case <-done:
+				return
+			case <-time.After(time.Millisecond * 50):
+				if scanner.Scan() {
+					recv <- scanner.Text()
+				} else {
+					recv <- ":go!~gopher@golang.org QUIT :EOF (the test is over now, goodbye!)\n"
+					close(done)
+					return
+				}
+			}
+		}
+	}()
+
+	return send, recv, done
+}
 
 func Dial(addr string) (send, recv chan string, done chan struct{}) {
 
