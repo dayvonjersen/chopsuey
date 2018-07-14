@@ -19,6 +19,9 @@ func (t *tabServer) Update(servState *serverState) {
 
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
+		if t.HasFocus() {
+			statusBar.SetText(t.statusText)
+		}
 	})
 
 	switch servState.connState {
@@ -44,9 +47,6 @@ func (t *tabServer) Update(servState *serverState) {
 	case CONNECTED:
 		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
 		t.disconnected = false
-	}
-	if t.HasFocus() {
-		statusBar.SetText(t.statusText)
 	}
 	for _, chanState := range servState.channels {
 		chanState.tab.Update(servState, chanState)

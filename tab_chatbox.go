@@ -45,7 +45,9 @@ func (t *tabChatbox) Notify(asterisk bool) {
 	}
 	if !t.HasFocus() {
 		t.unread++
-		t.tabPage.SetTitle(t.Title())
+		mw.WindowBase.Synchronize(func() {
+			t.tabPage.SetTitle(t.Title())
+		})
 	}
 }
 
@@ -55,8 +57,8 @@ func (t *tabChatbox) Focus() {
 	t.notify = false
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
+		statusBar.SetText(t.statusText)
 	})
-	statusBar.SetText(t.statusText)
 	t.textInput.SetFocus()
 	t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 }
@@ -67,7 +69,9 @@ func (t *tabChatbox) Logln(text string) {
 
 func (t *tabChatbox) Errorln(text string, styles [][]int) {
 	t.error = true
-	statusBar.SetText(text)
+	mw.WindowBase.Synchronize(func() {
+		statusBar.SetText(text)
+	})
 	// TODO(tso): set status bar icon
 	t.Println(text, styles)
 }

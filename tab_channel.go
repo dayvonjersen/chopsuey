@@ -38,12 +38,12 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		t.topicInput.SetText(chanState.topic)
+		if t.HasFocus() {
+			statusBar.SetText(t.statusText)
+		}
 	})
 
 	t.statusText = servState.tab.statusText
-	if t.HasFocus() {
-		statusBar.SetText(t.statusText)
-	}
 }
 
 func (t *tabChannel) updateNickList(chanState *channelState) {

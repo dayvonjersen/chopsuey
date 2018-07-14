@@ -15,16 +15,16 @@ func (t *tabPrivmsg) Send(message string) {
 
 func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 	t.disconnected = servState.connState != CONNECTED
+	t.statusText = servState.tab.statusText
 	if t.tabPage != nil {
 		mw.WindowBase.Synchronize(func() {
 			t.tabPage.SetTitle(t.Title())
+			if t.HasFocus() {
+				statusBar.SetText(t.statusText)
+			}
 		})
 	}
 
-	t.statusText = servState.tab.statusText
-	if t.HasFocus() {
-		statusBar.SetText(t.statusText)
-	}
 }
 
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {
