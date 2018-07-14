@@ -168,7 +168,7 @@ func Println(msgType int, tabs []tabWithInput, msg ...string) {
 
 	case UPDATE_MESSAGE:
 		// TODO(tso): option to hide?
-		text, styles := parseString(joinpartMsg(msg...))
+		text, styles := parseString(updateMsg(msg...))
 		for _, tab := range tabs {
 			tab.Logln(text)
 			tab.Println(text, styles)
@@ -259,7 +259,7 @@ func joinpartMsg(text ...string) string {
 }
 
 func updateMsg(text ...string) string {
-	return color(now(), LightGray) + " " + color(strings.Join(append([]string{"..."}, text...), " "), LightGrey)
+	return color(now(), LightGray) + " " + color(strings.Join(text, " "), LightGrey)
 }
 
 func noticeMsg(hl bool, text ...string) string {

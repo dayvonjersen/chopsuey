@@ -1,3 +1,52 @@
+BUGS(uncategorized): {{{
+
+ - tabWidget.Pages().SetCurrentIndex() causes crash sometimes
+ - holding scrollbar of textbuffer causes nicklist not to update until you
+   release the scrollbar and vice-versa
+    - is mw.WindowBase.Synchronize() absolutely necessary for AppendText()?
+ - VS_SCROLL hack fires even when textBuffer has keyboard focus
+   OR call to SetTextSelection() in AppendText() is doing it
+   either way you can't scroll in a super active channel which is the only
+   time you really need scroll
+ - channelList not populated sometimes
+   - 321 ALWAYS comes before 322 
+     but if goirc.HandleFunc is just doing go handler() indiscriminately
+     which would cause a 322 to get handled before a 321 sometimes at random
+     that's another reason to get rid of goirc
+
+     because we *do* want to ignore 322 if the channelList tab was closed atm
+
+     NOTE(tso): unrelated
+     userstory storytime:
+        " hey what channels are on this network
+        " oh shit there are 20,000
+        " */list*
+        " *server sends 20,000 lines*
+        " let's sort by most popular oh this one looks good
+        " *closes channel list tab*
+        " *client is still receiving 20,000 lines*
+        " oh nvm this channel is dead let's see that list again
+        " /list
+
+        WHAT SHOULD HAPPEN CHOOSE YOUR ADVENTURE:
+
+        [1] "still getting list results from last time, try again later"
+        (what we do now)
+
+        [2] display the still-incoming list results as-is 
+        (confusing to user)
+
+        [3] always store all of the list results in a separate array on
+            serverState structure instead of relying on channelListModel
+            and add a Refresh button to channelList 
+            which is disabled until we get ENDOFLIST (323 I assume)
+        (A WINNER IS YOU)
+
+        we're basically just recreating xchat at this point
+
+    -tso 7/13/2018 10:27:54 PM
+
+}}}
 
 richedit {{{
 
@@ -24,9 +73,6 @@ CREATE NEW PROBLEMS:
  - bold/italic/underline toggles don't work
     - colors.go needs a major overhaul 
 
- - statusBar is just really inconsistent
-    - disconnecting from one server makes all servers display "disconnected x_x"
-
  - nick with prefix e.g. @channelop should be without prefix in ACTION
 
  - unicode characters display in a shitty font make sure Universalia is
@@ -49,6 +95,8 @@ CREATE NEW PROBLEMS:
 
  - don't display lines if not sent
     - e.g. cannot send to channel (+m)
+ - don't open privmsg tab if not sent
+    - e.g. no such nick/channel
 }}}
 ---
 walk {{{
