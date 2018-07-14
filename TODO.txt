@@ -55,6 +55,8 @@ FIX PROBLEMS:
    going on with that it has to do with when its focused or not
    dont just spam WM_VSCROLL although thats probably the solution
 
+ - appendtext/linecount
+
 CREATE NEW PROBLEMS:
  - /search or /find or CTRL+F
     - perfect world: reduce text buffer to matches, then restore
@@ -149,8 +151,6 @@ big project/refactor {{{
 }}}
 ---
 commands {{{
-
- - usage text and descriptions for all commands in a map.
 
  - /mode needs to be able to send just the channel e.g. MODE #test
    to get a reply of what the mode is
@@ -384,6 +384,55 @@ colors there's always walk.WebView, electron, Qt, or reinventing the wheel
 clipboard manually and invent a scrollbar and waste like a solid year on that)
 
 -tso, July Sun Jul 8 07:49:26 2018 -0400
+
+RE: splitting main into subpackages
+
+or "issues nobody raised yet but inevitably will part 1"
+
+who's going to import and use github.com/generaltso/chopsuey/widgets
+or github.com/generaltso/chopsuey/colors or messages or whatever?
+nobody that's who because most of this code is specific to this application
+
+if the argument is well you should make the code decoupled for reuse,
+who other than another client or an overly complicated bot is going 
+to use this code? authors of those things tend to want to roll their own
+anyway. 
+
+if it's for testing purposes, there's no reason not to add tests for
+the main package since `go test` doesn't call main and most things are
+testable as they are right now (with the notable exception of not being able
+to mock the serverConnection which will go away if/when I replace goirc)
+
+and if the argument is it will make the code easier to maintain I would kindly
+ask for an example because I've never seen a project where having to grep -r
+(or is it -R) and jump around multiple files in multiple directories trying to
+figure out where functions are called and things are happening makes anything
+easier to understand
+
+Furthermore, worrying about which symbols need to be exported or needing to
+use .mod files is an undue source of complexity and headaches for a project of
+this scope
+
+Splitting an **application** into multiple subpackages is an antipattern imho
+unless that application has what are effectively its own libraries that are
+potentially useful for other applications to import. In that case, I'm not
+opposed to the idea, in fact I made a basic webapp framework based on what I
+did in caffochoco and caffochoco-mythril (I lost what I think was the only copy
+of the code to a hard drive crash...) but in that case where you can get
+started on a new application by just import'ing what you already have *is*
+really useful but tbh that's simply not the case here and separating all that
+logic would be a lot of work for literally no gain, the examples provided with
+walk are better at showing how to scaffold a new app 
+
+If you follow what I'm saying then you'll understand why the (go) channels-
+based irc connection is its own package
+
+If you're still convinced I'm wrong I encourge you to refactor everything
+yourself and fork (off)
+
+WONTFIX
+-tso 7/14/2018 8:14:06 AM
+
 }}}
 
 
