@@ -40,10 +40,10 @@ func (t *tabChatbox) Title() string {
 
 // TODO(tso): think of a better name than UpdateMessageCounterAndPossiblyNickFlashSlashHighlight
 func (t *tabChatbox) Notify(asterisk bool) {
-	if asterisk {
-		t.notify = true
-	}
 	if !t.HasFocus() {
+		if asterisk {
+			t.notify = true
+		}
 		t.unread++
 		mw.WindowBase.Synchronize(func() {
 			t.tabPage.SetTitle(t.Title())
@@ -68,7 +68,9 @@ func (t *tabChatbox) Logln(text string) {
 }
 
 func (t *tabChatbox) Errorln(text string, styles [][]int) {
-	t.error = true
+	if !t.HasFocus() {
+		t.error = true
+	}
 	mw.WindowBase.Synchronize(func() {
 		statusBar.SetText(text)
 	})
