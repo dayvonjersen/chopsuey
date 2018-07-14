@@ -103,8 +103,6 @@ CREATE NEW PROBLEMS:
  - unicode characters display in a shitty font make sure Universalia is
    used if the text isn't ascii  
 
- - CTCP messages should appear somewhere in UI
-
  - /part without closing tab
      - chanState tracks whether "connected" to channel?
 
@@ -215,11 +213,6 @@ need dialog box for better management of lists:
     - /uninvite
  - /kickban
 
-easy:
- - /whois
- - /version
- - /away
- - /unaway
 }}}
 ---
 improvements {{{

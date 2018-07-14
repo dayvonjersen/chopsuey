@@ -229,7 +229,7 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 }
 
 func clientMsg(text ...string) string {
-	return strings.Join(text, " ")
+	return color(strings.Join(text, " "), DarkGrey)
 }
 
 func clientErrorMsg(text ...string) string {

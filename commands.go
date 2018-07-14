@@ -56,6 +56,13 @@ var (
 		"rejoin": clientCommandDoc{"/rejoin", "join a channel you have left (either by being kicked or having parted)"},
 		"topic":  clientCommandDoc{"/topic [new topic...]", "set or view the topic for the channel"},
 
+		"version": clientCommandDoc{"/version [nick]", "find out what client someone is using"},
+		"whois":   clientCommandDoc{"/whois [nick]", "find out a user's true identity"},
+
+		// stuff no one uses anymore
+		"away":   clientCommandDoc{"/away [message]", "mark yourself as being (Away)!"},
+		"unaway": clientCommandDoc{"/unaway", "announce your triumphant return"},
+
 		// stubs
 		"help": clientCommandDoc{"/help [command]", "..."},
 		"exit": clientCommandDoc{"/exit", "SHUT\nIT\nDOWN"},
@@ -108,6 +115,12 @@ func init() {
 		"part":    partCmd,
 		"rejoin":  rejoinCmd,
 		"topic":   topicCmd,
+		"version": versionCmd,
+		"whois":   whoisCmd,
+
+		// stuff no one uses anymore
+		"away":   awayCmd,
+		"unaway": unawayCmd,
 
 		// stubs
 		"help": helpCmd,
@@ -443,6 +456,34 @@ func topicCmd(ctx *commandContext, args ...string) {
 	} else {
 		clientError(ctx.tab, "ERROR: /topic can only be used in channels")
 	}
+}
+
+func versionCmd(ctx *commandContext, args ...string) {
+	if len(args) != 1 {
+		usage(ctx, "version")
+		return
+	}
+	ctx.servConn.conn.Version(args[0])
+}
+
+func whoisCmd(ctx *commandContext, args ...string) {
+	if len(args) != 1 {
+		usage(ctx, "whois")
+		return
+	}
+	ctx.servConn.conn.Whois(args[0])
+}
+
+func awayCmd(ctx *commandContext, args ...string) {
+	msg := strings.Join(args, " ")
+	if len(args) == 0 {
+		msg = "(Away!)"
+	}
+	ctx.servConn.conn.Away(msg)
+}
+
+func unawayCmd(ctx *commandContext, args ...string) {
+	ctx.servConn.conn.Away()
 }
 
 func helpCmd(ctx *commandContext, args ...string) {
