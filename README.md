@@ -10,7 +10,8 @@
 
 ---
 
-current version is **v0.5** (*we're half-way there*)
+
+current version is **v0.66666666666666662965923251249478198587894439697265625** (*now with more nil pointer dereferencing!*)
 
 if you want to know when this will be ready to use [email me](mailto:tso@teknik.io?Subject=chopsuey+when) and i'll let you know
 

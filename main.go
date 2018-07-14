@@ -11,9 +11,9 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
-const (
-	VERSION_STRING = "v0.5"
+var VERSION_STRING = fmt.Sprintf("v%.53f", 2.0/3.0)
 
+const (
 	CHATLOG_DIR = "./chatlogs/"
 	SCRIPTS_DIR = "./scripts/"
 
