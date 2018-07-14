@@ -272,7 +272,7 @@ func noticeMsg(hl bool, text ...string) string {
 	if hl {
 		line += bold(color(" ..! ", Orange, Yellow))
 	}
-	return line + strings.Join(text[1:], " ")
+	return line + strings.Join(text[2:], " ")
 }
 
 func actionMsg(hl bool, text ...string) string {
