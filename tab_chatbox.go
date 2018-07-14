@@ -9,6 +9,7 @@ import (
 type tabChatbox struct {
 	tabCommon
 	unread       int
+	unreadSpaced bool
 	disconnected bool
 	error        bool
 	notify       bool
@@ -53,6 +54,7 @@ func (t *tabChatbox) Notify(asterisk bool) {
 
 func (t *tabChatbox) Focus() {
 	t.unread = 0
+	t.unreadSpaced = false
 	t.error = false
 	t.notify = false
 	mw.WindowBase.Synchronize(func() {
@@ -80,19 +82,13 @@ func (t *tabChatbox) Errorln(text string, styles [][]int) {
 
 func (t *tabChatbox) Println(text string, styles [][]int) {
 	mw.WindowBase.Synchronize(func() {
-		t.textBuffer.AppendText("\n")
-
-		// HACK(tso): shouldn't have to clear styles like this
-		if t.textBuffer.linecount > 1 {
-			l := t.textBuffer.TextLength()
-			t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
+		if t.unread > 0 && !t.unreadSpaced {
+			t.textBuffer.AppendText("\n\n\n- - - - - - - - - - - - - - - - - - - - - - -") // TODO(tso): think of something better
+			t.unreadSpaced = true
 		}
 
+		t.textBuffer.AppendText("\n")
 		t.textBuffer.AppendText(text, styles...)
-
-		// HACK(tso): and we shouldn't have to do it twice
-		l := t.textBuffer.TextLength()
-		t.textBuffer.ResetText(l-t.textBuffer.linecount, l-t.textBuffer.linecount)
 
 		if t.textInput.Focused() || !mainWindowFocused {
 			t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)

@@ -68,8 +68,6 @@ CREATE NEW PROBLEMS:
  - unicode characters display in a shitty font make sure Universalia is
    used if the text isn't ascii  
 
- - whitespace or something to indicate where unread messages start
-
  - CTCP messages should appear somewhere in UI
 
  - /part without closing tab
