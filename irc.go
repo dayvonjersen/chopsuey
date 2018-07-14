@@ -371,9 +371,9 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			reason = strings.TrimPrefix(reason, "Quit:")
 		}
 		reason = strings.TrimSpace(reason)
-		msg := []string{" <- ", l.Nick, " has quit"}
+		msg := []string{"<-", l.Nick, "has quit"}
 		if reason != "" {
-			msg = append(msg, ": "+reason)
+			msg = append(msg, "("+reason+")")
 		}
 		dest := []tabWithInput{}
 		for _, chanState := range servState.channels {
