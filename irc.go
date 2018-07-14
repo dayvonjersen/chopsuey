@@ -298,6 +298,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
 		t, nick, msg := getMessageParams(l)
+		nick = strings.Trim(nick, "~&@%+")
 		actionMessageWithHighlight(t, highlighter, nick, msg)
 	})
 

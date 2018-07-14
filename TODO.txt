@@ -65,8 +65,6 @@ CREATE NEW PROBLEMS:
 ---
 (*actual todo list) {{{
 
- - nick with prefix e.g. @channelop should be without prefix in ACTION
-
  - unicode characters display in a shitty font make sure Universalia is
    used if the text isn't ascii  
 

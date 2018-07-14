@@ -280,7 +280,7 @@ func actionMsg(hl bool, text ...string) string {
 	if hl {
 		line += bold(color(" ..! ", Orange, Yellow))
 	}
-	return line + " " + "*" + strings.Join(text, " ") + "*"
+	return line + "*" + strings.Join(text, " ") + "*"
 }
 
 func privateMsg(hl bool, text ...string) string {
