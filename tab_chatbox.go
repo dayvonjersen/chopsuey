@@ -104,7 +104,20 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 		log.Println("failed to GetScrollInfo()!")
 	}
 	if t.unread > 0 && !t.unreadSpaced {
-		t.textBuffer.AppendText("\n\n\n- - - - - - - - - - - - - - - - - - - - - - -") // TODO(tso): think of something better
+		// TODO(tso): think of something better than a bunch of whitespace
+		//            because apparently I have a tendency to focus and unfocus
+		//            the window without thinking about it
+		//
+		//            and chat
+		//
+		//            ends up
+		//
+		//            looking
+		//
+		//            like this
+		//
+		//            maybe put an arrow instead of the timestamp where the first new message begins
+		// -tso 7/15/2018 1:07:16 PM
 		t.unreadSpaced = true
 	}
 
