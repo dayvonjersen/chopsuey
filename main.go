@@ -16,6 +16,7 @@ var VERSION_STRING = fmt.Sprintf("v%.53f", 2.0/3.0)
 const (
 	CHATLOG_DIR = "./chatlogs/"
 	SCRIPTS_DIR = "./scripts/"
+	THEMES_DIR  = "./themes/"
 
 	CONNECT_RETRIES        = 1
 	CONNECT_RETRY_INTERVAL = time.Second

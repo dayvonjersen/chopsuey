@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -72,6 +74,38 @@ var colorPalette = [16]int{ // TODO(tso): load palettes from files and more than
 	0xff00ff, //pink
 	0x676767, //dark gray
 	0xcccccc, //light gray
+}
+
+func loadPaletteFromFile(filename string) ([]int, error) {
+	f, err := os.Open(THEMES_DIR + filename)
+	defer f.Close()
+	if err != nil {
+		return nil, err
+	}
+	csv, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	values := [][]byte{}
+	tmp := []byte{}
+	for _, b := range csv {
+		if b == ',' {
+			values = append(values, tmp)
+			tmp = []byte{}
+			continue
+		}
+		tmp = append(tmp, b)
+	}
+	values = append(values, tmp)
+	palette := []int{}
+	for _, v := range values {
+		c, err := strconv.Atoi(string(v))
+		if err != nil {
+			return nil, err
+		}
+		palette = append(palette, c)
+	}
+	return palette, nil
 }
 
 var colorPaletteWindows = [16]int{}

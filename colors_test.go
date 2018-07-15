@@ -295,3 +295,19 @@ func TestStripFmtChars(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadPaletteFromFile(t *testing.T) {
+	for _, f := range []string{"_base", "3024-day", "3024-night", "aci", "aco", "adventuretime", "afterglow", "alien-blood", "argonaut", "arthur", "atom", "azu", "belafonte-day", "belafonte-night", "bim", "birds-of-paradise", "blazer", "borland", "broadcast", "brogrammer", "c64", "cai", "chalk", "chalkboard", "ciapre", "clone-of-ubuntu", "clrs", "cobalt2", "cobalt-neon", "crayon-pony-fish", "dark-pastel", "darkside", "desert", "dimmed-monokai", "dracula", "earthsong", "elemental", "elementary", "elic", "elio", "espresso", "espresso-libre", "fishtank", "flat", "flatland", "foxnightly", "freya", "frontend-delight", "frontend-fun-forrest", "frontend-galaxy", "github", "gooey", "grape", "grass", "gruvbox", "gruvbox-dark", "hardcore", "harper", "hemisu-dark", "hemisu-light", "highway", "hipster-green", "homebrew", "hurtado", "hybrid", "ic-green-ppl", "ic-orange-ppl", "idle-toes", "ir-black", "jackie-brown", "japanesque", "jellybeans", "jup", "kibble", "later-this-evening", "lavandula", "liquid-carbon", "liquid-carbon-transparent", "man-page", "mar", "material", "mathias", "medallion", "misterioso", "miu", "molokai", "mona-lisa", "monokai-dark", "monokai-soda", "n0tch2k", "neopolitan", "nep", "neutron", "nightlion-v1", "nightlion-v2", "nord", "nord-light", "novel", "obsidian", "ocean", "ocean-dark", "oceanic-next", "ollie", "one-dark", "one-half-black", "one-light", "pali", "paraiso-dark", "paul-millr", "pencil-dark", "pencil-light", "peppermint", "pnevma", "pro", "red-alert", "red-sands", "rippedcasts", "royal", "sat", "seafoam-pastel", "sea-shells", "seti", "shaman", "shel", "slate", "smyck", "snazzy", "soft-server", "solarized-darcula", "solarized-dark", "solarized-dark-higher-contrast", "solarized-light", "spacedust", "spacegray", "spacegray-eighties", "spacegray-eighties-dull", "spring", "square", "srcery", "sundried", "symphonic", "teerb", "terminal-basic", "terminix-dark", "thayer-bright", "tin", "tomorrow", "tomorrow-night", "tomorrow-night-blue", "tomorrow-night-bright", "tomorrow-night-eighties", "toy-chest", "treehouse", "twilight", "ura", "urple", "vag", "vaughn", "vibrant-ink", "warm-neon", "wez", "wild-cherry", "wombat", "wryan", "zenburn"} {
+		palette, err := loadPaletteFromFile(f)
+
+		if err != nil {
+			t.Errorf("%v", err)
+			return
+		}
+
+		if len(palette) != 18 {
+			t.Errorf("%s has < 18 colors", f)
+			return
+		}
+	}
+}
