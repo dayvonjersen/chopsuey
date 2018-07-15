@@ -60,9 +60,9 @@ func (t *tabChatbox) Focus() {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		statusBar.SetText(t.statusText)
+		t.textInput.SetFocus()
+		t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 	})
-	t.textInput.SetFocus()
-	t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
 }
 
 func (t *tabChatbox) Logln(text string) {

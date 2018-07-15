@@ -1,25 +1,5 @@
 BUGS(uncategorized): {{{
 
- - /quit panics:
-
-panic: runtime error: invalid memory address or nil pointer dereference
-[signal 0xc0000005 code=0x0 addr=0x20 pc=0x7672be]
-
-
-To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
-
-1: running [locked]
-    main main.go:98         main.func1()
-    walk event.go:58        (*EventPublisher).Publish(*EventPublisher(0xc0421205a8))
-    walk tabwidget.go:297   (*TabWidget).onSelChange(*TabWidget(#3))
-    walk tabwidget.go:579   (*TabWidget).onRemovedPage(*TabWidget(#3), 1, *TabPage(#4), 0x3, 0xc0420028b0)
-    walk tabpagelist.go:139 (*TabPageList).RemoveAt(*TabPageList(#1), 1, 0x1, 0xc042087550)
-    walk tabpagelist.go:124 (*TabPageList).Remove(*TabPageList(#1), *TabPage(#4), #2, 0x0)
-    main tab_common.go:57   (*tabCommon).Close.func1()
-    walk form.go:56         runSynchronized()
-    walk form.go:402        (*FormBase).Run(*FormBase(#2), 0x0)
-
- - tabWidget.Pages().SetCurrentIndex() causes crash sometimes
  - holding scrollbar of textbuffer causes nicklist not to update until you
    release the scrollbar and vice-versa
     - is mw.WindowBase.Synchronize() absolutely necessary for AppendText()?
@@ -64,20 +44,6 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
         we're basically just recreating xchat at this point
 
     -tso 7/13/2018 10:27:54 PM
-
- - jump to wrong tab on /close
-    - [Network A] [channel 1] [channel 2] ... [Network B] [channel]
-                                  ^you are here
-
-      after /close:
-
-      actual:
-      [Network A] [channel 1]             ... [Network B] [channel]
-                                                              ^you are here
-
-      expected:                                                              
-      [Network A] [channel 1]             ... [Network B] [channel]
-                      ^you are here
 
 }}}
 
@@ -138,8 +104,6 @@ PROBLEMS:
  - nickListBox gets resized back to nonzero when window is resized even
    though the PushButton will hide it again with 1 click maybe something like
    a "hidden" on the nickList and an event on MainWindow
-
- - we should ReleaseDC() after closing tabs 
 
 EXPLORE A NEW WORLD OF OPPORTUNITY:
  - keyboard nav 

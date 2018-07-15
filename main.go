@@ -74,16 +74,39 @@ func main() {
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 
-	tabWidget.SetPersistent(true)
+	tabWidget.SetPersistent(false)
 
-	focusCurrentTab := func() {
-		clientState.CurrentTab().Focus()
-	}
+	// NOTE(tso): contrary to what the name of this event publisher implies
+	//            CurrentIndexChanged() fires every time you Insert() or Remove()
+	//            a TabPage regardless of whether the CurrentIndex() actually
+	//            changed.
+	//
+	//            and you *have* to set the CurrentIndex() again when you Add(),
+	//            Insert() or Remove() for everything to draw correctly
+	//
+	//            e.g.
+	//            tabs: [0 1 2 3], currentIndex == 1
+	//            Add()
+	//            tabs: [0 1 2 3 4], currentIndex still == 1
+	//            CurrentIndexChanged fires
+	//              uhhhhhhhhhhhhhhhhhhh
+	//
+	//            at least that's what I think is happening, probably wrong about
+	//            something
+	// -tso 7/14/2018 11:29:50 PM
 
-	tabWidget.CurrentIndexChanged().Attach(focusCurrentTab)
+	var currentFocusedTab tab
+	tabWidget.CurrentIndexChanged().Attach(func() {
+		currentTab := clientState.CurrentTab()
+		if currentFocusedTab != currentTab {
+			currentFocusedTab = currentTab
+			currentTab.Focus()
+		}
+	})
 	mw.Activating().Attach(func() {
 		mainWindowFocused = true
-		focusCurrentTab()
+		// always call Focus() when window regains focus
+		clientState.CurrentTab().Focus()
 	})
 	mw.Deactivating().Attach(func() {
 		mainWindowFocused = false

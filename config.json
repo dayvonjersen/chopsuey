@@ -4,7 +4,7 @@
             "host": "chopstick",
             "port": 6667,
             "ssl": false,
-            "nick": "tso|chopsuey",
+            "nick": "tso|pls",
             "autojoin": [
                 "#test"
             ]

@@ -85,6 +85,7 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 		t.tabTitle = "channels"
 		t.tabPage.SetTitle(t.tabTitle)
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
+
 		builder := NewBuilder(t.tabPage)
 
 		w := float64(mw.ClientBounds().Width)
@@ -122,9 +123,19 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 				})
 			},
 		}.Create(builder)
-		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, t.tabPage))
-		tabWidget.SaveState()
+
 	})
+	// actualCurrentIndex := tabWidget.CurrentIndex()
+	mw.WindowBase.Synchronize(func() {
+		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, t.tabPage))
+		tempIndex := tabWidget.Pages().Index(t.tabPage)
+		checkErr(tabWidget.SetCurrentIndex(tempIndex))
+		checkErr(tabWidget.SaveState())
+	})
+	// mw.WindowBase.Synchronize(func() {
+	// 	tabWidget.SetCurrentIndex(actualCurrentIndex)
+	// 	tabWidget.SaveState()
+	// })
 
 	return t
 }

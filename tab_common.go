@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/lxn/walk"
 )
 
@@ -52,21 +54,34 @@ func (t *tabCommon) HasFocus() bool {
 	return mainWindowFocused && t.Index() == tabWidget.CurrentIndex()
 }
 
+var mu = &sync.Mutex{}
+
 func (t *tabCommon) Close() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	// for when we implement closing tabs in ways other than /close
+	shouldChangeTabFocus := t.HasFocus()
+	myIndexWas := t.Index()
+
 	clientState.RemoveTab(t)
-	mw.WindowBase.Synchronize(func() {
-		mw.WindowBase.SetSuspended(true)
-		defer mw.WindowBase.SetSuspended(false)
 
-		checkErr(tabWidget.Pages().Remove(t.tabPage))
-		t.tabPage.Dispose()
-		tabWidget.SaveState()
+	checkErr(tabWidget.Pages().Remove(t.tabPage))
+	t.tabPage.Dispose()
+	tabWidget.SaveState()
 
-		if tabWidget.Pages().Len() > 0 {
-			checkErr(tabWidget.SetCurrentIndex(tabWidget.Pages().Len() - 1))
-		} else {
-			tabWidget.Pages().Clear()
+	if tabWidget.Pages().Len() == 0 {
+		tabWidget.Pages().Clear()
+	}
+	if shouldChangeTabFocus {
+		newIndex := myIndexWas - 1
+		if newIndex < 0 {
+			newIndex = 0
 		}
+		checkErr(tabWidget.SetCurrentIndex(newIndex))
+
 		tabWidget.SaveState()
-	})
+	} else {
+		tabWidget.SetCurrentIndex(tabWidget.CurrentIndex())
+	}
 }
