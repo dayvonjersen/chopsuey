@@ -1,3 +1,26 @@
+hey asshole:
+14:56 +tso I'm glad no one noticed I leaked my fucking NickServ password
+
+
+- - - - - - - - - - - - - - - - - - - - - - -
+14:57 +bdelloid I have
+14:57 +bdelloid but I don't care
+14:57 +tso bless you bdelloid
+14:57 +gnu that's a beautiful password
+14:57 +gnu you can't even ghost people anymore so it's pointless
+14:57 +bdelloid we're not 12 anymore
+14:58 +tso well I'm not sure about yossarian
+14:58 +gnu it used to be fun to kick people off the network but rizon ruined that joy
+14:58 *tso adds don't display messages to services in the FUCKING TEXT BUFFER YOU ABSOLUTE GIT*
+14:58 +tso to todolist.txt
+
+EARLIER:
+14:43 +tso https://u.teknik.io/YDs4G.png 
+14:43 +tso I really need to get puu.sh
+
+So enjoy a screenshot, ppl
+-tso 7/15/2018 2:59:39 PM
+
 BUGS(uncategorized): {{{
 
  - VS_SCROLL hack fires even when textBuffer has keyboard focus
