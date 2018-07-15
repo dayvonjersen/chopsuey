@@ -1,8 +1,6 @@
 package main
 
 import (
-	"sync"
-
 	"github.com/lxn/walk"
 )
 
@@ -54,11 +52,7 @@ func (t *tabCommon) HasFocus() bool {
 	return mainWindowFocused && t.Index() == tabWidget.CurrentIndex()
 }
 
-var mu = &sync.Mutex{}
-
 func (t *tabCommon) Close() {
-	mu.Lock()
-	defer mu.Unlock()
 
 	// for when we implement closing tabs in ways other than /close
 	shouldChangeTabFocus := t.HasFocus()
