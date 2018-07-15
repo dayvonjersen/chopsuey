@@ -12,6 +12,9 @@ import (
 func italic(text string) string    { return string(fmtItalic) + text + string(fmtItalic) }
 func bold(text string) string      { return string(fmtBold) + text + string(fmtBold) }
 func underline(text string) string { return string(fmtUnderline) + text + string(fmtUnderline) }
+func strikethrough(text string) string {
+	return string(fmtStrikethrough) + text + string(fmtStrikethrough)
+}
 
 const (
 	White     = 0
@@ -46,16 +49,17 @@ func color(text string, colors ...int) string {
 }
 
 const (
-	fmtColor     = '\x03'
-	fmtBold      = '\x02'
-	fmtItalic    = '\x1d'
-	fmtUnderline = '\x1f'
-	fmtReverse   = '\x16' // TODO(tso): swap background and foreground colors
-	fmtReset     = '\x0f'
+	fmtColor         = '\x03'
+	fmtBold          = '\x02'
+	fmtItalic        = '\x1d'
+	fmtStrikethrough = '\x1e'
+	fmtUnderline     = '\x1f'
+	fmtReverse       = '\x16' // TODO(tso): swap background and foreground colors
+	fmtReset         = '\x0f'
 )
 
-var fmtCharsString = "\x03\x02\x1d\x1f\x16\x0f"
-var fmtCharsRunes = []rune{'\x03', '\x03', '\x02', '\x1d', '\x1f', '\x16', '\x0f'}
+var fmtCharsString = "\x03\x02\x1d\x1e\x1f\x16\x0f"
+var fmtCharsRunes = []rune{'\x03', '\x03', '\x02', '\x1d', '\x1e', '\x1f', '\x16', '\x0f'}
 
 var colorPalette = [16]int{ // TODO(tso): load palettes from files and more than 16 colors
 	0xffffff, //white

@@ -246,6 +246,14 @@ func (re *RichEdit) UnderlineText(start, end int) {
 	re.setCharFormat(charfmt, start, end)
 }
 
+func (re *RichEdit) StrikethroughText(start, end int) {
+	charfmt := _charformat{
+		dwMask:    CFM_STRIKEOUT,
+		dwEffects: CFM_STRIKEOUT,
+	}
+	re.setCharFormat(charfmt, start, end)
+}
+
 // Removes all text effects
 func (re *RichEdit) ResetText(start, end int) {
 	charfmt := _charformat2{
@@ -261,11 +269,12 @@ func (re *RichEdit) ResetText(start, end int) {
 // -tso 7/11/2018 5:13:12 PM
 const (
 	//TextEffectColor = 3      // Use TextEffectForegroundColor or TextEffectBackgroundColor
-	TextEffectBold      = 2
-	TextEffectItalic    = 29
-	TextEffectUnderline = 31
-	TextEffectReverse   = 22
-	TextEffectReset     = 15
+	TextEffectBold          = 2
+	TextEffectItalic        = 29
+	TextEffectStrikethrough = 30
+	TextEffectUnderline     = 31
+	TextEffectReverse       = 22
+	TextEffectReset         = 15
 
 	TextEffectForegroundColor = 102
 	TextEffectBackgroundColor = 98
@@ -319,6 +328,8 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 			re.ItalicText(start, end)
 		case TextEffectUnderline:
 			re.UnderlineText(start, end)
+		case TextEffectStrikethrough:
+			re.StrikethroughText(start, end)
 		case TextEffectReset:
 			re.ResetText(start, end)
 		}

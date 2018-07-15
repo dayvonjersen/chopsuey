@@ -118,6 +118,17 @@ func TestParseString(t *testing.T) {
 			},
 		},
 		{
+			input: italic("italic"+bold("bold")) + strikethrough("strikethrough"),
+			expected: &richtext{
+				str: "italicboldstrikethrough",
+				styles: [][]int{
+					{TextEffectItalic, 0, 10},
+					{TextEffectBold, 6, 10},
+					{TextEffectStrikethrough, 10, 23},
+				},
+			},
+		},
+		{
 			input: color("test", Purple),
 			expected: &richtext{
 				str: "test",
