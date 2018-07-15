@@ -8,11 +8,12 @@ import (
 )
 
 type connectionConfig struct {
-	Host     string   `json:"host"`
-	Port     int      `json:"port"`
-	Ssl      bool     `json:"ssl"`
-	Nick     string   `json:"nick"`
-	AutoJoin []string `json:"autojoin"`
+	Host             string   `json:"host"`
+	Port             int      `json:"port"`
+	Ssl              bool     `json:"ssl"`
+	Nick             string   `json:"nick"`
+	NickServPASSWORD string   `json:"nickserv_password"`
+	AutoJoin         []string `json:"autojoin"`
 }
 
 type clientConfig struct {

@@ -139,6 +139,9 @@ func main() {
 			}
 			var servConn *serverConnection
 			servConn = NewServerConnection(servState, func() {
+				if cfg.NickServPASSWORD != "" {
+					servConn.conn.Privmsg("NickServ", "IDENTIFY "+cfg.NickServPASSWORD)
+				}
 				for _, channel := range cfg.AutoJoin {
 					servConn.conn.Join(channel)
 				}
