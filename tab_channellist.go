@@ -124,18 +124,10 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 			},
 		}.Create(builder)
 
-	})
-	// actualCurrentIndex := tabWidget.CurrentIndex()
-	mw.WindowBase.Synchronize(func() {
 		checkErr(tabWidget.Pages().Insert(servState.tab.Index()+1, t.tabPage))
-		tempIndex := tabWidget.Pages().Index(t.tabPage)
-		checkErr(tabWidget.SetCurrentIndex(tempIndex))
-		checkErr(tabWidget.SaveState())
+		tabWidget.SetCurrentIndex(tabWidget.CurrentIndex() + 1)
+		tabWidget.SaveState()
 	})
-	// mw.WindowBase.Synchronize(func() {
-	// 	tabWidget.SetCurrentIndex(actualCurrentIndex)
-	// 	tabWidget.SaveState()
-	// })
 
 	return t
 }

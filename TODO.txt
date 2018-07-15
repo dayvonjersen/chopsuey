@@ -89,18 +89,7 @@ CREATE NEW PROBLEMS:
 walk {{{
 
 PROBLEMS:
- - draw issue when
-    1) open /list from #channel
-    2) click to channel list tab
-    3) click to server tab
-
-    fixes itself when you click on #channel again
-
-    - this also can happen when you /join from a privmsg
-      so it probably has to do with how the tabPage being inserted and not
-      being shown right away messes with the WM_PAINT or something
-      i really don't know
-
+ 
  - nickListBox gets resized back to nonzero when window is resized even
    though the PushButton will hide it again with 1 click maybe something like
    a "hidden" on the nickList and an event on MainWindow
