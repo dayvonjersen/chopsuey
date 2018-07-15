@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"unsafe"
 
 	"github.com/lxn/win"
 )
@@ -81,17 +83,36 @@ func (t *tabChatbox) Errorln(text string, styles [][]int) {
 }
 
 func (t *tabChatbox) Println(text string, styles [][]int) {
-	mw.WindowBase.Synchronize(func() {
-		if t.unread > 0 && !t.unreadSpaced {
-			t.textBuffer.AppendText("\n\n\n- - - - - - - - - - - - - - - - - - - - - - -") // TODO(tso): think of something better
-			t.unreadSpaced = true
+	if t.textBuffer == nil {
+		return
+	}
+	lpsi := win.SCROLLINFO{}
+	lpsi.FMask = win.SIF_ALL
+	lpsi.CbSize = uint32(unsafe.Sizeof(lpsi))
+	shouldScroll := false
+	if win.GetScrollInfo(t.textBuffer.Handle(), win.SB_VERT, &lpsi) {
+		min := int(lpsi.NMin)
+		max := int(lpsi.NMax)
+		pos := int(int32(lpsi.NPage) + lpsi.NPos)
+		log.Printf("lpsi: %v min: %v max: %v pos: %v", lpsi, min, max, pos)
+		if lpsi.NPage == 0 {
+			shouldScroll = true
+		} else {
+			shouldScroll = pos >= max
 		}
+	} else {
+		log.Println("failed to GetScrollInfo()!")
+	}
+	if t.unread > 0 && !t.unreadSpaced {
+		t.textBuffer.AppendText("\n\n\n- - - - - - - - - - - - - - - - - - - - - - -") // TODO(tso): think of something better
+		t.unreadSpaced = true
+	}
 
-		t.textBuffer.AppendText("\n")
-		t.textBuffer.AppendText(text, styles...)
+	t.textBuffer.AppendText("\n")
+	t.textBuffer.AppendText(text, styles...)
 
-		if t.textInput.Focused() || !mainWindowFocused {
-			t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
-		}
-	})
+	if shouldScroll {
+		t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+	}
+
 }

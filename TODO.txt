@@ -1,8 +1,5 @@
 BUGS(uncategorized): {{{
 
- - holding scrollbar of textbuffer causes nicklist not to update until you
-   release the scrollbar and vice-versa
-    - is mw.WindowBase.Synchronize() absolutely necessary for AppendText()?
  - VS_SCROLL hack fires even when textBuffer has keyboard focus
    OR call to SetTextSelection() in AppendText() is doing it
    either way you can't scroll in a super active channel which is the only
@@ -44,6 +41,8 @@ BUGS(uncategorized): {{{
         we're basically just recreating xchat at this point
 
     -tso 7/13/2018 10:27:54 PM
+
+  - tab close behavior is screwy but I don't want to mess with it rn
 
 }}}
 
