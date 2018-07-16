@@ -7,3 +7,4 @@ chatlogs/
 scripts/
 config.json
 debug.log
+version.go
