@@ -138,7 +138,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	}
 
 	printChannelMessage := func(c *goirc.Conn, l *goirc.Line) {
-		debugPrint(l)
+		// debugPrint(l)
 		channel := l.Args[0]
 		msg := strings.Join(l.Args[1:], " ")
 
