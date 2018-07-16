@@ -1,10 +1,87 @@
+rice is life {{{
+
+ - SEND COLORS
+    - shorthand `lime:>implying this will be green text`
+    - ctrl+k inserts \x03
+    - ctrl+b inserts \x02
+    - etc...
+    - NOTE(tso): you can already send control codes with scripting
+
+ - unique random colors for nicks
+
+ - nick padding
+
+ - /palette
+   - display all colors and maybe all messages, NOTICE ERROR CTCP etc
+     for testing purposes
+     
+ - single-letter messages
+   - 00:10 NOTICE(NickServ->tso): This nickname is registered... becomes
+     00:10N(NickServ->tso): This nickname is registered...
+
+ - use underline for nickflash
+
+ - themes
+   - background/foreground color need to be applied to:
+     - nicklistbox bg[ ] fg[ ]
+     - status bar  bg[x] fg[ ]
+     - richedit    bg[x] fg[ ]
+     - tabs        bg[ ] fg[ ]
+     - linedit     bg[ ] fg[ ]
+     - pushbutton  bg[ ] fg[ ]
+     - tableview   bg[ ] fg[ ]
+   - need abstraction for above in order to load new palette whenever
+   - selectable font (oh god)
+
+ - win98 status bar icons
+
+ - borderless window (enable caption 0)
+
+ - set borders/margins/padding on all widgets to 0
+
+ - set richedit font to Universalia 8pt if any unicode in text
+   - or around unicode bits of text only 
+
+}}}
+---
+tabwidget {{{
+        
+ - windows styles
+     - multiline
+     - stretch-to-fit
+     - button style
+
+ - mouse
+     - middle-click to close tabs
+     - scroll to cycle through tabs
+     - context menu
+        - mark as read
+        - close
+BETTER CONTEXT MENU IDEA OMG
+ - list
+   of
+   current
+   networks
+   and 
+   channels (and privmsgs)
+   !!
+
+ - keyboard
+    - ctrl+t for empty server tab
+    - ctrl+tab to 
+
+ - automatic tab sort order 
+    - alphabetical
+    - most activity
+}}}
 
 BUGS(uncategorized): {{{
 
- - VS_SCROLL hack fires even when textBuffer has keyboard focus
+ - WM_VSCROLL hack fires even when textBuffer has keyboard focus
    OR call to SetTextSelection() in AppendText() is doing it
    either way you can't scroll in a super active channel which is the only
    time you really need scroll
+
  - channelList not populated sometimes
    - 321 ALWAYS comes before 322 
      but if goirc.HandleFunc is just doing go handler() indiscriminately
@@ -45,6 +122,12 @@ BUGS(uncategorized): {{{
 
   - tab close behavior is screwy but I don't want to mess with it rn
 
+  - major: sync issues
+    - grep -r HACK for more information
+
+  - minor but looks really bad: adding/closing tabs to window causes ui
+    flicker
+
 }}}
 
 richedit {{{
@@ -82,6 +165,7 @@ CREATE NEW PROBLEMS:
 
  - don't display lines if not sent
     - e.g. cannot send to channel (+m)
+
  - don't open privmsg tab if not sent
     - e.g. no such nick/channel
 }}}
@@ -93,6 +177,7 @@ PROBLEMS:
  - nickListBox gets resized back to nonzero when window is resized even
    though the PushButton will hide it again with 1 click maybe something like
    a "hidden" on the nickList and an event on MainWindow
+    - there is an event that fires on window resize
 
 EXPLORE A NEW WORLD OF OPPORTUNITY:
  - keyboard nav 
@@ -102,8 +187,6 @@ EXPLORE A NEW WORLD OF OPPORTUNITY:
      - notifications balloons for highlight (if !mainWindowFocused)
 
  - figure out how to make the window flash orange in the task bar
-
- - enable_caption(0)
 
  - transparency?
 }}}
@@ -183,8 +266,6 @@ config {{{
  - write to config.json
      - save current state as autojoin on exit (optional)
 
- - automatic NickServ stuff
-
  - hidejoinparts per channel(with list) or global
 
  - ignore list
@@ -239,8 +320,55 @@ bikeshedding {{{
          - no convenient way to capture unhandled server messages 
          - it would be trivial to mock connections by just sending raw IRC
            lines on the recv chan
+           see MockConnection() in irc/irc.go
+         - all handlers run in their own goroutines so even though messages
+           always come in in a particular order the handlers can run in any
+           order which is causing me all sorts of issues 
+            - with LIST sometimes we get a LIST result before LISTSTART so the
+              channellist tab hasn't been created yetbut the server sent
+              LISTSTART first.
+            - with NAMES and 332 sometimes one comes before the other and we
+              need to create the channel tab in either case (and not on JOIN
+              because user could have mode +b or channel could be +s) so it's
+              a race condition and conceivably two tabs could open though I
+              haven't seen that happen yet (I was consistently not getting 332
+              displaying in the buffer but that was because the tab creation
+              itself happens asynchronously as well)
+            - this could all be a misunderstanding on my part but I'm pretty
+              sure it would be better to dispatch handlers asynchronously only
+              if/when the ui state is known instead of having to sync up
+              inside of those handlers
+              of course it would be much easier to understand if we just did
+              everything line-by-line and didn't introduce goroutines at all
+              but I worry that would cause a laggy/unresponsive chat
+              experience like cybits used to exhibit whenever an http request
+              took a long time.
 
-           in fact I'll add it to the irc subpackage right now.
+              I don't see how it would be a problem to just:
+              
+              line := <-recv
+              cmd, args := parseLine(line)
+              switch cmd {
+              // ...
+              case PRIVMSG:
+                if !tabExists(args.dest) {
+                    createTab(args.dest)
+                }
+                go privmsgHandler(args)
+
+                like I want to believe that would solve everything and seems
+                less pants-on-head than
+
+                go privmsgHandler()
+
+                func privmsgHandler{
+                    if !tabExists ...
+
+                    like we're doing now
+
+            like I don't get how doing some blocking stuff for a few cycles
+            that's necessary to have a consistent state is a bad thing what am
+            I missing?
 
     nay:
          - it works
@@ -256,6 +384,7 @@ bikeshedding {{{
 
     nay:
         - walk is hella comfy
+        - sunken cost fallacy (I've spent a lot of time getting stuff to work)
         
  - irc bouncer (separate project)
      - use public/private key pairs for authentication or something
@@ -267,53 +396,6 @@ bikeshedding {{{
        what the policy is and/or how znc does it so well
        or just use znc
 
-}}}
----
-colors {{{
-
- - write more test cases
-
- - SEND COLORS
-    - shorthand `red:no u`
-    - ctrl+k inserts \x03
-    - ctrl+b inserts \x02
-    - etc...
-    - NOTE(tso): you can already send control codes with scripting
-
- - unique random colors for nicks
-
- - themes
-}}}
----
-tabwidget {{{
-
- - mouse
-     - middle-click to close tabs
-     - scroll to cycle through tabs
-     - context menu
-        - mark as read
-        - close
-BETTER CONTEXT MENU IDEA OMG
- - list
-   of
-   current
-   networks
-   and 
-   channels (and privmsgs)
-   !!
-
- - keyboard
-    - ctrl+t for empty server tab
-    - ctrl+tab to 
-        
- - windows styles
-     - multiline
-     - stretch-to-fit
-     - button style
-
- - automatic tab sort order 
-    - alphabetical
-    - most activity
 }}}
 ░░░
 RESOURCES: {{{
