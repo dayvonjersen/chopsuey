@@ -1,5 +1,7 @@
 package main
 
+import "sync"
+
 var clientState *_clientState // global instance
 type _clientState struct {
 	cfg *clientConfig
@@ -7,6 +9,7 @@ type _clientState struct {
 	connections []*serverConnection
 	servers     []*serverState
 	tabs        []tab
+	mu          *sync.Mutex
 }
 
 func (clientState *_clientState) AppendTab(t tab) {
@@ -113,7 +116,9 @@ func ensureChanState(servConn *serverConnection, servState *serverState, channel
 			channel:  channel,
 			nickList: newNickList(),
 		}
+		clientState.mu.Lock()
 		chanState.tab = NewChannelTab(servConn, servState, chanState)
+		clientState.mu.Unlock()
 		servState.channels[channel] = chanState
 	}
 	return chanState
@@ -126,7 +131,9 @@ func ensurePmState(servConn *serverConnection, servState *serverState, nick stri
 		pmState = &privmsgState{
 			nick: nick,
 		}
+		clientState.mu.Lock()
 		pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
+		clientState.mu.Unlock()
 		servState.privmsgs[nick] = pmState
 	}
 	return pmState

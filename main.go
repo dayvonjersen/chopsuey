@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -139,6 +140,7 @@ func main() {
 		connections: []*serverConnection{},
 		servers:     []*serverState{},
 		tabs:        []tab{},
+		mu:          &sync.Mutex{},
 	}
 	clientState.cfg, err = getClientConfig()
 	if err != nil {
@@ -168,7 +170,9 @@ func main() {
 					servConn.conn.Join(channel)
 				}
 			})
+			clientState.mu.Lock()
 			servView := NewServerTab(servConn, servState)
+			clientState.mu.Unlock()
 			servState.tab = servView
 			servConn.Connect(servState)
 		}
