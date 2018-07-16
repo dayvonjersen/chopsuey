@@ -9,6 +9,7 @@ import (
 	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 var VERSION_STRING = fmt.Sprintf("v%.53f", 2.0/3.0)
@@ -74,6 +75,27 @@ func main() {
 	font, err := walk.NewFont("ProFontWindows", 9, 0)
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
+
+	userTheme, err := loadPaletteFromFile("zenburn")
+	checkErr(err)
+	loadColorPalette(userTheme[:16])
+	bg := userTheme[16]
+	r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
+	brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+	checkErr(err)
+	defer brush.Dispose()
+	mw.SetBackground(brush)
+	tabWidget.SetBackground(brush)
+	sb := mw.StatusBar()
+	sb.SetBackground(brush)
+	fg := userTheme[17]
+	colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
+	win.SetTextColor(win.GetDC(mw.Handle()), colorref)
+	win.SetTextColor(win.GetDC(tabWidget.Handle()), colorref)
+	win.SetTextColor(win.GetDC(sb.Handle()), colorref)
+
+	globalBackgroundColor = bg
+	globalForegroundColor = fg
 
 	tabWidget.SetPersistent(false)
 

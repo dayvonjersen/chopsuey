@@ -267,6 +267,9 @@ func (re *RichEdit) ResetText(start, end int) {
 //            e.g. \x02 is "bold"
 //            it's entirely arbitrary and could just as well be 0, 1, 2, 3...
 // -tso 7/11/2018 5:13:12 PM
+//            but it makes it consistent with how styles are returned from
+//            parseString() in colors.go
+// -tso 7/16/2018 9:13:51 AM
 const (
 	//TextEffectColor = 3      // Use TextEffectForegroundColor or TextEffectBackgroundColor
 	TextEffectBold          = 2

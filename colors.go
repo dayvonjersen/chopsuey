@@ -61,24 +61,27 @@ const (
 var fmtCharsString = "\x03\x02\x1d\x1e\x1f\x16\x0f"
 var fmtCharsRunes = []rune{'\x03', '\x03', '\x02', '\x1d', '\x1e', '\x1f', '\x16', '\x0f'}
 
-var colorPalette = [16]int{ // TODO(tso): load palettes from files and more than 16 colors
-	0xffffff, //white
-	0x000000, //black
-	0x000080, //navy
-	0x008001, //green
-	0xff0000, //red
-	0x800000, //maroon
-	0x6a0dad, //purple
-	0xff6600, //orange
-	0xffff00, //yellow
-	0x32cd32, //lime
-	0x008080, //teal
-	0x00ffff, //cyan
-	0x0000ff, //blue
-	0xff00ff, //pink
-	0x676767, //dark gray
-	0xcccccc, //light gray
+var defaultColorPalette = [99]int{
+	// 0 - 15: standard irc colors, see constants above for indices => color
+	0xffffff, 0x000000, 0x000080, 0x008001, 0xff0000, 0x800000, 0x6a0dad, 0xff6600,
+	0xffff00, 0x32cd32, 0x008080, 0x00ffff, 0x0000ff, 0xff00ff, 0x676767, 0xcccccc,
+	// 16-98: http://modern.ircdocs.horse/formatting.html#colors-16-98
+	0x470000, 0x472100, 0x474700, 0x324700, 0x004700, 0x00472c, 0x004747, 0x002747,
+	0x000047, 0x2e0047, 0x470047, 0x47002a, 0x740000, 0x743a00, 0x747400, 0x517400,
+	0x007400, 0x007449, 0x007474, 0x004074, 0x000074, 0x4b0074, 0x740074, 0x740045,
+	0xb50000, 0xb56300, 0xb5b500, 0x7db500, 0x00b500, 0x00b571, 0x00b5b5, 0x0063b5,
+	0x0000b5, 0x7500b5, 0xb500b5, 0xb5006b, 0xff0000, 0xff8c00, 0xffff00, 0xb2ff00,
+	0x00ff00, 0x00ffa0, 0x00ffff, 0x008cff, 0x0000ff, 0xa500ff, 0xff00ff, 0xff0098,
+	0xff5959, 0xffb459, 0xffff71, 0xcfff60, 0x6fff6f, 0x65ffc9, 0x6dffff, 0x59b4ff,
+	0x5959ff, 0xc459ff, 0xff66ff, 0xff59bc, 0xff9c9c, 0xffd39c, 0xffff9c, 0xe2ff9c,
+	0x9cff9c, 0x9cffdb, 0x9cffff, 0x9cd3ff, 0x9c9cff, 0xdc9cff, 0xff9cff, 0xff94d3,
+	0x000000, 0x131313, 0x282828, 0x363636, 0x4d4d4d, 0x656565, 0x818181, 0x9f9f9f,
+	0xbcbcbc, 0xe2e2e2, 0xffffff,
+	// NOTE(tso): 99 is same as \x0f
 }
+
+var globalBackgroundColor = 0xffffff
+var globalForegroundColor = 0x000000
 
 func loadPaletteFromFile(filename string) ([]int, error) {
 	f, err := os.Open(THEMES_DIR + filename)
@@ -112,16 +115,16 @@ func loadPaletteFromFile(filename string) ([]int, error) {
 	return palette, nil
 }
 
-var colorPaletteWindows = [16]int{}
+var colorPaletteWindows = [99]int{}
 
-func loadColorPalette() {
+func loadColorPalette(colorPalette []int) {
 	for i, c := range colorPalette {
 		colorPaletteWindows[i] = c&0xff<<16 | c&0xff00 | c&0xff0000>>16
 	}
 }
 
 func init() {
-	loadColorPalette()
+	loadColorPalette(defaultColorPalette[:])
 }
 
 func matchRune(r rune, any []rune) bool {
@@ -133,6 +136,7 @@ func matchRune(r rune, any []rune) bool {
 	return false
 }
 
+// NOTE(tso): maxlen is 0-indexed, 0 == 1 digit, 1 == 2 digits, ...
 func findNumber(runes []rune, maxlen int) (number, start, end int, err error) {
 	s := -1
 	e := -1
@@ -204,8 +208,9 @@ func parseString(str string) (text string, styles [][]int) {
 				}
 
 				runes = append(runes[:s+i], runes[e+1+i:]...)
-				if fg > 15 { // FIXME(tso): eating \x03xx where x > 15 without displaying any color or resetting previous color is WRONG
-					break
+				if fg == 99 {
+					styles, _ = clearLast(styles, TextEffectReset, i)
+					continue
 				}
 
 				styles, _ = clearLast(styles, TextEffectForegroundColor, i)
@@ -220,9 +225,6 @@ func parseString(str string) (text string, styles [][]int) {
 					}
 
 					runes = append(runes[:s+i], runes[e+1+i:]...)
-					if bg > 15 { // FIXME(tso): eating \x03xx where x > 15 without displaying any color or resetting previous color is WRONG
-						break
-					}
 
 					styles, _ = clearLast(styles, TextEffectBackgroundColor, i)
 					styles = append(styles, []int{TextEffectBackgroundColor, i, 0, colorPaletteWindows[bg]})

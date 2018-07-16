@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type tabServer struct {
@@ -87,6 +88,18 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
+
+		bg := globalBackgroundColor
+		bgColorref := uint32(bg&0xff<<16 | bg&0xff00 | bg&0xff0000>>16)
+		t.textBuffer.SendMessage(win.WM_USER+67, 0, uintptr(bgColorref))
+		/*		brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+				checkErr(err)
+				//defer brush.Dispose()
+				mw.SetBackground(brush)
+				fg := globalForegroundColor
+				colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
+				win.SetTextColor(win.GetDC(re.Handle()), colorref)
+		*/
 	})
 	return t
 }

@@ -29,6 +29,7 @@ func TestFindNumber(t *testing.T) {
 		{"\x0315123", "\x03123", 15, 1, 2, false},
 		{"\x031500:32\x0f \x0312NOTICE: *** Looking up your hostname...\x0f",
 			"\x0300:32\x0f \x0312NOTICE: *** Looking up your hostname...\x0f", 15, 1, 2, false},
+		{"100,1000", "0,1000", 10, 0, 1, false},
 	} {
 		n, s, e, err := findNumber([]rune(test.strBefore), 1)
 		var after string
