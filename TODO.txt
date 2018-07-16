@@ -321,8 +321,13 @@ RESOURCES: {{{
 IRC:
 http://modern.ircdocs.horse/
 
+Tabs:
+
 About Tab Controls | Microsoft Docs
 https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
+
+Hacking the Overall Background Color of a Windows Tab Control
+http://www.glennslayden.com/code/win32/tab-control-background-brush
 
 Windows #define stuff:
 https://doc.pcsoft.fr/en-US/?6510001
