@@ -79,6 +79,29 @@ BETTER CONTEXT MENU IDEA OMG
 
 BUGS(uncategorized): {{{
 
+ - make sure strings never have \0 in them:
+
+<- :Term1nal!~metal@unaffiliated/f41l QUIT :Quit: Term1nal
+panic: syscall: string with NUL passed to StringToUTF16
+
+
+To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
+
+1: running [locked]
+    syscall syscall_windows.go:29 StringToUTF16(#3, 0xa, 0x1, 0xc0423ae0c0, 0x1)
+
+    syscall syscall_windows.go:64 StringToUTF16Ptr([]uint16(#3 len=10 cap=825747252801))
+    walk    listbox.go:120        (*ListBox).insertItemAt(*ListBox(#2), 2, 0x0, 0x0)
+    walk    listbox.go:146        (*ListBox).resetItems(*ListBox(#2), 0x0, 0x0)
+    walk    listbox.go:160        (*ListBox).attachModel.func1()
+    walk    event.go:58           (*EventPublisher).Publish(*EventPublisher(#1))
+
+    walk    models.go:51          (*ListModelBase).PublishItemsReset(*ListModelBase(#1))
+    main    tab_channel.go:83     (*tabChannel).updateNickList.func1()
+    walk    form.go:56            runSynchronized()
+    walk    form.go:402           (*FormBase).Run(*FormBase(0xc0420b6a80), 0x0)
+    main    main.go:182           main()
+
  - WM_VSCROLL hack fires even when textBuffer has keyboard focus
    OR call to SetTextSelection() in AppendText() is doing it
    either way you can't scroll in a super active channel which is the only
