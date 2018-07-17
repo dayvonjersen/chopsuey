@@ -149,9 +149,6 @@ CREATE NEW PROBLEMS:
 ---
 (*actual todo list) {{{
 
- - unicode characters display in a shitty font make sure Universalia is
-   used if the text isn't ascii  
-
  - /part without closing tab
      - chanState tracks whether "connected" to channel?
 
