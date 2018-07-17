@@ -7,10 +7,6 @@ rice is life {{{
     - etc...
     - NOTE(tso): you can already send control codes with scripting
 
- - unique random colors for nicks
-
- - nick padding
-
  - /palette
    - display all colors and maybe all messages, NOTICE ERROR CTCP etc
      for testing purposes
@@ -128,6 +124,10 @@ BUGS(uncategorized): {{{
   - minor but looks really bad: adding/closing tabs to window causes ui
     flicker
 
+  - nick colors are all over the place and wrong
+
+  - nickflash/highlight should be case insensitive
+
 }}}
 
 richedit {{{
@@ -212,6 +212,9 @@ big project/refactor {{{
  - new server tab/connection abstraction
 
  - make empty server tab possible
+
+ - use nick type instead of nick as string in more places
+   - store color value in nickList
 }}}
 ---
 commands {{{
