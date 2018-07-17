@@ -1,4 +1,7 @@
 rice is life {{{
+ 
+ - default colors should all be visible on a white background
+    - lime and yellow are not, for example
 
  - SEND COLORS
     - shorthand `lime:>implying this will be green text`
@@ -15,7 +18,10 @@ rice is life {{{
    - 00:10 NOTICE(NickServ->tso): This nickname is registered... becomes
      00:10N(NickServ->tso): This nickname is registered...
 
- - use underline for nickflash
+ - use nick color as background color for nickflash
+   - maybe we need that thing from vibrant to determine whether to set text
+     color as white or black based on whatever that was called you know what
+     i'm talking about tho
 
  - themes
    - background/foreground color need to be applied to:
