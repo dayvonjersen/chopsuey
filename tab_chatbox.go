@@ -27,7 +27,7 @@ func (t *tabChatbox) Padlen(nick string) int {
 		t.nickQueue = &nickQueue{}
 	}
 	t.nickQueue.Push(nick)
-	return t.nickQueue.Mode()
+	return t.nickQueue.Max()
 }
 
 func (t *tabChatbox) Clear() {
