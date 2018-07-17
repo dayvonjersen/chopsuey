@@ -11,7 +11,9 @@ type tabServer struct {
 	tabChatbox
 }
 
-func (t *tabServer) Send(message string) {}
+// FIXME(tso): having these here just to satisfy the interface seems wrong.
+func (t *tabServer) NickColor(nick string) int { return Black }
+func (t *tabServer) Send(message string)       {}
 
 func (t *tabServer) Update(servState *serverState) {
 	if t.tabTitle != servState.networkName {

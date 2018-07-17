@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"strconv"
 
 	"github.com/lxn/walk"
@@ -27,6 +28,16 @@ type tabChannel struct {
 	nickListBox      *walk.ListBox
 	nickListBoxModel *listBoxModel
 	send             func(string)
+
+	nickColors map[string]int
+}
+
+func (t *tabChannel) NickColor(nick string) int {
+	if color, ok := t.nickColors[nick]; ok {
+		return color
+	}
+	t.nickColors[nick] = rand.Intn(98)
+	return t.nickColors[nick]
 }
 
 func (t *tabChannel) Send(message string) {
@@ -76,6 +87,7 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
 	t := &tabChannel{}
+	t.nickColors = map[string]int{}
 	clientState.AppendTab(t)
 	t.tabTitle = chanState.channel
 

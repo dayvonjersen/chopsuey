@@ -301,7 +301,6 @@ func colorNick(tab tabWithTextBuffer, nick string) string {
 	if padamt > len(nick) {
 		nick = strings.Repeat(" ", padamt-len(nick)) + nick
 	}
-	// TODO(tso): different colors for nicks
-	nick = color(nick, DarkGrey)
+	nick = color(nick, tab.NickColor(nick))
 	return nick
 }

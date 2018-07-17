@@ -1,12 +1,19 @@
 package main
 
 import (
+	"math/rand"
+
 	"github.com/lxn/walk"
 )
 
 type tabPrivmsg struct {
 	tabChatbox
-	send func(string)
+	send      func(string)
+	nickColor func(string) int
+}
+
+func (t *tabPrivmsg) NickColor(nick string) int {
+	return t.nickColor(nick)
 }
 
 func (t *tabPrivmsg) Send(message string) {
@@ -36,6 +43,14 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		servConn.conn.Privmsg(pmState.nick, msg)
 		nick := newNick(servState.user.nick)
 		privateMessage(t, nick.String(), msg)
+	}
+
+	color := rand.Intn(98)
+	t.nickColor = func(nick string) int {
+		if nick == servState.user.nick {
+			return DarkGray
+		}
+		return color
 	}
 
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + pmState.nick)
