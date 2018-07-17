@@ -104,8 +104,8 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		logmsg := now() + " <" + nick + "> " + msg
 		h := hl(nick, msg)
-		colorNick(&nick)
 		for _, tab := range tabs {
+			nick := colorNick(tab, nick)
 			tab.Notify(h)
 			tab.Logln(logmsg)
 			tab.Println(parseString(privateMsg(h, nick, msg)))
@@ -115,8 +115,8 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		h := hl(nick, msg)
-		colorNick(&nick)
 		for _, tab := range tabs {
+			nick := colorNick(tab, nick)
 			tab.Notify(h)
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(h, nick, msg)))
@@ -184,8 +184,8 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 	case PRIVATE_MESSAGE:
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		logmsg := now() + " <" + nick + "> " + msg
-		colorNick(&nick)
 		for _, tab := range tabs {
+			nick := colorNick(tab, nick)
 			tab.Notify(false)
 			tab.Logln(logmsg)
 			tab.Println(parseString(privateMsg(false, nick, msg)))
@@ -194,8 +194,8 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 	case ACTION_MESSAGE:
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
-		colorNick(&nick)
 		for _, tab := range tabs {
+			nick := colorNick(tab, nick)
 			tab.Notify(false)
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(false, nick, msg)))
@@ -296,8 +296,12 @@ func privateMsg(hl bool, text ...string) string {
 
 }
 
-func colorNick(nick *string) {
+func colorNick(tab tabWithTextBuffer, nick string) string {
+	padamt := tab.Padlen(nick)
+	if padamt > len(nick) {
+		nick = strings.Repeat(" ", padamt-len(nick)) + nick
+	}
 	// TODO(tso): different colors for nicks
-	// TODO(tso): npm install left-pad
-	*nick = color(*nick, DarkGrey)
+	nick = color(nick, DarkGrey)
+	return nick
 }

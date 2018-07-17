@@ -22,6 +22,8 @@ type tabWithInput interface {
 type tabWithTextBuffer interface {
 	tab
 
+	Padlen(string) int // just shoehorning this in here for now
+
 	Logln(string)            // chatlogging
 	Errorln(string, [][]int) // print error to buffer
 	Println(string, [][]int) // print text to buffer

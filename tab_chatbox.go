@@ -18,9 +18,20 @@ type tabChatbox struct {
 	textBuffer   *RichEdit
 	textInput    *MyLineEdit
 	chatlogger   func(string)
+
+	nickQueue *nickQueue
+}
+
+func (t *tabChatbox) Padlen(nick string) int {
+	if t.nickQueue == nil {
+		t.nickQueue = &nickQueue{}
+	}
+	t.nickQueue.Push(nick)
+	return t.nickQueue.Mode()
 }
 
 func (t *tabChatbox) Clear() {
+	t.nickQueue = &nickQueue{}
 	t.textBuffer.SetText("")
 }
 
