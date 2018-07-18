@@ -204,22 +204,24 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 		}
 
 	default:
-		log.Printf(`
-		
-		--------------------------------------------------------------------
-		HEY!
-		
-		
-		should this message be logged and displayed in the text buffer?
+		/*
+			log.Printf(`
+
+			--------------------------------------------------------------------
+			HEY!
 
 
-		%v
-		
-
-		??? default is yes...
+			should this message be logged and displayed in the text buffer?
 
 
-		also msgType %d isn't defined. add it to messages.go`, msg, msgType)
+			%v
+
+
+			??? default is yes...
+
+
+			also msgType %d isn't defined. add it to messages.go`, msg, msgType)
+		*/
 
 		text, styles := parseString(strings.Join(msg, " "))
 		for _, tab := range tabs {

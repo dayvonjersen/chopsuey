@@ -671,6 +671,110 @@ func unregisterCmd(ctx *commandContext, args ...string) {
 	clientMessage(ctx.tab, "/"+name+" ("+alias+") unregistered")
 }
 
+// XXX TEMPORARY SECRETARY
+func paletteCmd(ctx *commandContext, args ...string) {
+	Println(99999, T(ctx.tab),
+		color("White    ", White, White),
+		color("White    ", Black, White),
+		color("White    ", White),
+		color("Black    ", White, Black),
+		color("Black    ", Black, Black),
+		color("Black    ", Black))
+	Println(99999, T(ctx.tab),
+		color("Navy     ", White, Navy),
+		color("Navy     ", Black, Navy),
+		color("Navy     ", Navy),
+		color("Green    ", White, Green),
+		color("Green    ", Black, Green),
+		color("Green    ", Green))
+	Println(99999, T(ctx.tab),
+		color("Red      ", White, Red),
+		color("Red      ", Black, Red),
+		color("Red      ", Red),
+		color("Maroon   ", White, Maroon),
+		color("Maroon   ", Black, Maroon),
+		color("Maroon   ", Maroon))
+	Println(99999, T(ctx.tab),
+		color("Purple   ", White, Purple),
+		color("Purple   ", Black, Purple),
+		color("Purple   ", Purple),
+		color("Orange   ", White, Orange),
+		color("Orange   ", Black, Orange),
+		color("Orange   ", Orange))
+	Println(99999, T(ctx.tab),
+		color("Yellow   ", White, Yellow),
+		color("Yellow   ", Black, Yellow),
+		color("Yellow   ", Yellow),
+		color("Lime     ", White, Lime),
+		color("Lime     ", Black, Lime),
+		color("Lime     ", Lime))
+	Println(99999, T(ctx.tab),
+		color("Teal     ", White, Teal),
+		color("Teal     ", Black, Teal),
+		color("Teal     ", Teal),
+		color("Cyan     ", White, Cyan),
+		color("Cyan     ", Black, Cyan),
+		color("Cyan     ", Cyan))
+	Println(99999, T(ctx.tab),
+		color("Blue     ", White, Blue),
+		color("Blue     ", Black, Blue),
+		color("Blue     ", Blue),
+		color("Pink     ", White, Pink),
+		color("Pink     ", Black, Pink),
+		color("Pink     ", Pink))
+	Println(99999, T(ctx.tab),
+		color("DarkGray ", White, DarkGray),
+		color("DarkGray ", Black, DarkGray),
+		color("DarkGray ", DarkGray),
+		color("LightGray", White, LightGray),
+		color("LightGray", Black, LightGray),
+		color("LightGray", LightGray))
+
+	for i := 16; i < 91; i += 6 {
+		j, k, l, m, n := i+1, i+2, i+3, i+4, i+5
+		Println(99999, T(ctx.tab),
+			color(strconv.Itoa(i), White, i),
+			color(strconv.Itoa(i), Black, i),
+			color(strconv.Itoa(i), i),
+			color(strconv.Itoa(j), White, j),
+			color(strconv.Itoa(j), Black, j),
+			color(strconv.Itoa(j), j),
+			color(strconv.Itoa(k), White, k),
+			color(strconv.Itoa(k), Black, k),
+			color(strconv.Itoa(k), k),
+			color(strconv.Itoa(l), White, l),
+			color(strconv.Itoa(l), Black, l),
+			color(strconv.Itoa(l), l),
+			color(strconv.Itoa(m), White, m),
+			color(strconv.Itoa(m), Black, m),
+			color(strconv.Itoa(m), m),
+			color(strconv.Itoa(n), White, n),
+			color(strconv.Itoa(n), Black, n),
+			color(strconv.Itoa(n), n),
+		)
+	}
+	i, j := 97, 98
+	Println(99999, T(ctx.tab),
+		color(strconv.Itoa(i), White, i),
+		color(strconv.Itoa(i), Black, i),
+		color(strconv.Itoa(i), i),
+		color(strconv.Itoa(j), White, j),
+		color(strconv.Itoa(j), Black, j),
+		color(strconv.Itoa(j), j),
+	)
+	clientError(ctx.tab, "client error")
+	clientMessage(ctx.tab, "client message")
+	serverMessage(ctx.tab, "123", "server message")
+	serverError(ctx.tab, "123", "server error")
+	joinpartMessage(ctx.tab, "<->", "user123 has joined quit parted")
+	updateMessage(ctx.tab, "topic for #channel is there is no spoon")
+	noticeMessage(ctx.tab, "colbert", "nation", "you're on notice")
+	actionMessage(ctx.tab, "puts", "on robe and wizard hat")
+	privateMessage(ctx.tab, "user456", "hello world")
+	actionMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "owo", "nuzzles")
+	privateMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "anon", "here's your (You)")
+}
+
 func rawCmd(ctx *commandContext, args ...string) {
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
 }
