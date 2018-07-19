@@ -11,6 +11,7 @@ import (
 	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 const (
@@ -47,11 +48,7 @@ func main() {
 		AssignTo: &mw,
 		Title:    "chopsuey IRC " + VERSION_STRING,
 		Layout:   VBox{MarginsZero: true},
-		Children: []Widget{
-			TabWidget{
-				AssignTo: &tabWidget,
-			},
-		},
+		Children: []Widget{},
 		StatusBarItems: []StatusBarItem{
 			StatusBarItem{
 				AssignTo: &statusBar,
@@ -59,6 +56,12 @@ func main() {
 			},
 		},
 	}.Create()
+
+	var err error
+	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
+	checkErr(err)
+
+	mw.Children().Add(tabWidget)
 
 	mw.SetBounds(walk.Rectangle{
 		X:      1536,
