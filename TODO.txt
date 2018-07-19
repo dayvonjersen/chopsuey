@@ -9,10 +9,6 @@ rice is life {{{
     - ctrl+b inserts \x02
     - etc...
     - NOTE(tso): you can already send control codes with scripting
-
- - /palette
-   - display all colors and maybe all messages, NOTICE ERROR CTCP etc
-     for testing purposes
      
  - single-letter messages
    - 00:10 NOTICE(NickServ->tso): This nickname is registered... becomes
@@ -46,38 +42,29 @@ rice is life {{{
 
 }}}
 ---
+keyboard shortcuts {{{
+    - ctrl+t:  open/switch to empty server tab
+    - ctrl+f4: close current tab
+    - ctrl+f:  search textBuffer
+}}}
+---
 tabwidget {{{
         
- - windows styles
-     - multiline
-     - stretch-to-fit
-     - button style
-
+NOTE(tso): not possible to get mouse or keyboard events on TabWidget afaict
+so rip the dream:
  - mouse
      - middle-click to close tabs
      - scroll to cycle through tabs
      - context menu
         - mark as read
         - close
-BETTER CONTEXT MENU IDEA OMG
- - list
-   of
-   current
-   networks
-   and 
-   channels (and privmsgs)
-   !!
-
- - keyboard
-    - ctrl+t for empty server tab
-    - ctrl+tab to 
 
  - automatic tab sort order 
     - alphabetical
     - most activity
 }}}
-
-BUGS(uncategorized): {{{
+---
+BUGS(panic at the disco): {{{
 
  - wat
 panic: invalid hdc
@@ -150,7 +137,9 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
     walk    form.go:56            runSynchronized()
     walk    form.go:402           (*FormBase).Run(*FormBase(0xc0420b6a80), 0x0)
     main    main.go:182           main()
-
+}}}
+---
+BUGS(uncategorized): {{{
  - WM_VSCROLL hack fires even when textBuffer has keyboard focus
    OR call to SetTextSelection() in AppendText() is doing it
    either way you can't scroll in a super active channel which is the only
@@ -201,8 +190,6 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
 
   - minor but looks really bad: adding/closing tabs to window causes ui
     flicker
-
-  - nick colors are all over the place and wrong
 
   - nickflash/highlight should be case insensitive
 
@@ -255,11 +242,16 @@ PROBLEMS:
     - there is an event that fires on window resize
 
 EXPLORE A NEW WORLD OF OPPORTUNITY:
- - keyboard nav 
   
  - system tray icon
      - hide to tray
      - notifications balloons for highlight (if !mainWindowFocused)
+       CONTEXT MENU:
+         - list of current networks and channels (and privmsgs) !!
+         - settings
+         - about
+         - report issue
+         - quit
 
  - figure out how to make the window flash orange in the task bar
 
@@ -364,7 +356,9 @@ dcc {{{
 }}}
 ---
 extensions {{{
+
  - inline twitter links
+
  - be able to connect to irc.twitch.tv (implement OAUTH or whatever they use)
 }}}
 ---
@@ -459,9 +453,13 @@ bikeshedding {{{
     yay:
          - inline images for emojis and embedding thumbnails 
          - richedit is hella annoying
+         - can't capture global mouse/key events because child widgets steal
+           focus
+         - can't get mouse/key events on tabs in widget or apply custom
+           background/text color/etc without reimplementing entire widget
 
     nay:
-        - walk is hella comfy
+        - walk is hella comfy (it just worksة)
         - sunken cost fallacy (I've spent a lot of time getting stuff to work)
         
  - irc bouncer (separate project)
@@ -483,15 +481,12 @@ http://modern.ircdocs.horse/
 
 Tabs:
 
-About Tab Controls | Microsoft Docs
+    About Tab Controls | Microsoft Docs
 https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
 
-Hacking the Overall Background Color of a Windows Tab Control
+    Hacking the Overall Background Color of a Windows Tab Control
 http://www.glennslayden.com/code/win32/tab-control-background-brush
 
-Windows #define stuff:
-https://doc.pcsoft.fr/en-US/?6510001
-https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
 
 RichEdit stuff:
 https://docs.microsoft.com/en-us/windows/desktop/Controls/bumper-rich-edit-rich-edit-control-reference
@@ -510,6 +505,10 @@ https://www.dwheeler.com/essays/open-files-urls.html
 
     get tab key messages in windows:
 http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
+
+    numerical values for Windows constants e.g. LONG DWORD LPSTR etc:
+https://doc.pcsoft.fr/en-US/?6510001
+https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
 
 }}}
 ▒▒▒
