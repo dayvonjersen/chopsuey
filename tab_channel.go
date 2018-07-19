@@ -184,6 +184,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 			},
 		}.Create(builder)
 
+		t.textBuffer.KeyPress().Attach(ctrlTab)
 		t.textInput = NewTextInput(t, &commandContext{
 			servConn:  servConn,
 			tab:       t,

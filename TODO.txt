@@ -364,8 +364,8 @@ dcc {{{
 }}}
 ---
 extensions {{{
-
  - inline twitter links
+ - be able to connect to irc.twitch.tv (implement OAUTH or whatever they use)
 }}}
 ---
 bikeshedding {{{

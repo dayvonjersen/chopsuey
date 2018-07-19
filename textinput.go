@@ -126,11 +126,12 @@ func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 		}
 	})
 
+	textInput.KeyPress().Attach(ctrlTab)
 	textInput.KeyPress().Attach(func(key walk.Key) {
 		if key == walk.KeyUp || key == walk.KeyDown {
 			text := textInput.Text()
 			textInput.SetTextSelection(len(text), len(text))
-		} else if key == walk.KeyTab {
+		} else if key == walk.KeyTab && !walk.ControlDown() {
 			text := strings.Split(textInput.Text(), " ")
 			if textInput.tabComplete.Active {
 				textInput.tabComplete.Index++
