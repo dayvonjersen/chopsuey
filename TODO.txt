@@ -79,6 +79,55 @@ BETTER CONTEXT MENU IDEA OMG
 
 BUGS(uncategorized): {{{
 
+ - wat
+panic: invalid hdc
+
+Stack:
+
+1: running [locked]
+    debug   stack.go:24            Stack(0xc042504af8, 0xc042504b18, 0x4466f8)
+    walk    error.go:81            newErr(string(0x8758aa, len=11), 0x2, #1)
+    walk    error.go:85            newError(string(0x8758aa, len=11), 0x18, 0xc042504b88)
+    walk    canvas.go:109          newCanvasFromHDC(HDC(0x0), #1, 0xc042504bf8)
+    walk    container.go:304       (*ContainerBase).doPaint(*ContainerBase(#7), 0x0, 0x0)
+    walk    container.go:378       (*ContainerBase).WndProc(*ContainerBase(#7), HWND(#1), 0, uintptr(0x0))
+    walk    window.go:1492         defaultWndProc(HWND(#1), 0, uintptr(0x0))
+    syscall syscall_windows.go:184 Syscall6(uintptr(#3), uintptr(0x9100a), uintptr(0xf003), uintptr(0x0), uintptr(0x0), ...)
+    win     user32.go:1947         DefWindowProc(HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    window.go:1819         (*WindowBase).WndProc(*WindowBase(#6), HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    form.go:692            (*FormBase).WndProc(*FormBase(#6), HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    mainwindow.go:226      (*MainWindow).WndProc(*MainWindow(#6), HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    window.go:1492         defaultWndProc(HWND(0x9100a), 61443, uintptr(0x10655))
+    syscall syscall_windows.go:184 Syscall6(uintptr(#3), uintptr(0x9100a), uintptr(0xc), uintptr(0x0), uintptr(0x0), ...)
+    win     user32.go:1947         DefWindowProc(HWND(0x9100a), 12, uintptr(0x10655))
+    walk    window.go:1819         (*WindowBase).WndProc(*WindowBase(#6), HWND(0x9100a), 12, uintptr(0x10655))
+    walk    form.go:692            (*FormBase).WndProc(*FormBase(#6), HWND(0x9100a), 12, uintptr(0x10655))
+    walk    mainwindow.go:226      (*MainWindow).WndProc(*MainWindow(#6), HWND(0x9100a), 12, uintptr(0x10655))
+    walk    window.go:1492         defaultWndProc(HWND(0x9100a), 12, uintptr(0x10655))
+    syscall syscall_windows.go:171 Syscall(uintptr(#2), uintptr(0x9100a), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(0x9100a), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(#6), 0x0)
+    main    main.go:185            main()
+1: running [locked]
+    walk    container.go:379       (*ContainerBase).WndProc(#7, #1, 0xf, 0, 0, 0)
+    walk    window.go:1492         defaultWndProc(HWND(#1), 0, uintptr(0x0))
+    syscall syscall_windows.go:184 Syscall6(uintptr(#3), uintptr(0x9100a), uintptr(0xf003), uintptr(0x0), uintptr(0x0), ...)
+    win     user32.go:1947         DefWindowProc(HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    window.go:1819         (*WindowBase).WndProc(*WindowBase(#6), HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    form.go:692            (*FormBase).WndProc(*FormBase(#6), HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    mainwindow.go:226      (*MainWindow).WndProc(*MainWindow(#6), HWND(0x9100a), 61443, uintptr(0x10655))
+    walk    window.go:1492         defaultWndProc(HWND(0x9100a), 61443, uintptr(0x10655))
+    syscall syscall_windows.go:184 Syscall6(uintptr(#3), uintptr(0x9100a), uintptr(0xc), uintptr(0x0), uintptr(0x0), ...)
+    win     user32.go:1947         DefWindowProc(HWND(0x9100a), 12, uintptr(0x10655))
+    walk    window.go:1819         (*WindowBase).WndProc(*WindowBase(#6), HWND(0x9100a), 12, uintptr(0x10655))
+    walk    form.go:692            (*FormBase).WndProc(*FormBase(#6), HWND(0x9100a), 12, uintptr(0x10655))
+    walk    mainwindow.go:226      (*MainWindow).WndProc(*MainWindow(#6), HWND(0x9100a), 12, uintptr(0x10655))
+    walk    window.go:1492         defaultWndProc(HWND(0x9100a), 12, uintptr(0x10655))
+    syscall syscall_windows.go:171 Syscall(uintptr(#2), uintptr(0x9100a), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(0x9100a), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(#6), 0x0)
+    main    main.go:185            main()
+
  - make sure strings never have \0 in them:
 
 <- :Term1nal!~metal@unaffiliated/f41l QUIT :Quit: Term1nal
