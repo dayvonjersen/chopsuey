@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"runtime"
 	"sync"
 	"syscall"
@@ -51,6 +53,7 @@ var (
 	mw        *myMainWindow
 	tabWidget *walk.TabWidget
 	statusBar *walk.StatusBarItem
+	systray   *walk.NotifyIcon
 
 	mainWindowFocused bool = true // start focused because windows
 	mainWindowHidden  bool = false
@@ -74,6 +77,15 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 
 func main() {
 	runtime.LockOSThread()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		checkErr(mw.Close())
+		systray.Dispose()
+		os.Exit(1)
+	}()
 
 	logging.SetLogger(&debugLogger{})
 
@@ -99,19 +111,19 @@ func main() {
 	// transparency:
 	//
 	// required:
-	// win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED)
+	// win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED|win.WS_EX_STATICEDGE)
 	//
 	// entire window, 50% transparent
 	// SetLayeredWindowAttributes(mw.Handle(), 0, 0xff * 50, LWA_ALPHA)
 	//
 	// chromakey
 	// NOTE(tso): no
-	// SetLayeredWindowAttributes(mw.Handle(), 0xffffff, 0, LWA_COLORKEY)
+	// SetLayeredWindowAttributes(mw.Handle(), 0xf0f0f0, 0, LWA_COLORKEY)
 
 	//
 	// ｂ ｏ ｎ ｅ ｌ ｅ ｓ ｓ
 	//
-	win.SetWindowLong(mw.Handle(), win.GWL_STYLE, (win.WS_OVERLAPPEDWINDOW&(^win.WS_THICKFRAME))&(^win.WS_BORDER))
+	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_STATICEDGE) // (win.WS_OVERLAPPEDWINDOW&(^win.WS_THICKFRAME))&(^win.WS_BORDER))
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	var err error
@@ -131,7 +143,7 @@ func main() {
 	checkErr(err)
 	mw.SetIcon(ico)
 
-	systray, err := walk.NewNotifyIcon()
+	systray, err = walk.NewNotifyIcon()
 	checkErr(err)
 	defer systray.Dispose()
 	systray.SetIcon(ico)
