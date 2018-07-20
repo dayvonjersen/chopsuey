@@ -88,6 +88,8 @@ func main() {
 	mw.SetIcon(ico)
 
 	systray, err := walk.NewNotifyIcon()
+	checkErr(err)
+	defer systray.Dispose()
 	systray.SetIcon(ico)
 	systray.SetVisible(true)
 	systray.MouseDown().Attach(func(x, y int, button walk.MouseButton) {

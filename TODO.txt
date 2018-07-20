@@ -38,8 +38,12 @@ rice is life {{{
 }}}
 ---
 keyboard shortcuts {{{
+    - ctrl+q:     exit application
+    - alt+f4:     exit application
+    - ctrl+m:     hide to tray
     - ctrl+t:     open/switch to empty server tab
     - ctrl+f4:    close current tab
+    - ctrl+w:     close current tab
     - ctrl+f:     search textBuffer
     - ctrl+enter: insert \n
     - ctrl+k:     insert \x03
@@ -237,7 +241,6 @@ CREATE NEW PROBLEMS:
 walk {{{
 
  - system tray icon
-     - hide to tray
      - notifications balloons for highlight (if !mainWindowFocused)
        CONTEXT MENU:
          - list of current networks and channels (and privmsgs) !!
