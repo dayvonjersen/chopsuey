@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -115,10 +116,12 @@ func loadPaletteFromFile(filename string) ([]int, error) {
 	return palette, nil
 }
 
+var colorPalette = [99]int{}
 var colorPaletteWindows = [99]int{}
 
-func loadColorPalette(colorPalette []int) {
-	for i, c := range colorPalette {
+func loadColorPalette(palette []int) {
+	for i, c := range palette {
+		colorPalette[i] = c
 		colorPaletteWindows[i] = c&0xff<<16 | c&0xff00 | c&0xff0000>>16
 	}
 }
@@ -294,4 +297,44 @@ func stripFmtChars(str string) string {
 	}
 
 	return string(runes)
+}
+
+func colorVisible(fg, bg int) bool {
+	return contrast(fg, bg) >= 4.5
+}
+
+func unpackColorFloat(color int) (r, g, b float64) {
+	return float64((color >> 16) & 0xff),
+		float64((color >> 8) & 0xff),
+		float64(color & 0xff)
+}
+
+// returns the contrast ratio of 24-bit int colors fg and bg (foreground and background)
+func contrast(fg, bg int) float64 {
+	lum1 := luminance(unpackColorFloat(fg))
+	lum2 := luminance(unpackColorFloat(bg))
+	return math.Max(lum1, lum2) / math.Min(lum1, lum2)
+}
+
+// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+func luminance(red, green, blue float64) float64 {
+	red /= 255.0
+	if red < 0.03928 {
+		red /= 12.92
+	} else {
+		red = math.Pow((red+0.055)/1.055, 2.4)
+	}
+	green /= 255.0
+	if green < 0.03928 {
+		green /= 12.92
+	} else {
+		green = math.Pow((green+0.055)/1.055, 2.4)
+	}
+	blue /= 255.0
+	if blue < 0.03928 {
+		blue /= 12.92
+	} else {
+		blue = math.Pow((blue+0.055)/1.055, 2.4)
+	}
+	return (0.2126 * red) + (0.7152 * green) + (0.0722 * blue)
 }
