@@ -28,8 +28,6 @@ rice is life {{{
 
  - win98 status bar icons
 
- - borderless window 
-
  - set richedit font to Universalia 8pt if any unicode in text
    - or around unicode bits of text only 
 
