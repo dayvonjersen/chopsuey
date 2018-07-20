@@ -293,7 +293,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			return false
 		}
 
-		m, _ := regexp.MatchString(`\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, msg)
+		m, _ := regexp.MatchString(`(?i)\b@*`+regexp.QuoteMeta(servState.user.nick)+`(\b|[^\w])`, msg)
 		return m
 	}
 
