@@ -1,9 +1,5 @@
 rice is life {{{
  
- - single-letter messages
-   - 00:10 NOTICE(NickServ->tso): This nickname is registered... becomes
-     00:10N(NickServ->tso): This nickname is registered...
-
  - themes
    - background/foreground color need to be applied to:
      - nicklistbox bg[ ] fg[ ]
@@ -180,8 +176,6 @@ BUGS(uncategorized): {{{
 
   - minor but looks really bad: adding/closing tabs to window causes ui
     flicker
-
-  - nickflash/highlight should be case insensitive
 
 }}}
 
