@@ -231,15 +231,6 @@ CREATE NEW PROBLEMS:
 ---
 walk {{{
 
-PROBLEMS:
- 
- - nickListBox gets resized back to nonzero when window is resized even
-   though the PushButton will hide it again with 1 click maybe something like
-   a "hidden" on the nickList and an event on MainWindow
-    - there is an event that fires on window resize
-
-EXPLORE A NEW WORLD OF OPPORTUNITY:
-  
  - system tray icon
      - hide to tray
      - notifications balloons for highlight (if !mainWindowFocused)
@@ -348,6 +339,8 @@ dcc {{{
  - file transfers tab
  
  - Save As dialog on recv
+
+ - drag/drop
 
  unrelated: maybe turn tsobot into a XDCC bot
 }}}
