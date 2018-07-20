@@ -5,6 +5,7 @@ import (
 	"log"
 	"runtime"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/fluffle/goirc/logging"
@@ -12,6 +13,28 @@ import (
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 )
+
+var setLayeredWindowAttributes uintptr
+
+const (
+	LWA_COLORKEY = 1
+	LWA_ALPHA    = 2
+)
+
+func init() {
+	libuser32 := win.MustLoadLibrary("user32.dll")
+	setLayeredWindowAttributes = win.MustGetProcAddress(libuser32, "SetLayeredWindowAttributes")
+}
+
+func SetLayeredWindowAttributes(hwnd win.HWND, crKey, bAlpha, dwFlags int32) bool {
+	ret, _, _ := syscall.Syscall6(setLayeredWindowAttributes, 4,
+		uintptr(hwnd),
+		uintptr(crKey),
+		uintptr(bAlpha),
+		uintptr(dwFlags),
+		0, 0)
+	return ret != 0
+}
 
 const (
 	CHATLOG_DIR     = "./chatlogs/"
@@ -71,6 +94,25 @@ func main() {
 		},
 	}.Create()
 	walk.InitWrapperWindow(mw)
+
+	//
+	// transparency:
+	//
+	// required:
+	// win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED)
+	//
+	// entire window, 50% transparent
+	// SetLayeredWindowAttributes(mw.Handle(), 0, 0xff * 50, LWA_ALPHA)
+	//
+	// chromakey
+	// NOTE(tso): no
+	// SetLayeredWindowAttributes(mw.Handle(), 0xffffff, 0, LWA_COLORKEY)
+
+	//
+	// borderless, attempt #1
+	//
+	// NOTE(tso): fucks up layout (hides textInput)
+	// win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW&(^win.WS_CAPTION))
 
 	var err error
 	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)

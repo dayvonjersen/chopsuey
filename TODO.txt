@@ -28,9 +28,7 @@ rice is life {{{
 
  - win98 status bar icons
 
- - borderless window (enable caption 0)
-
- - set borders/margins/padding on all widgets to 0
+ - borderless window 
 
  - set richedit font to Universalia 8pt if any unicode in text
    - or around unicode bits of text only 
@@ -250,8 +248,6 @@ walk {{{
          - quit
 
  - figure out how to make the window flash orange in the task bar
-
- - transparency?
 }}}
 ---
 new feature {{{
