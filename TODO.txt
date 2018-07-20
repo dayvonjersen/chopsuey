@@ -498,6 +498,7 @@ https://docs.microsoft.com/en-us/windows/desktop/Controls/em-seteventmask
 https://docs.microsoft.com/en-us/windows/desktop/Controls/rich-edit-control-event-mask-flags
 https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyleex
 https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
+https://blogs.msdn.microsoft.com/murrays/2015/03/27/richedit-colors/
 
 Useful:
     open urls from command line in any OS:
