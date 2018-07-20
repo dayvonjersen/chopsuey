@@ -408,7 +408,7 @@ func NewRichEdit(parent walk.Container) (*RichEdit, error) {
 		parent,
 		"RICHEDIT50W",
 		win.ES_MULTILINE|win.WS_VISIBLE|win.WS_CHILD|win.WS_VSCROLL,
-		win.WS_EX_CLIENTEDGE,
+		0,
 	)
 	if err != nil {
 		return nil, err
