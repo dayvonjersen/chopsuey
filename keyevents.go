@@ -23,3 +23,23 @@ func ctrlTab(key walk.Key) {
 		tabWidget.SetCurrentIndex(index)
 	}
 }
+
+func insertCharacter(key walk.Key) rune {
+	if walk.ControlDown() {
+		switch key {
+		case walk.KeyK:
+			return fmtColor
+		case walk.KeyB:
+			return fmtBold
+		case walk.KeyI:
+			return fmtItalic
+		case walk.KeyU:
+			return fmtUnderline
+		case walk.KeyS:
+			return fmtStrikethrough
+		case walk.Key0, walk.KeyNumpad0:
+			return fmtReset
+		}
+	}
+	return 0
+}

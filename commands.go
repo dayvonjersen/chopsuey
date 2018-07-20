@@ -143,6 +143,7 @@ func init() {
 		"unregister": unregisterCmd,
 
 		// debugging
+		"palette":    paletteCmd,
 		"raw":        rawCmd,
 		"screenshot": screenshotCmd,
 	}
@@ -685,61 +686,61 @@ func unregisterCmd(ctx *commandContext, args ...string) {
 // XXX TEMPORARY SECRETARY
 func paletteCmd(ctx *commandContext, args ...string) {
 	Println(99999, T(ctx.tab),
-		color("White    ", White, White),
-		color("White    ", Black, White),
-		color("White    ", White),
-		color("Black    ", White, Black),
-		color("Black    ", Black, Black),
-		color("Black    ", Black))
+		color("0:White     ", White, White),
+		color("0:White     ", Black, White),
+		color("0:White     ", White),
+		color("1:Black     ", White, Black),
+		color("1:Black     ", Black, Black),
+		color("1:Black     ", Black))
 	Println(99999, T(ctx.tab),
-		color("Navy     ", White, Navy),
-		color("Navy     ", Black, Navy),
-		color("Navy     ", Navy),
-		color("Green    ", White, Green),
-		color("Green    ", Black, Green),
-		color("Green    ", Green))
+		color("2:Navy      ", White, Navy),
+		color("2:Navy      ", Black, Navy),
+		color("2:Navy      ", Navy),
+		color("3:Green     ", White, Green),
+		color("3:Green     ", Black, Green),
+		color("3:Green     ", Green))
 	Println(99999, T(ctx.tab),
-		color("Red      ", White, Red),
-		color("Red      ", Black, Red),
-		color("Red      ", Red),
-		color("Maroon   ", White, Maroon),
-		color("Maroon   ", Black, Maroon),
-		color("Maroon   ", Maroon))
+		color("4:Red       ", White, Red),
+		color("4:Red       ", Black, Red),
+		color("4:Red       ", Red),
+		color("5:Maroon    ", White, Maroon),
+		color("5:Maroon    ", Black, Maroon),
+		color("5:Maroon    ", Maroon))
 	Println(99999, T(ctx.tab),
-		color("Purple   ", White, Purple),
-		color("Purple   ", Black, Purple),
-		color("Purple   ", Purple),
-		color("Orange   ", White, Orange),
-		color("Orange   ", Black, Orange),
-		color("Orange   ", Orange))
+		color("6:Purple    ", White, Purple),
+		color("6:Purple    ", Black, Purple),
+		color("6:Purple    ", Purple),
+		color("7:Orange    ", White, Orange),
+		color("7:Orange    ", Black, Orange),
+		color("7:Orange    ", Orange))
 	Println(99999, T(ctx.tab),
-		color("Yellow   ", White, Yellow),
-		color("Yellow   ", Black, Yellow),
-		color("Yellow   ", Yellow),
-		color("Lime     ", White, Lime),
-		color("Lime     ", Black, Lime),
-		color("Lime     ", Lime))
+		color("8:Yellow    ", White, Yellow),
+		color("8:Yellow    ", Black, Yellow),
+		color("8:Yellow    ", Yellow),
+		color("9:Lime      ", White, Lime),
+		color("9:Lime      ", Black, Lime),
+		color("9:Lime      ", Lime))
 	Println(99999, T(ctx.tab),
-		color("Teal     ", White, Teal),
-		color("Teal     ", Black, Teal),
-		color("Teal     ", Teal),
-		color("Cyan     ", White, Cyan),
-		color("Cyan     ", Black, Cyan),
-		color("Cyan     ", Cyan))
+		color("10:Teal     ", White, Teal),
+		color("10:Teal     ", Black, Teal),
+		color("10:Teal     ", Teal),
+		color("11:Cyan     ", White, Cyan),
+		color("11:Cyan     ", Black, Cyan),
+		color("11:Cyan     ", Cyan))
 	Println(99999, T(ctx.tab),
-		color("Blue     ", White, Blue),
-		color("Blue     ", Black, Blue),
-		color("Blue     ", Blue),
-		color("Pink     ", White, Pink),
-		color("Pink     ", Black, Pink),
-		color("Pink     ", Pink))
+		color("12:Blue     ", White, Blue),
+		color("12:Blue     ", Black, Blue),
+		color("12:Blue     ", Blue),
+		color("13:Pink     ", White, Pink),
+		color("13:Pink     ", Black, Pink),
+		color("13:Pink     ", Pink))
 	Println(99999, T(ctx.tab),
-		color("DarkGray ", White, DarkGray),
-		color("DarkGray ", Black, DarkGray),
-		color("DarkGray ", DarkGray),
-		color("LightGray", White, LightGray),
-		color("LightGray", Black, LightGray),
-		color("LightGray", LightGray))
+		color("14:DarkGray ", White, DarkGray),
+		color("14:DarkGray ", Black, DarkGray),
+		color("14:DarkGray ", DarkGray),
+		color("15:LightGray", White, LightGray),
+		color("15:LightGray", Black, LightGray),
+		color("15:LightGray", LightGray))
 
 	for i := 16; i < 91; i += 6 {
 		j, k, l, m, n := i+1, i+2, i+3, i+4, i+5

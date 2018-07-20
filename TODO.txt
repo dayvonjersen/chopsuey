@@ -519,6 +519,9 @@ https://msdn.microsoft.com/en-us/library/ms997507.aspx
     reference:
 https://msdn.microsoft.com/en-us/library/windows/desktop/ms633540(v=vs.85).aspx
 
+    might be what we're looking for:
+https://docs.microsoft.com/en-us/windows/desktop/api/dwmapi/nf-dwmapi-dwmextendframeintoclientarea
+
 }}}
 ▒▒▒
 ADDENDUM: {{{

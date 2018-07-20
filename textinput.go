@@ -65,7 +65,13 @@ func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 	textInput := newMyLineEdit(tabPage)
 
 	textInput.KeyDown().Attach(func(key walk.Key) {
-		if key == walk.KeyReturn {
+		if r := insertCharacter(key); r != 0 {
+			text := []rune(textInput.Text())
+			s, e := textInput.TextSelection()
+			text = append(text[:s], append([]rune{r}, text[e:]...)...)
+			textInput.SetText(string(text))
+			textInput.SetTextSelection(s+1, e+1)
+		} else if key == walk.KeyReturn {
 			text := textInput.Text()
 			if len(text) < 1 {
 				return
