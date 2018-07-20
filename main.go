@@ -26,27 +26,38 @@ const (
 )
 
 var (
-	mw        *walk.MainWindow
+	mw        *myMainWindow
 	tabWidget *walk.TabWidget
 	statusBar *walk.StatusBarItem
 
 	mainWindowFocused bool = true // start focused because windows
+	mainWindowHidden  bool = false
 )
 
-type debugLogger struct{}
+type myMainWindow struct {
+	*walk.MainWindow
+}
 
-func (l *debugLogger) Debug(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
-func (l *debugLogger) Info(f string, a ...interface{})  { fmt.Printf(f+"\n", a...) }
-func (l *debugLogger) Warn(f string, a ...interface{})  { fmt.Printf(f+"\n", a...) }
-func (l *debugLogger) Error(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
+func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	if msg == win.WM_SYSCOMMAND {
+		// minimize/close to tray
+		if wParam == win.SC_MINIMIZE || wParam == win.SC_CLOSE {
+			win.ShowWindow(mw.Handle(), win.SW_HIDE)
+			mainWindowHidden = true
+			return 0
+		}
+	}
+	return mw.MainWindow.WndProc(hwnd, msg, wParam, lParam)
+}
 
 func main() {
 	runtime.LockOSThread()
 
 	logging.SetLogger(&debugLogger{})
 
+	mw = new(myMainWindow)
 	MainWindow{
-		AssignTo: &mw,
+		AssignTo: &mw.MainWindow,
 		Title:    "chopsuey IRC " + VERSION_STRING,
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{},
@@ -57,6 +68,7 @@ func main() {
 			},
 		},
 	}.Create()
+	walk.InitWrapperWindow(mw)
 
 	var err error
 	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
@@ -78,15 +90,14 @@ func main() {
 	systray, err := walk.NewNotifyIcon()
 	systray.SetIcon(ico)
 	systray.SetVisible(true)
-	hidden := false
 	systray.MouseDown().Attach(func(x, y int, button walk.MouseButton) {
 		if button == walk.LeftButton {
-			if hidden {
+			if mainWindowHidden {
 				win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 			} else {
 				win.ShowWindow(mw.Handle(), win.SW_HIDE)
 			}
-			hidden = !hidden
+			mainWindowHidden = !mainWindowHidden
 		}
 	})
 	/*	action := walk.NewAction()
@@ -235,3 +246,10 @@ func main() {
 	*/
 	mw.Run()
 }
+
+type debugLogger struct{}
+
+func (l *debugLogger) Debug(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
+func (l *debugLogger) Info(f string, a ...interface{})  { fmt.Printf(f+"\n", a...) }
+func (l *debugLogger) Warn(f string, a ...interface{})  { fmt.Printf(f+"\n", a...) }
+func (l *debugLogger) Error(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
