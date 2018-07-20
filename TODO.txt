@@ -1,12 +1,5 @@
 rice is life {{{
  
- - SEND COLORS
-    - shorthand `lime:>implying this will be green text`
-    - ctrl+k inserts \x03
-    - ctrl+b inserts \x02
-    - etc...
-    - NOTE(tso): you can already send control codes with scripting
-     
  - single-letter messages
    - 00:10 NOTICE(NickServ->tso): This nickname is registered... becomes
      00:10N(NickServ->tso): This nickname is registered...
@@ -42,12 +35,6 @@ keyboard shortcuts {{{
     - ctrl+w:     close current tab
     - ctrl+f:     search textBuffer
     - ctrl+enter: insert \n
-    - ctrl+k:     insert \x03
-    - ctrl+b:     insert bold
-    - ctrl+i:     insert italic
-    - ctrl+u:     insert underline
-    - ctrl+s:     insert strikethrough
-    - ctrl+0:     insert fmtReset
 }}}
 ---
 tabwidget {{{

@@ -105,7 +105,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 		logmsg := now() + " <" + nick + "> " + msg
 		h := hl(nick, msg)
 		for _, tab := range tabs {
-			nick := colorNick(tab, nick)
+			nick := colorNick(tab, h, nick)
 			nick = leftpadNick(tab, nick)
 			tab.Notify(h)
 			tab.Logln(logmsg)
@@ -117,7 +117,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		h := hl(nick, msg)
 		for _, tab := range tabs {
-			nick := colorNick(tab, nick)
+			nick := colorNick(tab, h, nick)
 			tab.Notify(h)
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(h, nick, msg)))
@@ -186,7 +186,7 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		logmsg := now() + " <" + nick + "> " + msg
 		for _, tab := range tabs {
-			nick := colorNick(tab, nick)
+			nick := colorNick(tab, false, nick)
 			nick = leftpadNick(tab, nick)
 			tab.Notify(false)
 			tab.Logln(logmsg)
@@ -197,7 +197,7 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		for _, tab := range tabs {
-			nick := colorNick(tab, nick)
+			nick := colorNick(tab, false, nick)
 			tab.Notify(false)
 			tab.Logln(logmsg)
 			tab.Println(parseString(actionMsg(false, nick, msg)))
@@ -281,9 +281,6 @@ func noticeMsg(hl bool, text ...string) string {
 
 func actionMsg(hl bool, text ...string) string {
 	line := color(now(), LightGray) + " "
-	if hl {
-		line += bold(color(" ..! ", Orange, Yellow))
-	}
 	return line + "*" + strings.Join(text, " ") + "*"
 }
 
@@ -293,14 +290,19 @@ func privateMsg(hl bool, text ...string) string {
 	}
 	nick := text[0]
 	line := color(now(), LightGray) + " "
-	if hl {
-		line += bold(color(" ..! ", Orange, Yellow))
-	}
 	return line + nick + " " + strings.Join(text[1:], " ")
 
 }
 
-func colorNick(tab tabWithTextBuffer, nick string) string {
+func colorNick(tab tabWithTextBuffer, hl bool, nick string) string {
+	if hl {
+		bg := tab.NickColor(nick)
+		fg := White
+		if !colorVisible(0xffffff, colorPalette[bg]) {
+			fg = Black
+		}
+		return color(nick, fg, bg)
+	}
 	return color(nick, tab.NickColor(nick))
 }
 func leftpadNick(tab tabWithTextBuffer, nick string) string {
