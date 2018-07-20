@@ -31,8 +31,8 @@ type tabChannel struct {
 
 	nickColors map[string]int
 
-	nickListHidden bool
-	size, size2    walk.Size
+	nickListHidden  bool
+	nickListBoxSize walk.Size
 }
 
 func (t *tabChannel) NickColor(nick string) int {
@@ -94,20 +94,20 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 
 func (t *tabChannel) Resize() {
 	mw.WindowBase.Synchronize(func() {
+		nlSize := t.nickListBox.Size()
+		tbSize := t.textBuffer.Size()
 
-		s := t.nickListBox.Size()
-		s2 := t.textBuffer.Size()
-
-		if s.Width != 0 {
-			t.size = s
+		if nlSize.Width != 0 {
+			t.nickListBoxSize = nlSize
 		}
+
 		if t.nickListHidden {
-			s2.Width += s.Width
-			s.Width = 0
+			tbSize.Width += nlSize.Width
+			nlSize.Width = 0
 		}
 
-		t.nickListBox.SetSize(s)
-		t.textBuffer.SetSize(s2)
+		t.nickListBox.SetSize(nlSize)
+		t.textBuffer.SetSize(tbSize)
 	})
 }
 
@@ -132,6 +132,9 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + chanState.channel)
 
+	t.nickListHidden = false
+	t.nickListBoxSize = walk.Size{}
+
 	mw.WindowBase.Synchronize(func() {
 		var err error
 		t.tabPage, err = walk.NewTabPage()
@@ -140,8 +143,6 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(t.tabPage)
 
-		t.size = walk.Size{}
-		t.size2 = walk.Size{}
 		Composite{
 			Layout: HBox{
 				MarginsZero: true,
@@ -154,24 +155,25 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 				},
 				PushButton{
 					AssignTo: &t.nickListToggle,
-					Text:     "OK",
+					Text:     "0 users",
 					OnClicked: func() {
 						mw.WindowBase.Synchronize(func() {
-							s := t.nickListBox.Size()
-							s2 := t.textBuffer.Size()
+							nlSize := t.nickListBox.Size()
+							tbSize := t.textBuffer.Size()
+
 							if t.nickListHidden {
 								t.nickListHidden = false
-								s.Width = t.size.Width
-								t.size2 = s2
-								s2.Width -= s.Width
+								nlSize.Width = t.nickListBoxSize.Width
+								tbSize.Width -= nlSize.Width
 							} else {
 								t.nickListHidden = true
-								t.size = s
-								s.Width = 0
-								s2.Width += t.size.Width
+								t.nickListBoxSize = nlSize
+								nlSize.Width = 0
+								tbSize.Width += t.nickListBoxSize.Width
 							}
-							t.textBuffer.SetSize(s2)
-							t.nickListBox.SetSize(s)
+
+							t.nickListBox.SetSize(nlSize)
+							t.textBuffer.SetSize(tbSize)
 						})
 					},
 				},
