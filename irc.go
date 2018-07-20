@@ -303,10 +303,10 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		// if l.Args[0] == "DCC" {
 		// 	dccHandler(servConn, l.Nick, l.Args[2])
 		// }
-		clientMessage(servState.CurrentTab(), append([]string{"CTCP(" + l.Src + "->" + servState.user.nick + "):"}, l.Args...)...)
+		clientMessage(servState.CurrentTab(), append([]string{now() + "C(" + l.Src + "->" + servState.user.nick + "):"}, l.Args...)...)
 	})
 	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
-		clientMessage(servState.CurrentTab(), append([]string{"CTCP(" + l.Src + "->" + servState.user.nick + "):"}, l.Args...)...)
+		clientMessage(servState.CurrentTab(), append([]string{now() + "C(" + l.Src + "->" + servState.user.nick + "):"}, l.Args...)...)
 	})
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {

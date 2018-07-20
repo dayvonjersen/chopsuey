@@ -4,9 +4,6 @@ rice is life {{{
    - 00:10 NOTICE(NickServ->tso): This nickname is registered... becomes
      00:10N(NickServ->tso): This nickname is registered...
 
- - use nick color as background color for nickflash
-   - use contrast()
-
  - themes
    - background/foreground color need to be applied to:
      - nicklistbox bg[ ] fg[ ]

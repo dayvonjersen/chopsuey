@@ -245,9 +245,9 @@ func serverErrorMsg(text ...string) string {
 		return fmt.Sprintf("wrong argument count for server error: want 2 got %d:\n%#v",
 			len(text), text)
 	}
-	return color(now(), Red) + " " +
-		color("ERROR("+text[0]+")", White, Red) + " " +
-		color(strings.Join(text[1:], " "), Red)
+	return color(now(), Red) +
+		color("E", White, Red) +
+		color("("+text[0]+"): "+strings.Join(text[1:], " "), Red)
 }
 
 func serverMsg(text ...string) string {
@@ -255,15 +255,16 @@ func serverMsg(text ...string) string {
 		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%#v",
 			len(text), text)
 	}
-	return color(now()+" "+text[0]+": "+strings.Join(text[1:], " "), DarkGray)
+	// NOTE(tso): "R" for "reply" (maybe S is better or nothing at all)
+	return color(now()+"R("+text[0]+"): "+strings.Join(text[1:], " "), DarkGray)
 }
 
 func joinpartMsg(text ...string) string {
-	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), Orange))
+	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), 53)) // XXX TEMPORARY SECRETARY (that default orange was bothering me)
 }
 
 func updateMsg(text ...string) string {
-	return color(now(), LightGray) + " " + color(strings.Join(text, " "), LightGrey)
+	return color(now(), DarkGray) + " " + color(strings.Join(text, " "), DarkGrey)
 }
 
 func noticeMsg(hl bool, text ...string) string {
@@ -271,7 +272,7 @@ func noticeMsg(hl bool, text ...string) string {
 		return fmt.Sprintf("wrong argument count for notice: want 3, got %d:\n%v", len(text), text)
 	}
 	line := color(now(), LightGray) +
-		color("NOTICE", White, Orange) +
+		color("N", White, Orange) +
 		color("("+text[0]+"->"+text[1]+"): ", Orange)
 	if hl {
 		line += bold(color(" ..! ", Orange, Yellow))
@@ -280,7 +281,12 @@ func noticeMsg(hl bool, text ...string) string {
 }
 
 func actionMsg(hl bool, text ...string) string {
-	line := color(now(), LightGray) + " "
+	line := color(now(), LightGray)
+	if hl {
+		line += "»"
+	} else {
+		line += " "
+	}
 	return line + "*" + strings.Join(text, " ") + "*"
 }
 
@@ -289,7 +295,12 @@ func privateMsg(hl bool, text ...string) string {
 		return fmt.Sprintf("wrong argument count for notice: want 2, got %d:\n%v", len(text), text)
 	}
 	nick := text[0]
-	line := color(now(), LightGray) + " "
+	line := color(now(), LightGray)
+	if hl {
+		line += "»"
+	} else {
+		line += " "
+	}
 	return line + nick + " " + strings.Join(text[1:], " ")
 
 }
@@ -305,6 +316,7 @@ func colorNick(tab tabWithTextBuffer, hl bool, nick string) string {
 	}
 	return color(nick, tab.NickColor(nick))
 }
+
 func leftpadNick(tab tabWithTextBuffer, nick string) string {
 	padamt := tab.Padlen(nick)
 	if padamt > len(nick) {
