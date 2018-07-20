@@ -74,15 +74,9 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 			ops++
 		}
 	}
-	text := strconv.Itoa(count) + " user"
-	if count != 1 {
-		text += "s"
-	}
+	text := strconv.Itoa(count) + pluralize(" user", count)
 	if ops > 0 {
-		text += ", " + strconv.Itoa(ops) + " op"
-		if ops != 1 {
-			text += "s"
-		}
+		text += ", " + strconv.Itoa(ops) + pluralize(" op", ops)
 	}
 
 	mw.WindowBase.Synchronize(func() {
@@ -198,13 +192,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 					OnItemActivated: func() {
 						nick := newNick(t.nickListBoxModel.Items[t.nickListBox.CurrentIndex()])
 
-						pmState, ok := servState.privmsgs[nick.name]
-						if !ok {
-							pmState = &privmsgState{
-								nick: nick.name,
-							}
-							pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
-						}
+						pmState := ensurePmState(servConn, servState, nick.name)
 						mw.WindowBase.Synchronize(func() {
 							checkErr(tabWidget.SetCurrentIndex(pmState.tab.Index()))
 						})

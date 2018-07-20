@@ -28,6 +28,13 @@ func debugPrint(l *goirc.Line) {
 	printf(&goirc.Line{Nick: l.Nick, Ident: l.Ident, Host: l.Host, Src: l.Src, Cmd: l.Cmd, Raw: l.Raw, Args: l.Args})
 }
 
+func pluralize(text string, count int) string {
+	if count != 1 {
+		text += "s"
+	}
+	return text
+}
+
 func now() string {
 	return time.Now().Format(clientState.cfg.TimeFormat)
 }
