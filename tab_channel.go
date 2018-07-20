@@ -30,6 +30,9 @@ type tabChannel struct {
 	send             func(string)
 
 	nickColors map[string]int
+
+	nickListHidden bool
+	size, size2    walk.Size
 }
 
 func (t *tabChannel) NickColor(nick string) int {
@@ -89,6 +92,25 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 	})
 }
 
+func (t *tabChannel) Resize() {
+	mw.WindowBase.Synchronize(func() {
+
+		s := t.nickListBox.Size()
+		s2 := t.textBuffer.Size()
+
+		if s.Width != 0 {
+			t.size = s
+		}
+		if t.nickListHidden {
+			s2.Width += s.Width
+			s.Width = 0
+		}
+
+		t.nickListBox.SetSize(s)
+		t.textBuffer.SetSize(s2)
+	})
+}
+
 func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
 	t := &tabChannel{}
 	t.nickColors = map[string]int{}
@@ -118,8 +140,8 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		builder := NewBuilder(t.tabPage)
 
-		size := walk.Size{}
-		size2 := walk.Size{}
+		t.size = walk.Size{}
+		t.size2 = walk.Size{}
 		Composite{
 			Layout: HBox{
 				MarginsZero: true,
@@ -137,18 +159,19 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 						mw.WindowBase.Synchronize(func() {
 							s := t.nickListBox.Size()
 							s2 := t.textBuffer.Size()
-							if s.Width == 0 {
-								s.Width = size.Width
-								size2 = s2
+							if t.nickListHidden {
+								t.nickListHidden = false
+								s.Width = t.size.Width
+								t.size2 = s2
 								s2.Width -= s.Width
 							} else {
-								size = s
+								t.nickListHidden = true
+								t.size = s
 								s.Width = 0
-								s2.Width += size.Width
+								s2.Width += t.size.Width
 							}
 							t.textBuffer.SetSize(s2)
 							t.nickListBox.SetSize(s)
-							// t.nickListBox.SetVisible(!t.nickListBox.Visible())
 						})
 					},
 				},

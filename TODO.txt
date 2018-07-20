@@ -1,8 +1,5 @@
 rice is life {{{
  
- - default colors should all be visible on a white background
-    - lime and yellow are not, for example
-
  - SEND COLORS
     - shorthand `lime:>implying this will be green text`
     - ctrl+k inserts \x03

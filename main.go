@@ -135,6 +135,22 @@ func main() {
 	mw.Deactivating().Attach(func() {
 		mainWindowFocused = false
 	})
+	mw.SizeChanged().Attach(func() {
+		for _, t := range clientState.tabs {
+			switch t.(type) {
+			case *tabServer:
+				t := t.(*tabServer)
+				t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+			case *tabChannel:
+				t := t.(*tabChannel)
+				t.Resize()
+				t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+			case *tabPrivmsg:
+				t := t.(*tabPrivmsg)
+				t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+			}
+		}
+	})
 
 	clientState = &_clientState{
 		connections: []*serverConnection{},
