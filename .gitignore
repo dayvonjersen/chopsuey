@@ -4,6 +4,7 @@
 *.txt
 .stuff/
 chatlogs/
+screenshots/
 scripts/
 config.json
 debug.log

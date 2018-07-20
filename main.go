@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	CHATLOG_DIR = "./chatlogs/"
-	SCRIPTS_DIR = "./scripts/"
-	THEMES_DIR  = "./themes/"
+	CHATLOG_DIR     = "./chatlogs/"
+	SCREENSHOTS_DIR = "./screenshots/"
+	SCRIPTS_DIR     = "./scripts/"
+	THEMES_DIR      = "./themes/"
 
 	CONNECT_RETRIES        = 1
 	CONNECT_RETRY_INTERVAL = time.Second

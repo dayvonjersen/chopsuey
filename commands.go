@@ -2,12 +2,19 @@ package main
 
 import (
 	"bytes"
+	"image"
+	col "image/color"
+	"image/png"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
+	"unsafe"
+
+	"github.com/lxn/win"
 )
 
 type commandContext struct {
@@ -136,7 +143,8 @@ func init() {
 		"unregister": unregisterCmd,
 
 		// debugging
-		"raw": rawCmd,
+		"raw":        rawCmd,
+		"screenshot": screenshotCmd,
 	}
 }
 
@@ -777,4 +785,97 @@ func paletteCmd(ctx *commandContext, args ...string) {
 
 func rawCmd(ctx *commandContext, args ...string) {
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
+}
+
+func screenshotCmd(ctx *commandContext, args ...string) {
+	go func() {
+		// t. stackoverflow
+		// https://stackoverflow.com/a/3291411
+
+		// get the device context of the screen
+		// hScreenDC := win.CreateDC(syscall.StringToUTF16Ptr("DISPLAY"), nil, nil, nil)
+		hScreenDC := win.GetDC(win.GetParent(mw.Handle()))
+		// and a device context to put it in
+		hMemoryDC := win.CreateCompatibleDC(hScreenDC)
+
+		// width := win.GetDeviceCaps(hScreenDC, win.HORZRES)
+		// height := win.GetDeviceCaps(hScreenDC, win.VERTRES)
+		rect := mw.Bounds()
+		width := int32(rect.Width)
+		height := int32(rect.Height)
+
+		// maybe worth checking these are positive values
+		hBitmap := win.CreateCompatibleBitmap(hScreenDC, width, height)
+
+		// get a new bitmap
+		hOldBitmap := win.HBITMAP(win.SelectObject(hMemoryDC, win.HGDIOBJ(hBitmap)))
+
+		win.BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, int32(rect.X), int32(rect.Y), win.SRCCOPY)
+		hBitmap = win.HBITMAP(win.SelectObject(hMemoryDC, win.HGDIOBJ(hOldBitmap)))
+
+		// clean up
+		win.DeleteDC(hMemoryDC)
+		win.DeleteDC(hScreenDC)
+
+		{
+			// t. lxn
+			// http://localhost/src/github.com/lxn/walk/bitmap.go?s=1439:1495#L148
+
+			var bi win.BITMAPINFO
+			bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
+			hdc := win.GetDC(0)
+			if ret := win.GetDIBits(hdc, hBitmap, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
+				panic("GetDIBits get bitmapinfo failed")
+			}
+
+			buf := make([]byte, bi.BmiHeader.BiSizeImage)
+			bi.BmiHeader.BiCompression = win.BI_RGB
+			if ret := win.GetDIBits(hdc, hBitmap, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
+				panic("GetDIBits failed")
+			}
+
+			width := int(bi.BmiHeader.BiWidth)
+			height := int(bi.BmiHeader.BiHeight)
+			img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+			n := 0
+			for y := 0; y < height; y++ {
+				for x := 0; x < width; x++ {
+					r := buf[n+2]
+					g := buf[n+1]
+					b := buf[n+0]
+					n += int(bi.BmiHeader.BiBitCount) / 8
+					img.Set(x, height-y-1, col.RGBA{r, g, b, 255})
+				}
+			}
+
+			fname := SCREENSHOTS_DIR + time.Now().Format("20060102150405.999999999") + ".png"
+			f, err := os.Create(fname)
+			checkErr(err)
+			png.Encode(f, img)
+			f.Close()
+
+			abspath, err := filepath.Abs(fname)
+			checkErr(err)
+			clientMessage(ctx.tab, now(), "screenshot:", "file:///"+strings.Replace(abspath, "\\", "/", -1))
+
+			if ctx.chanState != nil || ctx.pmState != nil {
+				// FIXME(tso): stop being lazy and do this with net/http instead
+				cmd := exec.Command("curl", "-silent", "-F", "file=@"+fname, "https://0x0.st")
+				out, err := cmd.CombinedOutput()
+				if err == nil {
+					lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+					url := lines[len(lines)-1]
+					if ctx.chanState != nil {
+						ctx.tab.(*tabChannel).Send(url)
+					}
+					if ctx.pmState != nil {
+						ctx.tab.(*tabPrivmsg).Send(url)
+					}
+				} else {
+					clientError(ctx.tab, string(out))
+				}
+			}
+		}
+	}()
 }
