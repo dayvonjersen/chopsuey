@@ -109,10 +109,10 @@ func main() {
 	// SetLayeredWindowAttributes(mw.Handle(), 0xffffff, 0, LWA_COLORKEY)
 
 	//
-	// borderless, attempt #1
+	// ｂ ｏ ｎ ｅ ｌ ｅ ｓ ｓ
 	//
-	// NOTE(tso): fucks up layout (hides textInput)
-	// win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW&(^win.WS_CAPTION))
+	win.SetWindowLong(mw.Handle(), win.GWL_STYLE, (win.WS_OVERLAPPEDWINDOW&(^win.WS_THICKFRAME))&(^win.WS_BORDER))
+	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	var err error
 	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
