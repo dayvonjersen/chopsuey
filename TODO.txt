@@ -122,6 +122,16 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
 }}}
 ---
 BUGS(uncategorized): {{{
+ - tabcomplete should show nicks in the nickqueue first maybe
+
+ - show/hide nicklist still broken after window resize
+
+ - nick padding affected by nickflash because of the control characters in the
+   string
+
+ - probably shouldn't send any JOINs until we get replies from NickServ (why
+   is freenode so laggy???)
+
  - click to change tab from channelList causes crash
    - ctrl+tab works just fine
    - didn't try closing it
