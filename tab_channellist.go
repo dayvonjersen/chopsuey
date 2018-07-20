@@ -7,6 +7,7 @@ import (
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 type tabChannelList struct {
@@ -113,6 +114,10 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 				servConn.conn.Join(channel)
 			},
 		}.Create(builder)
+
+		// remove borders
+		win.SetWindowLong(tbl.Handle(), win.GWL_STYLE, win.WS_VISIBLE)
+
 		PushButton{
 			Text: "Close Tab",
 			OnClicked: func() {

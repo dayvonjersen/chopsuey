@@ -86,6 +86,9 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
+		// remove borders
+		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
+
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))

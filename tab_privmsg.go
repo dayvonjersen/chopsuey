@@ -4,6 +4,7 @@ import (
 	"math/rand"
 
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type tabPrivmsg struct {
@@ -76,6 +77,9 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 			pmState:   pmState,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
+
+		// remove borders
+		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
 
 		{
 			index := servState.tab.Index()

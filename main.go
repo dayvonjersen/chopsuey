@@ -58,7 +58,10 @@ func main() {
 	MainWindow{
 		AssignTo: &mw.MainWindow,
 		Title:    "chopsuey IRC " + VERSION_STRING,
-		Layout:   VBox{MarginsZero: true},
+		Layout: VBox{
+			MarginsZero: true,
+			SpacingZero: true,
+		},
 		Children: []Widget{},
 		StatusBarItems: []StatusBarItem{
 			StatusBarItem{

@@ -6,6 +6,7 @@ import (
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 type listBoxModel struct {
@@ -140,7 +141,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		Composite{
 			Layout: HBox{
 				MarginsZero: true,
-				Spacing:     2,
+				SpacingZero: true,
 			},
 			Children: []Widget{
 				LineEdit{
@@ -210,6 +211,11 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 			pmState:   nil,
 		})
 		checkErr(t.tabPage.Children().Add(t.textInput))
+
+		// remove borders
+		win.SetWindowLong(t.topicInput.Handle(), win.GWL_EXSTYLE, 0)
+		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
+		win.SetWindowLong(t.nickListBox.Handle(), win.GWL_STYLE, win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.WS_HSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY)
 
 		{
 			index := servState.tab.Index()
