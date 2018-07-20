@@ -12,9 +12,7 @@ rice is life {{{
      00:10N(NickServ->tso): This nickname is registered...
 
  - use nick color as background color for nickflash
-   - maybe we need that thing from vibrant to determine whether to set text
-     color as white or black based on whatever that was called you know what
-     i'm talking about tho
+   - use contrast()
 
  - themes
    - background/foreground color need to be applied to:
@@ -40,9 +38,16 @@ rice is life {{{
 }}}
 ---
 keyboard shortcuts {{{
-    - ctrl+t:  open/switch to empty server tab
-    - ctrl+f4: close current tab
-    - ctrl+f:  search textBuffer
+    - ctrl+t:     open/switch to empty server tab
+    - ctrl+f4:    close current tab
+    - ctrl+f:     search textBuffer
+    - ctrl+enter: insert \n
+    - ctrl+k:     insert \x03
+    - ctrl+b:     insert bold
+    - ctrl+i:     insert italic
+    - ctrl+u:     insert underline
+    - ctrl+s:     insert strikethrough
+    - ctrl+0:     insert fmtReset
 }}}
 ---
 tabwidget {{{
@@ -451,6 +456,9 @@ bikeshedding {{{
     nay:
         - walk is hella comfy (it just worksة)
         - sunken cost fallacy (I've spent a lot of time getting stuff to work)
+        - batteries included
+            - screenshots
+            - autourl detect
         
  - irc bouncer (separate project)
      - use public/private key pairs for authentication or something
