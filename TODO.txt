@@ -47,7 +47,35 @@ so rip the dream:
 }}}
 ---
 BUGS(panic at the disco): {{{
+ - and again, shorter traceback this time
+   - each time richedit stops drawing correctly, only replacing the last line
+   - tabs in the widget stop drawing but the panes update (click or ctrl+tab
+     still work)
+   - tab widget "crashes" (disappears)
+   - then this:
+   panic: invalid hdc
 
+Stack:
+
+1: running [locked]
+    debug   stack.go:24            Stack(0xc0422932c0, 0xc0422932e0, 0x4468d8)
+    walk    error.go:81            newErr(string(0x89fd3a, len=11), 0x2, 0x9e0f22)
+    walk    error.go:85            newError(string(0x89fd3a, len=11), 0x18, 0xc042293350)
+    walk    canvas.go:109          newCanvasFromHDC(HDC(0x0), 0x9e0f22, 0xc0422933c0)
+    walk    container.go:304       (*ContainerBase).doPaint(*ContainerBase(#4), 0x0, 0x0)
+    walk    container.go:378       (*ContainerBase).WndProc(*ContainerBase(#4), HWND(0x9e0f22), 0, uintptr(0x0))
+    walk    window.go:1492         defaultWndProc(HWND(0x9e0f22), 0, uintptr(0x0))
+    syscall syscall_windows.go:171 Syscall(uintptr(#2), uintptr(#1), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(#1), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(#3), 0x0)
+    main    main.go:308            main()
+1: running [locked]
+    walk    container.go:379       (*ContainerBase).WndProc(#4, 0x9e0f22, 0xf, 0, 0, 0)
+    walk    window.go:1492         defaultWndProc(HWND(0x9e0f22), 0, uintptr(0x0))
+    syscall syscall_windows.go:171 Syscall(uintptr(#2), uintptr(#1), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(#1), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(#3), 0x0)
+    main    main.go:308            main()
  - wat
 panic: invalid hdc
 
