@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"strconv"
+	"unsafe"
 
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -58,7 +59,7 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 		t.tabPage.SetTitle(t.Title())
 		t.topicInput.SetText(chanState.topic)
 		if t.HasFocus() {
-			statusBar.SetText(t.statusText)
+			// statusBar.SetText(t.statusText)
 		}
 	})
 
@@ -215,7 +216,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		// remove borders
 		win.SetWindowLong(t.topicInput.Handle(), win.GWL_EXSTYLE, 0)
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
-		win.SetWindowLong(t.nickListBox.Handle(), win.GWL_STYLE, win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.WS_HSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY)
+		win.SetWindowLong(t.nickListBox.Handle(), win.GWL_STYLE, win.WS_TABSTOP|win.WS_VISIBLE|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY)
 
 		{
 			index := servState.tab.Index()
@@ -236,6 +237,43 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
+
+		// richedit bg
+		bg := globalBackgroundColor
+		bgColorref := uint32(bg&0xff<<16 | bg&0xff00 | bg&0xff0000>>16)
+		t.textBuffer.SendMessage(win.WM_USER+67, 0, uintptr(bgColorref))
+
+		// richedit fg
+		fg := globalForegroundColor
+		fgColorref := fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16
+		charfmt := _charformat{
+			dwMask:      CFM_COLOR,
+			crTextColor: uint32(fgColorref),
+		}
+		charfmt.cbSize = uint32(unsafe.Sizeof(charfmt))
+		t.textBuffer.SendMessage(EM_SETCHARFORMAT, 0, uintptr(unsafe.Pointer(&charfmt)))
+
+		// lineedit bg
+		r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
+		brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+		checkErr(err)
+		// defer brush.Dispose()
+		t.textInput.SetBackground(brush)
+		t.topicInput.SetBackground(brush)
+
+		// lineedit fg
+		{
+			r, g, b := byte((fg>>16)&0xff), byte((fg>>8)&0xff), byte(fg&0xff)
+			t.textInput.SetTextColor(walk.RGB(r, g, b))
+			t.topicInput.SetTextColor(walk.RGB(r, g, b))
+		}
+
+		// listbox bg
+		t.nickListBox.SetBackground(brush)
+
+		// tabpage
+		t.tabPage.SetBackground(brush)
+		win.SetTextColor(win.GetDC(t.tabPage.Handle()), win.COLORREF(fg))
 	})
 	chanState.tab = t
 	servState.channels[chanState.channel] = chanState

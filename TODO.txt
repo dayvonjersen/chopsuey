@@ -3,10 +3,10 @@ rice is life {{{
  - themes
    - background/foreground color need to be applied to:
      - nicklistbox bg[ ] fg[ ]
-     - status bar  bg[x] fg[ ]
-     - richedit    bg[x] fg[ ]
+     - status bar  bg[x] fg[x]
+     - richedit    bg[x] fg[x]
      - tabs        bg[ ] fg[ ]
-     - linedit     bg[ ] fg[ ]
+     - linedit     bg[x] fg[x]
      - pushbutton  bg[ ] fg[ ]
      - tableview   bg[ ] fg[ ]
    - need abstraction for above in order to load new palette whenever
@@ -522,8 +522,11 @@ https://www.dwheeler.com/essays/open-files-urls.html
     get tab key messages in windows:
 http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
 
-    numerical values for Windows constants e.g. LONG DWORD LPSTR etc:
+    numerical values for (some) Windows constants
 https://doc.pcsoft.fr/en-US/?6510001
+    windows messages:
+https://wiki.winehq.org/List_Of_Windows_Messages
+    typedefs for LONG DWORD LPSTR etc:
 https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
 
     window styles

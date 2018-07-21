@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/fluffle/goirc/logging"
 	"github.com/lxn/walk"
@@ -61,9 +63,49 @@ var (
 
 type myMainWindow struct {
 	*walk.MainWindow
+	textColor, bgColor walk.Color
+}
+
+// hidden interfaces in walk/window.go:1596
+func (mw *myMainWindow) SetTextColor(tc walk.Color) {
+	mw.textColor = tc
+}
+func (mw *myMainWindow) TextColor() walk.Color {
+	return mw.textColor
+}
+func (mw *myMainWindow) SetBackgroundColor(bg walk.Color) {
+	mw.bgColor = bg
+}
+func (mw *myMainWindow) Color() walk.Color {
+	return mw.bgColor
+}
+
+var origWndProcPtr uintptr
+
+func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	log.Printf("msg: %v wParam: %v lParam: %v", msg, wParam, lParam)
+	if msg == win.WM_DRAWITEM {
+		log.Println("draw item?")
+	}
+	// win.SetTextColor(win.GetDC(hwnd), win.COLORREF(0xffff00))
+	return win.CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
 }
 
 func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	if msg == win.WM_DRAWITEM {
+		log.Printf("got WM_DRAWITEM: wParam: %v lParam: %v", wParam, lParam)
+		//case WM_DRAWITEM:
+		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
+		log.Printf("lParam is really %#v", item)
+		win.SetTextColor(item.HDC, win.COLORREF(0xffff00))
+		textptr := (*uint16)(unsafe.Pointer(item.ItemData))
+		text := win.UTF16PtrToString(textptr)
+		log.Printf("text: %v", text)
+		win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, int32(len(text)))
+
+		return win.TRUE
+	}
+
 	if msg == win.WM_SYSCOMMAND {
 		// minimize/close to tray
 		if wParam == win.SC_MINIMIZE || wParam == win.SC_CLOSE {
@@ -123,7 +165,8 @@ func main() {
 	//
 	// ｂ ｏ ｎ ｅ ｌ ｅ ｓ ｓ
 	//
-	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_STATICEDGE) // (win.WS_OVERLAPPEDWINDOW&(^win.WS_THICKFRAME))&(^win.WS_BORDER))
+	//win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|((win.WS_OVERLAPPEDWINDOW&(^win.WS_THICKFRAME))&(^win.WS_BORDER)))
+	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_STATICEDGE)
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	var err error
@@ -162,31 +205,49 @@ func main() {
 		action.SetText("hello world")
 		systray.ContextMenu().Actions().Add(action)
 	*/
-	font, err := walk.NewFont("ProFontWindows", 9, 0)
+	font, err := walk.NewFont("Hack", 9, 0)
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
-	/*
-		userTheme, err := loadPaletteFromFile("zenburn")
-		checkErr(err)
-		loadColorPalette(userTheme[:16])
-		bg := userTheme[16]
-		r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
-		brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
-		checkErr(err)
-		defer brush.Dispose()
-		mw.SetBackground(brush)
-		tabWidget.SetBackground(brush)
-		sb := mw.StatusBar()
-		sb.SetBackground(brush)
-		fg := userTheme[17]
-		colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
-		win.SetTextColor(win.GetDC(mw.Handle()), colorref)
-		win.SetTextColor(win.GetDC(tabWidget.Handle()), colorref)
-		win.SetTextColor(win.GetDC(sb.Handle()), colorref)
 
-		globalBackgroundColor = bg
-		globalForegroundColor = fg
-	*/
+	// load in
+	userTheme, err := loadPaletteFromFile("cobalt2")
+	checkErr(err)
+	loadColorPalette(userTheme[:16])
+	bg := userTheme[16]
+	fg := userTheme[17]
+	globalBackgroundColor = bg
+	globalForegroundColor = fg
+
+	// widget bg
+	r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
+	mw.SetBackgroundColor(walk.RGB(r, g, b))
+
+	brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+	checkErr(err)
+	defer brush.Dispose()
+	mw.SetBackground(brush)
+	tabWidget.SetBackground(brush)
+	sb := mw.StatusBar()
+	sb.SetBackground(brush)
+
+	text, err := syscall.UTF16PtrFromString("this is a test")
+	checkErr(err)
+	sb.SendMessage(win.SB_SETTEXT, win.SBT_OWNERDRAW, uintptr(unsafe.Pointer(text)))
+
+	// origWndProcPtr = win.SetWindowLongPtr(sb.Handle(), win.GWLP_WNDPROC, syscall.NewCallback(wndProc))
+
+	{
+		r, g, b := byte((fg>>16)&0xff), byte((fg>>8)&0xff), byte(fg&0xff)
+		mw.SetTextColor(walk.RGB(r, g, b))
+	}
+	// widget fg (not working...)
+
+	// colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
+	colorref := win.COLORREF(0x00ffff)
+	win.SetTextColor(win.GetDC(mw.Handle()), colorref)
+	win.SetTextColor(win.GetDC(tabWidget.Parent().Handle()), colorref)
+	win.SetTextColor(win.GetDC(sb.Handle()), colorref)
+
 	tabWidget.SetPersistent(false)
 
 	// NOTE(tso): contrary to what the name of this event publisher implies
@@ -251,56 +312,57 @@ func main() {
 	if err != nil {
 		log.Println("error parsing config.json", err)
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
-		statusBar.SetText("error parsing config.json")
-		/*}
-
-		// XXX TEMPORARY SECRETARY
-		for i := 0; i < 1; i++ {
-			emptyTab := NewServerTab(&serverConnection{}, &serverState{
-				networkName: "tab " + strconv.Itoa(i),
-				user:        &userState{nick: "tso"},
-			})
-
-			mw.WindowBase.Synchronize(func() {
-				paletteCmd(&commandContext{tab: emptyTab})
-			})
-		}
-		*/
-
-	} else {
-		for _, cfg := range clientState.cfg.AutoConnect {
-			servState := &serverState{
-				connState:   CONNECTION_EMPTY,
-				hostname:    cfg.Host,
-				port:        cfg.Port,
-				ssl:         cfg.Ssl,
-				networkName: serverAddr(cfg.Host, cfg.Port),
-				user: &userState{
-					nick: cfg.Nick,
-				},
-				channels: map[string]*channelState{},
-				privmsgs: map[string]*privmsgState{},
-			}
-			var servConn *serverConnection
-			servConn = NewServerConnection(servState,
-				func(nickservPASSWORD string, autojoin []string) func() {
-					return func() {
-						if nickservPASSWORD != "" {
-							servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
-						}
-						for _, channel := range autojoin {
-							servConn.conn.Join(channel)
-						}
-					}
-				}(cfg.NickServPASSWORD, cfg.AutoJoin),
-			)
-			clientState.mu.Lock()
-			servView := NewServerTab(servConn, servState)
-			clientState.mu.Unlock()
-			servState.tab = servView
-			servConn.Connect(servState)
-		}
+		// statusBar.SetText("error parsing config.json")
 	}
+
+	// XXX TEMPORARY SECRETARY
+	for i := 0; i < 1; i++ {
+		emptyTab := NewServerTab(&serverConnection{}, &serverState{
+			networkName: "tab " + strconv.Itoa(i),
+			user:        &userState{nick: "tso"},
+		})
+
+		mw.WindowBase.Synchronize(func() {
+			paletteCmd(&commandContext{tab: emptyTab})
+		})
+	}
+	/*
+
+		} else {
+			for _, cfg := range clientState.cfg.AutoConnect {
+				servState := &serverState{
+					connState:   CONNECTION_EMPTY,
+					hostname:    cfg.Host,
+					port:        cfg.Port,
+					ssl:         cfg.Ssl,
+					networkName: serverAddr(cfg.Host, cfg.Port),
+					user: &userState{
+						nick: cfg.Nick,
+					},
+					channels: map[string]*channelState{},
+					privmsgs: map[string]*privmsgState{},
+				}
+				var servConn *serverConnection
+				servConn = NewServerConnection(servState,
+					func(nickservPASSWORD string, autojoin []string) func() {
+						return func() {
+							if nickservPASSWORD != "" {
+								servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
+							}
+							for _, channel := range autojoin {
+								servConn.conn.Join(channel)
+							}
+						}
+					}(cfg.NickServPASSWORD, cfg.AutoJoin),
+				)
+				clientState.mu.Lock()
+				servView := NewServerTab(servConn, servState)
+				clientState.mu.Unlock()
+				servState.tab = servView
+				servConn.Connect(servState)
+			}
+		}
+	*/
 
 	mw.Run()
 }

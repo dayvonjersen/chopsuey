@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"unsafe"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
@@ -23,7 +24,7 @@ func (t *tabServer) Update(servState *serverState) {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		if t.HasFocus() {
-			statusBar.SetText(t.statusText)
+			// statusBar.SetText(t.statusText)
 		}
 	})
 
@@ -95,17 +96,34 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		tabWidget.SaveState()
 		t.Focus()
 
+		// richedit bg
 		bg := globalBackgroundColor
 		bgColorref := uint32(bg&0xff<<16 | bg&0xff00 | bg&0xff0000>>16)
 		t.textBuffer.SendMessage(win.WM_USER+67, 0, uintptr(bgColorref))
-		/*		brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
-				checkErr(err)
-				//defer brush.Dispose()
-				mw.SetBackground(brush)
-				fg := globalForegroundColor
-				colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
-				win.SetTextColor(win.GetDC(re.Handle()), colorref)
-		*/
+
+		// richedit fg
+		fg := globalForegroundColor
+		fgColorref := fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16
+		charfmt := _charformat{
+			dwMask:      CFM_COLOR,
+			crTextColor: uint32(fgColorref),
+		}
+		charfmt.cbSize = uint32(unsafe.Sizeof(charfmt))
+		t.textBuffer.SendMessage(EM_SETCHARFORMAT, 0, uintptr(unsafe.Pointer(&charfmt)))
+
+		// lineedit bg
+		r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
+		brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+		checkErr(err)
+		// defer brush.Dispose()
+		t.textInput.SetBackground(brush)
+
+		// lineedit fg
+		{
+			r, g, b := byte((fg>>16)&0xff), byte((fg>>8)&0xff), byte(fg&0xff)
+			t.textInput.SetTextColor(walk.RGB(r, g, b))
+		}
+
 	})
 	return t
 }
