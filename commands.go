@@ -14,6 +14,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
 
@@ -90,9 +91,6 @@ var (
 				"/register mycommand cool_script.pl\nmakes\n" +
 				"/mycommand hey guys\nsynonymous with\n/script cool_script.pl hey guys"},
 		"unregister": clientCommandDoc{"/unregister [alias]", "unalias a command registered with /register"},
-
-		// debugging
-		"raw": clientCommandDoc{"/raw [irc command]", "send a raw command to server e.g. JOIN #channel"},
 	}
 	scriptAliases = map[string]string{}
 )
@@ -142,7 +140,8 @@ func init() {
 		"register":   registerCmd,
 		"unregister": unregisterCmd,
 
-		// debugging
+		// developer commands do not use
+		"font":       fontCmd,
 		"palette":    paletteCmd,
 		"raw":        rawCmd,
 		"screenshot": screenshotCmd,
@@ -785,6 +784,19 @@ func paletteCmd(ctx *commandContext, args ...string) {
 	privateMessage(ctx.tab, "user456", "hello world")
 	actionMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "owo", "nuzzles")
 	privateMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "anon", "here's your (You)")
+}
+
+func fontCmd(ctx *commandContext, args ...string) {
+	if len(args) < 2 {
+		return
+	}
+	face := strings.Join(args[:len(args)-1], " ")
+	size, _ := strconv.Atoi(args[len(args)-1])
+
+	font, err := walk.NewFont(face, size, 0)
+	checkErr(err)
+
+	mw.WindowBase.SetFont(font)
 }
 
 func rawCmd(ctx *commandContext, args ...string) {
