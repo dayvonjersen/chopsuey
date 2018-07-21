@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -18,7 +17,7 @@ import (
 	"github.com/lxn/win"
 )
 
-var setLayeredWindowAttributes uintptr
+var setLayeredWindowAttributes, showScrollBar uintptr
 
 const (
 	LWA_COLORKEY = 1
@@ -28,6 +27,15 @@ const (
 func init() {
 	libuser32 := win.MustLoadLibrary("user32.dll")
 	setLayeredWindowAttributes = win.MustGetProcAddress(libuser32, "SetLayeredWindowAttributes")
+	showScrollBar = win.MustGetProcAddress(libuser32, "ShowScrollBar")
+}
+
+func ShowScrollBar(hwnd win.HWND, wBar int, bShow int) {
+	syscall.Syscall(showScrollBar, 3,
+		uintptr(hwnd),
+		uintptr(wBar),
+		uintptr(bShow),
+	)
 }
 
 func SetLayeredWindowAttributes(hwnd win.HWND, crKey, bAlpha, dwFlags int32) bool {
@@ -83,27 +91,61 @@ func (mw *myMainWindow) Color() walk.Color {
 var origWndProcPtr uintptr
 
 func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	log.Printf("msg: %v wParam: %v lParam: %v", msg, wParam, lParam)
-	if msg == win.WM_DRAWITEM {
-		log.Println("draw item?")
+	//log.Printf("msg: %v wParam: %v lParam: %v", msg, wParam, lParam)
+	if msg == win.WM_CTLCOLORDLG {
+		log.Printf("got WM_COLORDLG")
 	}
-	// win.SetTextColor(win.GetDC(hwnd), win.COLORREF(0xffff00))
+	if msg == win.WM_CTLCOLOREDIT {
+		log.Printf("got WM_COLOREDIT")
+	}
+	if msg == win.WM_CTLCOLORLISTBOX {
+		log.Printf("got WM_COLORLISTBOX")
+		hdc := win.HDC(wParam)
+		fg := globalForegroundColor
+		colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
+		win.SetTextColor(hdc, colorref)
+		bg := globalBackgroundColor
+		colorref = win.COLORREF(bg&0xff<<16 | bg&0xff00 | bg&0xff0000>>16)
+		win.SetBkColor(hdc, colorref)
+		return win.TRUE
+	}
+	if msg == win.WM_CTLCOLORMSGBOX {
+		log.Printf("got WM_COLORMSGBOX")
+	}
+	if msg == win.WM_CTLCOLORSCROLLBAR {
+		log.Printf("got WM_COLORSCROLLBAR")
+	}
+	if msg == win.WM_CTLCOLORSTATIC {
+		log.Printf("got WM_COLORSTATIC")
+	}
+	if msg == win.WM_CTLCOLORBTN {
+		log.Printf("got WM_CTLCOLORBTN")
+	}
+	if msg == win.WM_DRAWITEM {
+		log.Printf("got WM_DRAWITEM: wParam: %v", wParam)
+		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
+		log.Printf("lParam: %#v", item)
+		return win.TRUE
+	}
+
 	return win.CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
 }
 
 func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if msg == win.WM_DRAWITEM {
-		log.Printf("got WM_DRAWITEM: wParam: %v lParam: %v", wParam, lParam)
-		//case WM_DRAWITEM:
+		log.Printf("got WM_DRAWITEM: wParam: %v", wParam)
 		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		log.Printf("lParam is really %#v", item)
-		win.SetTextColor(item.HDC, win.COLORREF(0xffff00))
-		textptr := (*uint16)(unsafe.Pointer(item.ItemData))
-		text := win.UTF16PtrToString(textptr)
-		log.Printf("text: %v", text)
-		win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, int32(len(text)))
-
-		return win.TRUE
+		log.Printf("lParam: %#v", item)
+		if item.HwndItem == mw.StatusBar().Handle() {
+			fg := globalForegroundColor
+			colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
+			win.SetTextColor(item.HDC, colorref)
+			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
+			text := win.UTF16PtrToString(textptr)
+			log.Printf("text: %v", text)
+			win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, int32(len(text)))
+			return win.TRUE
+		}
 	}
 
 	if msg == win.WM_SYSCOMMAND {
@@ -210,7 +252,7 @@ func main() {
 	mw.WindowBase.SetFont(font)
 
 	// load in
-	userTheme, err := loadPaletteFromFile("cobalt2")
+	userTheme, err := loadPaletteFromFile("tomorrow-night-eighties")
 	checkErr(err)
 	loadColorPalette(userTheme[:16])
 	bg := userTheme[16]
@@ -313,56 +355,56 @@ func main() {
 		log.Println("error parsing config.json", err)
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
 		// statusBar.SetText("error parsing config.json")
-	}
+		/*}
 
-	// XXX TEMPORARY SECRETARY
-	for i := 0; i < 1; i++ {
-		emptyTab := NewServerTab(&serverConnection{}, &serverState{
-			networkName: "tab " + strconv.Itoa(i),
-			user:        &userState{nick: "tso"},
-		})
+		// XXX TEMPORARY SECRETARY
+		for i := 0; i < 1; i++ {
+			emptyTab := NewServerTab(&serverConnection{}, &serverState{
+				networkName: "tab " + strconv.Itoa(i),
+				user:        &userState{nick: "tso"},
+			})
 
-		mw.WindowBase.Synchronize(func() {
-			paletteCmd(&commandContext{tab: emptyTab})
-		})
-	}
-	/*
-
-		} else {
-			for _, cfg := range clientState.cfg.AutoConnect {
-				servState := &serverState{
-					connState:   CONNECTION_EMPTY,
-					hostname:    cfg.Host,
-					port:        cfg.Port,
-					ssl:         cfg.Ssl,
-					networkName: serverAddr(cfg.Host, cfg.Port),
-					user: &userState{
-						nick: cfg.Nick,
-					},
-					channels: map[string]*channelState{},
-					privmsgs: map[string]*privmsgState{},
-				}
-				var servConn *serverConnection
-				servConn = NewServerConnection(servState,
-					func(nickservPASSWORD string, autojoin []string) func() {
-						return func() {
-							if nickservPASSWORD != "" {
-								servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
-							}
-							for _, channel := range autojoin {
-								servConn.conn.Join(channel)
-							}
-						}
-					}(cfg.NickServPASSWORD, cfg.AutoJoin),
-				)
-				clientState.mu.Lock()
-				servView := NewServerTab(servConn, servState)
-				clientState.mu.Unlock()
-				servState.tab = servView
-				servConn.Connect(servState)
-			}
+			mw.WindowBase.Synchronize(func() {
+				paletteCmd(&commandContext{tab: emptyTab})
+			})
 		}
-	*/
+		*/
+
+	} else {
+		for _, cfg := range clientState.cfg.AutoConnect {
+			servState := &serverState{
+				connState:   CONNECTION_EMPTY,
+				hostname:    cfg.Host,
+				port:        cfg.Port,
+				ssl:         cfg.Ssl,
+				networkName: serverAddr(cfg.Host, cfg.Port),
+				user: &userState{
+					nick: cfg.Nick,
+				},
+				channels: map[string]*channelState{},
+				privmsgs: map[string]*privmsgState{},
+			}
+			var servConn *serverConnection
+			servConn = NewServerConnection(servState,
+				func(nickservPASSWORD string, autojoin []string) func() {
+					return func() {
+						if nickservPASSWORD != "" {
+							servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
+						}
+						for _, channel := range autojoin {
+							servConn.conn.Join(channel)
+						}
+					}
+				}(cfg.NickServPASSWORD, cfg.AutoJoin),
+			)
+			clientState.mu.Lock()
+			servView := NewServerTab(servConn, servState)
+			clientState.mu.Unlock()
+			servState.tab = servView
+			servConn.Connect(servState)
+		}
+	}
+	/**/
 
 	mw.Run()
 }

@@ -2,13 +2,13 @@ rice is life {{{
  
  - themes
    - background/foreground color need to be applied to:
-     - nicklistbox bg[ ] fg[ ]
+     - nicklistbox bg[x] fg[x]
      - status bar  bg[x] fg[x]
      - richedit    bg[x] fg[x]
      - tabs        bg[ ] fg[ ]
      - linedit     bg[x] fg[x]
      - pushbutton  bg[ ] fg[ ]
-     - tableview   bg[ ] fg[ ]
+     - tableview   bg[ ] fg[ ] 
    - need abstraction for above in order to load new palette whenever
    - selectable font (oh god)
 
@@ -489,7 +489,7 @@ bikeshedding {{{
 
 }}}
 ░░░
-RESOURCES: {{{
+RESOURCES/CITATIONS: {{{
 
 IRC:
 http://modern.ircdocs.horse/
@@ -540,6 +540,9 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ms633540(v=vs.85).aspx
 
     might be what we're looking for:
 https://docs.microsoft.com/en-us/windows/desktop/api/dwmapi/nf-dwmapi-dwmextendframeintoclientarea
+
+    ownerdraw status bar text (lifesaver):
+http://microsoft.public.win32.programmer.ui.narkive.com/dlstN3N0/change-color-of-text-in-status-bar
 
 }}}
 ▒▒▒

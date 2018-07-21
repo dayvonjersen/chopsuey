@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"strconv"
+	"syscall"
 	"unsafe"
 
 	"github.com/lxn/walk"
@@ -82,9 +83,15 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 	}
 
 	mw.WindowBase.Synchronize(func() {
+		bg := globalBackgroundColor
+		r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
+		brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+		checkErr(err)
+		t.nickListBox.SetBackground(brush)
 		t.nickListBoxModel.Items = nicks
 		t.nickListBoxModel.PublishItemsReset()
 		t.nickListToggle.SetText(text)
+		ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 	})
 }
 
@@ -104,6 +111,8 @@ func (t *tabChannel) Resize() {
 
 		t.nickListBox.SetSize(nlSize)
 		t.textBuffer.SetSize(tbSize)
+
+		ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 	})
 }
 
@@ -115,7 +124,6 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 
 	chanState.nickList = newNickList()
 	t.nickListToggle = &walk.PushButton{}
-	t.nickListBox = &walk.ListBox{}
 	t.nickListBoxModel = &listBoxModel{}
 
 	t.topicInput = &walk.LineEdit{}
@@ -218,6 +226,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
 		win.SetWindowLong(t.nickListBox.Handle(), win.GWL_STYLE, win.WS_TABSTOP|win.WS_VISIBLE|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY)
 
+		origWndProcPtr = win.SetWindowLongPtr(t.nickListBox.Parent().Handle(), win.GWLP_WNDPROC, syscall.NewCallback(wndProc))
 		{
 			index := servState.tab.Index()
 			if servState.channelList != nil {
