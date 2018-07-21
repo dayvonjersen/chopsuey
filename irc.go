@@ -148,6 +148,13 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		switch l.Cmd {
 		case "324":
 			msg = "Mode for " + l.Args[1] + " is " + l.Args[2]
+		case "366":
+			return
+		case "333":
+			channel = l.Args[1]
+			who := l.Args[2]
+			at, _ := strconv.Atoi(l.Args[3])
+			msg = fmt.Sprintf("%s topic for %s set by %s at %s", now(), channel, who, time.Unix(int64(at), 0))
 		default:
 			msg = color("UNHANDLED CODE("+l.Cmd+")", White, Purple) + ": " + msg
 		}
