@@ -42,62 +42,15 @@ type myMainWindow struct {
 	textColor, bgColor walk.Color
 }
 
-var origWndProcPtr uintptr
-
-func wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	//log.Printf("msg: %v wParam: %v lParam: %v", msg, wParam, lParam)
-	if msg == win.WM_CTLCOLORDLG {
-		log.Printf("got WM_COLORDLG")
-	}
-	if msg == win.WM_CTLCOLOREDIT {
-		log.Printf("got WM_COLOREDIT")
-	}
-	if msg == win.WM_CTLCOLORLISTBOX {
-		log.Printf("got WM_COLORLISTBOX")
-		hdc := win.HDC(wParam)
-		fg := globalForegroundColor
-		colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
-		win.SetTextColor(hdc, colorref)
-		bg := globalBackgroundColor
-		colorref = win.COLORREF(bg&0xff<<16 | bg&0xff00 | bg&0xff0000>>16)
-		win.SetBkColor(hdc, colorref)
-		return win.TRUE
-	}
-	if msg == win.WM_CTLCOLORMSGBOX {
-		log.Printf("got WM_COLORMSGBOX")
-	}
-	if msg == win.WM_CTLCOLORSCROLLBAR {
-		log.Printf("got WM_COLORSCROLLBAR")
-	}
-	if msg == win.WM_CTLCOLORSTATIC {
-		log.Printf("got WM_COLORSTATIC")
-	}
-	if msg == win.WM_CTLCOLORBTN {
-		log.Printf("got WM_CTLCOLORBTN")
-	}
-	if msg == win.WM_DRAWITEM {
-		log.Printf("got WM_DRAWITEM: wParam: %v", wParam)
-		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		log.Printf("lParam: %#v", item)
-		return win.TRUE
-	}
-
-	return win.CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
-}
-
 func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if msg == win.WM_DRAWITEM {
-		log.Printf("got WM_DRAWITEM: wParam: %v", wParam)
+		// use foreground color in statusBar
 		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		log.Printf("lParam: %#v", item)
 		if item.HwndItem == mw.StatusBar().Handle() {
-			fg := globalForegroundColor
-			colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
-			win.SetTextColor(item.HDC, colorref)
+			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
 			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
-			text := win.UTF16PtrToString(textptr)
-			log.Printf("text: %v", text)
-			win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, int32(len(text)))
+			textlen := int32(len(win.UTF16PtrToString(textptr)))
+			win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, textlen)
 			return win.TRUE
 		}
 	}
@@ -175,6 +128,7 @@ func main() {
 	var err error
 	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
 	checkErr(err)
+	tabWidget.SetPersistent(false)
 
 	mw.Children().Add(tabWidget)
 
@@ -212,28 +166,10 @@ func main() {
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 
-	// load in
-	userTheme, err := loadPaletteFromFile("tomorrow-night-eighties")
-	checkErr(err)
-	loadColorPalette(userTheme[:16])
-	bg := userTheme[16]
-	fg := userTheme[17]
-	globalBackgroundColor = bg
-	globalForegroundColor = fg
-
-	// widget bg
-	r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
-
-	brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
-	checkErr(err)
-	defer brush.Dispose()
-	mw.SetBackground(brush)
-	tabWidget.SetBackground(brush)
-	sb := mw.StatusBar()
-	sb.SetBackground(brush)
-
-	tabWidget.SetPersistent(false)
-
+	go func() {
+		<-time.After(time.Second * 5)
+		applyTheme("cobalt2")
+	}()
 	// NOTE(tso): contrary to what the name of this event publisher implies
 	//            CurrentIndexChanged() fires every time you Insert() or Remove()
 	//            a TabPage regardless of whether the CurrentIndex() actually
