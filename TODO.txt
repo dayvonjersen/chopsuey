@@ -156,10 +156,6 @@ BUGS(uncategorized): {{{
  - probably shouldn't send any JOINs until we get replies from NickServ (why
    is freenode so laggy???)
 
- - click to change tab from channelList causes crash
-   - ctrl+tab works just fine
-   - didn't try closing it
-
  - WM_VSCROLL hack fires even when textBuffer has keyboard focus
    OR call to SetTextSelection() in AppendText() is doing it
    either way you can't scroll in a super active channel which is the only
