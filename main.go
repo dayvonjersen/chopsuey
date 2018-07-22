@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"runtime"
 	"sync"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -16,37 +15,6 @@ import (
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 )
-
-var setLayeredWindowAttributes, showScrollBar uintptr
-
-const (
-	LWA_COLORKEY = 1
-	LWA_ALPHA    = 2
-)
-
-func init() {
-	libuser32 := win.MustLoadLibrary("user32.dll")
-	setLayeredWindowAttributes = win.MustGetProcAddress(libuser32, "SetLayeredWindowAttributes")
-	showScrollBar = win.MustGetProcAddress(libuser32, "ShowScrollBar")
-}
-
-func ShowScrollBar(hwnd win.HWND, wBar int, bShow int) {
-	syscall.Syscall(showScrollBar, 3,
-		uintptr(hwnd),
-		uintptr(wBar),
-		uintptr(bShow),
-	)
-}
-
-func SetLayeredWindowAttributes(hwnd win.HWND, crKey, bAlpha, dwFlags int32) bool {
-	ret, _, _ := syscall.Syscall6(setLayeredWindowAttributes, 4,
-		uintptr(hwnd),
-		uintptr(crKey),
-		uintptr(bAlpha),
-		uintptr(dwFlags),
-		0, 0)
-	return ret != 0
-}
 
 const (
 	CHATLOG_DIR     = "./chatlogs/"
@@ -72,20 +40,6 @@ var (
 type myMainWindow struct {
 	*walk.MainWindow
 	textColor, bgColor walk.Color
-}
-
-// hidden interfaces in walk/window.go:1596
-func (mw *myMainWindow) SetTextColor(tc walk.Color) {
-	mw.textColor = tc
-}
-func (mw *myMainWindow) TextColor() walk.Color {
-	return mw.textColor
-}
-func (mw *myMainWindow) SetBackgroundColor(bg walk.Color) {
-	mw.bgColor = bg
-}
-func (mw *myMainWindow) Color() walk.Color {
-	return mw.bgColor
 }
 
 var origWndProcPtr uintptr
@@ -262,7 +216,6 @@ func main() {
 
 	// widget bg
 	r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
-	mw.SetBackgroundColor(walk.RGB(r, g, b))
 
 	brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
 	checkErr(err)
@@ -271,24 +224,6 @@ func main() {
 	tabWidget.SetBackground(brush)
 	sb := mw.StatusBar()
 	sb.SetBackground(brush)
-
-	text, err := syscall.UTF16PtrFromString("this is a test")
-	checkErr(err)
-	sb.SendMessage(win.SB_SETTEXT, win.SBT_OWNERDRAW, uintptr(unsafe.Pointer(text)))
-
-	// origWndProcPtr = win.SetWindowLongPtr(sb.Handle(), win.GWLP_WNDPROC, syscall.NewCallback(wndProc))
-
-	{
-		r, g, b := byte((fg>>16)&0xff), byte((fg>>8)&0xff), byte(fg&0xff)
-		mw.SetTextColor(walk.RGB(r, g, b))
-	}
-	// widget fg (not working...)
-
-	// colorref := win.COLORREF(fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16)
-	colorref := win.COLORREF(0x00ffff)
-	win.SetTextColor(win.GetDC(mw.Handle()), colorref)
-	win.SetTextColor(win.GetDC(tabWidget.Parent().Handle()), colorref)
-	win.SetTextColor(win.GetDC(sb.Handle()), colorref)
 
 	tabWidget.SetPersistent(false)
 
@@ -354,7 +289,7 @@ func main() {
 	if err != nil {
 		log.Println("error parsing config.json", err)
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
-		// statusBar.SetText("error parsing config.json")
+		SetStatusBarText("error parsing config.json")
 		/*}
 
 		// XXX TEMPORARY SECRETARY

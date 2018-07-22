@@ -24,7 +24,7 @@ func (t *tabServer) Update(servState *serverState) {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		if t.HasFocus() {
-			// statusBar.SetText(t.statusText)
+			SetStatusBarText(t.statusText)
 		}
 	})
 

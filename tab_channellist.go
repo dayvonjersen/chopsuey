@@ -50,14 +50,14 @@ func (t *tabChannelList) Title() string {
 func (t *tabChannelList) Focus() {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
-		// statusBar.SetText(t.statusText)
+		SetStatusBarText(t.statusText)
 	})
 }
 
 func (t *tabChannelList) Update(servState *serverState) {
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
-		// statusBar.SetText(t.statusText)
+		SetStatusBarText(t.statusText)
 	}
 
 	if servState.connState != CONNECTED {

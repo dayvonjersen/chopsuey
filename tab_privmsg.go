@@ -28,7 +28,7 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 		mw.WindowBase.Synchronize(func() {
 			t.tabPage.SetTitle(t.Title())
 			if t.HasFocus() {
-				// statusBar.SetText(t.statusText)
+				SetStatusBarText(t.statusText)
 			}
 		})
 	}

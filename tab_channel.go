@@ -60,7 +60,7 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 		t.tabPage.SetTitle(t.Title())
 		t.topicInput.SetText(chanState.topic)
 		if t.HasFocus() {
-			// statusBar.SetText(t.statusText)
+			SetStatusBarText(t.statusText)
 		}
 	})
 
