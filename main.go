@@ -166,10 +166,6 @@ func main() {
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 
-	go func() {
-		<-time.After(time.Second * 5)
-		applyTheme("cobalt2")
-	}()
 	// NOTE(tso): contrary to what the name of this event publisher implies
 	//            CurrentIndexChanged() fires every time you Insert() or Remove()
 	//            a TabPage regardless of whether the CurrentIndex() actually

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -347,11 +348,59 @@ func rgb2COLORREF(rgb int) win.COLORREF {
 	return win.COLORREF(rgb&0xff<<16 | rgb&0xff00 | rgb&0xff0000>>16)
 }
 
+func rgb2RGB(rgb int) walk.Color {
+	b, g, r := byte(rgb&0xff), byte((rgb>>8)&0xff), byte((rgb>>16)&0xff)
+	return walk.RGB(r, g, b)
+}
+
 func rgb2Brush(rgb int) *walk.SolidColorBrush {
-	r, g, b := byte(rgb&0xff), byte((rgb>>8)&0xff), byte((rgb>>16)&0xff)
-	brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
+	brush, err := walk.NewSolidColorBrush(rgb2RGB(rgb))
 	checkErr(err)
 	return brush
+}
+
+func applyThemeToRichEdit(re *RichEdit) {
+	re.SendMessage(win.WM_USER+67, 0, uintptr(rgb2COLORREF(globalBackgroundColor)))
+	charfmt := _charformat{
+		dwMask:      CFM_COLOR,
+		crTextColor: uint32(rgb2COLORREF(globalForegroundColor)),
+	}
+	charfmt.cbSize = uint32(unsafe.Sizeof(charfmt))
+	re.SendMessage(EM_SETCHARFORMAT, 0, uintptr(unsafe.Pointer(&charfmt)))
+}
+
+func applyThemeToLineEdit(le *walk.LineEdit, brush *walk.SolidColorBrush, rgb walk.Color) {
+	le.SetBackground(brush)
+	le.SetTextColor(rgb)
+}
+
+func applyThemeToTabPage(tp *walk.TabPage, brush *walk.SolidColorBrush) {
+	tp.SetBackground(brush)
+	win.SetTextColor(win.GetDC(tp.Handle()), rgb2COLORREF(globalForegroundColor))
+}
+
+func applyThemeToTab(t tab, brush *walk.SolidColorBrush, rgb walk.Color) {
+	switch t.(type) {
+	case *tabServer:
+		t := t.(*tabServer)
+		applyThemeToTabPage(t.tabPage, brush)
+		applyThemeToRichEdit(t.textBuffer)
+		applyThemeToLineEdit(&t.textInput.LineEdit, brush, rgb)
+	case *tabChannel:
+		t := t.(*tabChannel)
+		applyThemeToTabPage(t.tabPage, brush)
+		applyThemeToRichEdit(t.textBuffer)
+		applyThemeToLineEdit(&t.textInput.LineEdit, brush, rgb)
+		applyThemeToLineEdit(t.topicInput, brush, rgb)
+		t.nickListBox.SetBackground(brush)
+	case *tabPrivmsg:
+		t := t.(*tabPrivmsg)
+		applyThemeToTabPage(t.tabPage, brush)
+		applyThemeToRichEdit(t.textBuffer)
+		applyThemeToLineEdit(&t.textInput.LineEdit, brush, rgb)
+	default:
+		log.Printf("type %T does not support theming yet!!", t)
+	}
 }
 
 func applyTheme(filename string) {
@@ -363,50 +412,14 @@ func applyTheme(filename string) {
 	globalBackgroundColor = bg
 	globalForegroundColor = fg
 
-	// widget bg
 	brush := rgb2Brush(bg)
+	rgb := rgb2RGB(globalForegroundColor)
+
 	mw.SetBackground(brush)
 	tabWidget.SetBackground(brush)
 	mw.StatusBar().SetBackground(brush)
 
 	for _, t := range clientState.tabs {
-		switch t.(type) {
-		case *tabChannel:
-			t := t.(*tabChannel)
-			// richedit bg
-			t.textBuffer.SendMessage(win.WM_USER+67, 0, uintptr(rgb2COLORREF(globalBackgroundColor)))
-
-			// richedit fg
-			fg := globalForegroundColor
-			fgColorref := fg&0xff<<16 | fg&0xff00 | fg&0xff0000>>16
-			charfmt := _charformat{
-				dwMask:      CFM_COLOR,
-				crTextColor: uint32(fgColorref),
-			}
-			charfmt.cbSize = uint32(unsafe.Sizeof(charfmt))
-			t.textBuffer.SendMessage(EM_SETCHARFORMAT, 0, uintptr(unsafe.Pointer(&charfmt)))
-
-			// lineedit bg
-			r, g, b := byte((bg>>16)&0xff), byte((bg>>8)&0xff), byte(bg&0xff)
-			brush, err := walk.NewSolidColorBrush(walk.RGB(r, g, b))
-			checkErr(err)
-			// defer brush.Dispose()
-			t.textInput.SetBackground(brush)
-			t.topicInput.SetBackground(brush)
-
-			// lineedit fg
-			{
-				r, g, b := byte((fg>>16)&0xff), byte((fg>>8)&0xff), byte(fg&0xff)
-				t.textInput.SetTextColor(walk.RGB(r, g, b))
-				t.topicInput.SetTextColor(walk.RGB(r, g, b))
-			}
-
-			// listbox bg
-			t.nickListBox.SetBackground(brush)
-
-			// tabpage
-			t.tabPage.SetBackground(brush)
-			win.SetTextColor(win.GetDC(t.tabPage.Handle()), win.COLORREF(fg))
-		}
+		applyThemeToTab(t, brush, rgb)
 	}
 }

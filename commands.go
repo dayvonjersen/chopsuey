@@ -145,6 +145,7 @@ func init() {
 		"palette":    paletteCmd,
 		"raw":        rawCmd,
 		"screenshot": screenshotCmd,
+		"theme":      themeCmd,
 	}
 }
 
@@ -890,4 +891,8 @@ func screenshotCmd(ctx *commandContext, args ...string) {
 			}
 		}
 	}()
+}
+
+func themeCmd(ctx *commandContext, args ...string) {
+	applyTheme(args[0])
 }
