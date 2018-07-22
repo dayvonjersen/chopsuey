@@ -85,6 +85,13 @@ func main() {
 		exit()
 	}()
 
+	defer func() {
+		if x := recover(); x != nil {
+			printf(mw)
+			panic(x)
+		}
+	}()
+
 	logging.SetLogger(&debugLogger{})
 
 	mw = new(myMainWindow)

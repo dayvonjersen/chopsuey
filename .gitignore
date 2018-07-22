@@ -2,10 +2,10 @@
 *.exe~
 *.sw*
 *.txt
+.log/
 .stuff/
 chatlogs/
 screenshots/
 scripts/
 config.json
-debug.log
 version.go
