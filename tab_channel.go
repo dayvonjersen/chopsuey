@@ -169,15 +169,18 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 								t.nickListHidden = false
 								nlSize.Width = t.nickListBoxSize.Width
 								tbSize.Width -= nlSize.Width
+								t.nickListBox.SetVisible(true)
 							} else {
 								t.nickListHidden = true
 								t.nickListBoxSize = nlSize
 								nlSize.Width = 0
 								tbSize.Width += t.nickListBoxSize.Width
+								t.nickListBox.SetVisible(false)
 							}
 
 							t.nickListBox.SetSize(nlSize)
 							t.textBuffer.SetSize(tbSize)
+							ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 						})
 					},
 				},
@@ -210,6 +213,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 				},
 			},
 		}.Create(builder)
+		ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 
 		t.textBuffer.KeyPress().Attach(ctrlTab)
 		t.textInput = NewTextInput(t, &commandContext{
