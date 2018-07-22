@@ -81,6 +81,7 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// remove borders
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
 
+		applyThemeToTab(t)
 		{
 			index := servState.tab.Index()
 			if servState.channelList != nil {

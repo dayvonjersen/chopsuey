@@ -379,7 +379,9 @@ func applyThemeToTabPage(tp *walk.TabPage, brush *walk.SolidColorBrush) {
 	win.SetTextColor(win.GetDC(tp.Handle()), rgb2COLORREF(globalForegroundColor))
 }
 
-func applyThemeToTab(t tab, brush *walk.SolidColorBrush, rgb walk.Color) {
+func applyThemeToTab(t tab) {
+	brush := rgb2Brush(globalBackgroundColor)
+	rgb := rgb2RGB(globalForegroundColor)
 	switch t.(type) {
 	case *tabServer:
 		t := t.(*tabServer)
@@ -407,19 +409,16 @@ func applyTheme(filename string) {
 	userTheme, err := loadPaletteFromFile(filename)
 	checkErr(err)
 	loadColorPalette(userTheme[:16])
-	bg := userTheme[16]
-	fg := userTheme[17]
-	globalBackgroundColor = bg
-	globalForegroundColor = fg
+	globalBackgroundColor = userTheme[16]
+	globalForegroundColor = userTheme[17]
 
-	brush := rgb2Brush(bg)
-	rgb := rgb2RGB(globalForegroundColor)
+	brush := rgb2Brush(globalBackgroundColor)
 
 	mw.SetBackground(brush)
 	tabWidget.SetBackground(brush)
 	mw.StatusBar().SetBackground(brush)
 
 	for _, t := range clientState.tabs {
-		applyThemeToTab(t, brush, rgb)
+		applyThemeToTab(t)
 	}
 }

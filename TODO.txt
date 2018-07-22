@@ -2,15 +2,9 @@ rice is life {{{
  
  - themes
    - background/foreground color need to be applied to:
-     - nicklistbox bg[x] fg[x]
-     - status bar  bg[x] fg[x]
-     - richedit    bg[x] fg[x]
      - tabs        bg[ ] fg[ ]
-     - linedit     bg[x] fg[x]
      - pushbutton  bg[ ] fg[ ]
      - tableview   bg[ ] fg[ ] 
-   - need abstraction for above in order to load new palette whenever
-   - selectable font (oh god)
 
  - win98 status bar icons
 
