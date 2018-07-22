@@ -41,6 +41,31 @@ so rip the dream:
 }}}
 ---
 BUGS(panic at the disco): {{{
+ - IT KEEPS HAPPENING
+   panic: invalid hdc
+
+Stack:
+
+1: running [locked]
+    debug   stack.go:24            Stack(0xc0422132c0, 0xc0422132e0, 0x4468d8)
+    walk    error.go:81            newErr(string(0x8a14b0, len=11), 0x2, #1)
+    walk    error.go:85            newError(string(0x8a14b0, len=11), 0x18, 0xc042213350)
+    walk    canvas.go:109          newCanvasFromHDC(HDC(0x0), #1, 0xc0422133c0)
+    walk    container.go:304       (*ContainerBase).doPaint(*ContainerBase(#4), 0x0, 0x0)
+    walk    container.go:378       (*ContainerBase).WndProc(*ContainerBase(#4), HWND(#1), 0, uintptr(0x0))
+    walk    window.go:1492         defaultWndProc(HWND(#1), 0, uintptr(0x0))
+    syscall syscall_windows.go:171 Syscall(uintptr(#3), uintptr(#2), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(#2), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(#5), 0x0)
+    main    main.go:285            main()
+1: running [locked]
+    walk    container.go:379       (*ContainerBase).WndProc(#4, #1, 0xf, 0, 0, 0)
+    walk    window.go:1492         defaultWndProc(HWND(#1), 0, uintptr(0x0))
+    syscall syscall_windows.go:171 Syscall(uintptr(#3), uintptr(#2), uintptr(0x0), uintptr(0x0))
+    win     user32.go:2376         IsDialogMessage(HWND(#2), *MSG(0x0))
+    walk    form.go:397            (*FormBase).Run(*FormBase(#5), 0x0)
+    main    main.go:285            main()
+
  - and again, shorter traceback this time
    - each time richedit stops drawing correctly, only replacing the last line
    - tabs in the widget stop drawing but the panes update (click or ctrl+tab
