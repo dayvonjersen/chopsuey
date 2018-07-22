@@ -547,11 +547,7 @@ func helpCmd(ctx *commandContext, args ...string) {
 }
 
 func exitCmd(ctx *commandContext, args ...string) {
-	// FIXME(tso): cleaner shutdown
-	// TODO(tso): send QUIT to all active server connections
-	// TODO(tso): TRAP ^C (in main)
-	// TODO(tso): maybe move this because we need to quit from other places (menus... ctrl+q, maybe make alt+f4 work)
-	checkErr(mw.Close())
+	exit()
 }
 
 func sendCmd(ctx *commandContext, args ...string) {

@@ -113,6 +113,15 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	return mw.MainWindow.WndProc(hwnd, msg, wParam, lParam)
 }
 
+// show me the way-ay out
+func exit() {
+	// FIXME(tso): even cleaner shutdown
+	// TODO(tso): send QUIT to all active server connections
+	checkErr(mw.Close())
+	systray.Dispose()
+	os.Exit(1)
+}
+
 func main() {
 	runtime.LockOSThread()
 
@@ -120,9 +129,7 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		checkErr(mw.Close())
-		systray.Dispose()
-		os.Exit(1)
+		exit()
 	}()
 
 	logging.SetLogger(&debugLogger{})
