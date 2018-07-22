@@ -150,6 +150,8 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
 }}}
 ---
 BUGS(uncategorized): {{{
+ - tabcomplete should be case-insensitive you absolute knob
+
  - tabcomplete should show nicks in the nickqueue first maybe
 
  - show/hide nicklist still broken after window resize
