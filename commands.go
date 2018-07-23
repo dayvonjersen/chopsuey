@@ -416,8 +416,8 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 	pmState := ensurePmState(ctx.servConn, ctx.servState, nick)
 
 	ctx.servConn.conn.Privmsg(nick, msg)
-	privateMessage(pmState.tab, ctx.servState.user.nick, msg)
 	mw.WindowBase.Synchronize(func() {
+		privateMessage(pmState.tab, ctx.servState.user.nick, msg)
 		checkErr(tabWidget.SetCurrentIndex(pmState.tab.Index()))
 	})
 }
