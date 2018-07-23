@@ -49,13 +49,16 @@ func (t *tabChannelList) Title() string {
 func (t *tabChannelList) Focus() {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
+		SetStatusBarIcon(t.statusIcon)
 		SetStatusBarText(t.statusText)
 	})
 }
 
 func (t *tabChannelList) Update(servState *serverState) {
+	t.statusIcon = servState.tab.statusIcon
 	t.statusText = servState.tab.statusText
 	if t.HasFocus() {
+		SetStatusBarIcon(t.statusIcon)
 		SetStatusBarText(t.statusText)
 	}
 
@@ -74,6 +77,7 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 	t.mdl = new(channelListModel)
 	t.complete = false
 	t.inProgress = false
+	t.statusIcon = servState.tab.statusIcon
 	t.statusText = servState.tab.statusText
 
 	var tbl *walk.TableView

@@ -5,6 +5,7 @@
 .log/
 .stuff/
 chatlogs/
+res/
 screenshots/
 scripts/
 config.json

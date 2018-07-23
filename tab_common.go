@@ -7,6 +7,7 @@ import (
 type tab interface {
 	Index() int
 	Title() string
+	StatusIcon() string
 	StatusText() string
 	HasFocus() bool
 	Focus()
@@ -37,11 +38,16 @@ type tabWithTextBuffer interface {
 type tabCommon struct {
 	tabTitle   string
 	tabPage    *walk.TabPage
+	statusIcon string
 	statusText string
 }
 
 func (t *tabCommon) Index() int {
 	return tabWidget.Pages().Index(t.tabPage)
+}
+
+func (t *tabCommon) StatusIcon() string {
+	return t.statusIcon
 }
 
 func (t *tabCommon) StatusText() string {

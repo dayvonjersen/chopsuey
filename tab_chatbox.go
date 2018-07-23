@@ -72,6 +72,7 @@ func (t *tabChatbox) Focus() {
 	t.notify = false
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
+		SetStatusBarIcon(t.statusIcon)
 		SetStatusBarText(t.statusText)
 		t.textInput.SetFocus()
 		t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
@@ -87,6 +88,7 @@ func (t *tabChatbox) Errorln(text string, styles [][]int) {
 		t.error = true
 	}
 	mw.WindowBase.Synchronize(func() {
+		SetStatusBarIcon("res/msg_error.ico")
 		SetStatusBarText(text)
 	})
 	// TODO(tso): set status bar icon

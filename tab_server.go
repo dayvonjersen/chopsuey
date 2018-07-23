@@ -23,6 +23,7 @@ func (t *tabServer) Update(servState *serverState) {
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		if t.HasFocus() {
+			SetStatusBarIcon(t.statusIcon)
 			SetStatusBarText(t.statusText)
 		}
 	})
@@ -30,24 +31,30 @@ func (t *tabServer) Update(servState *serverState) {
 	switch servState.connState {
 	case CONNECTION_EMPTY:
 		t.disconnected = true
+		t.statusIcon = "res/conn_pcs_no_network.ico"
 		t.statusText = "not connected to any network"
 	case DISCONNECTED:
 		t.disconnected = true
+		t.statusIcon = "res/conn_pcs_no_network.ico"
 		t.statusText = "disconnected x_x"
 		Println(CLIENT_ERROR, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTING:
 		t.disconnected = true
+		t.statusIcon = "res/conn_pcs_off_on.ico"
 		t.statusText = "connecting to " + servState.networkName + "..."
 		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTION_ERROR:
 		t.disconnected = true
+		t.statusIcon = "res/conn_pcs_no_network.ico"
 		t.statusText = "couldn't connect: " + servState.lastError.Error()
 		Println(CLIENT_ERROR, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTION_START:
 		t.disconnected = false
+		t.statusIcon = "res/conn_pcs_on_off.ico"
 		t.statusText = "connected to " + servState.networkName
 		Println(CLIENT_MESSAGE, T(servState.AllTabs()...), now(), t.statusText)
 	case CONNECTED:
+		t.statusIcon = "res/network_three_pcs.ico"
 		t.statusText = fmt.Sprintf("%s connected to %s", servState.user.nick, servState.networkName)
 		t.disconnected = false
 	}
