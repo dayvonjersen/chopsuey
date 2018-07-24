@@ -20,6 +20,7 @@ type clientConfig struct {
 	AutoConnect     []*connectionConfig `json:"autoconnect"`
 	HideJoinParts   bool                `json:"hidejoinparts"`
 	ChatLogsEnabled bool                `json:"chatlogs"`
+	Theme           string              `json:"theme"`
 	TimeFormat      string              `json:"timeformat"`
 	Version         string              `json:"version"`
 	QuitMessage     string              `json:"quitmessage"`

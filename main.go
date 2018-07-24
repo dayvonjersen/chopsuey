@@ -256,6 +256,9 @@ func main() {
 		*/
 
 	} else {
+		if clientState.cfg.Theme != "" {
+			applyTheme(clientState.cfg.Theme)
+		}
 		for _, cfg := range clientState.cfg.AutoConnect {
 			servState := &serverState{
 				connState:   CONNECTION_EMPTY,
