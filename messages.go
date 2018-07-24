@@ -89,13 +89,17 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 	switch msgType {
 	case NOTICE_MESSAGE:
 		for _, tab := range tabs {
-			tab.Logln(now() + " *** NOTICE: " + strings.Join(msg, " "))
+			logmsg := now() + " *** NOTICE: " + strings.Join(msg, " ")
+			tab.Logln(logmsg)
 
 			tab.Notify(true) // always put a * for NOTICE
 
 			h := false
 			if len(msg) >= 3 {
 				h = hl(msg[1], strings.Join(msg[2:], " "))
+			}
+			if h && !mainWindowFocused {
+				systray.ShowMessage("", logmsg)
 			}
 			tab.Println(parseString(noticeMsg(h, msg...)))
 		}
@@ -104,6 +108,9 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		logmsg := now() + " <" + nick + "> " + msg
 		h := hl(nick, msg)
+		if h && !mainWindowFocused {
+			systray.ShowMessage("", logmsg)
+		}
 		for _, tab := range tabs {
 			nick := colorNick(tab, h, nick)
 			nick = leftpadNick(tab, nick)
@@ -116,6 +123,9 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 		logmsg := now() + " *" + strings.Join(msg, " ") + "*"
 		nick, msg := msg[0], strings.Join(msg[1:], " ")
 		h := hl(nick, msg)
+		if h && !mainWindowFocused {
+			systray.ShowMessage("", logmsg)
+		}
 		for _, tab := range tabs {
 			nick := colorNick(tab, h, nick)
 			tab.Notify(h)
@@ -273,11 +283,15 @@ func noticeMsg(hl bool, text ...string) string {
 	}
 	line := color(now(), LightGray) +
 		color("N", White, Orange) +
-		color("("+text[0]+"->"+text[1]+"): ", Orange)
+		color("("+text[0]+"->"+text[1]+"):", Orange)
 	if hl {
-		line += bold(color(" ..! ", Orange, Yellow))
+		line += "»"
+		line += color(strings.Join(text[2:], " "), White, Orange)
+	} else {
+		line += " "
+		line += strings.Join(text[2:], " ")
 	}
-	return line + strings.Join(text[2:], " ")
+	return line
 }
 
 func actionMsg(hl bool, text ...string) string {

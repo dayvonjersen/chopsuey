@@ -271,9 +271,6 @@ CREATE NEW PROBLEMS:
 ---
 walk {{{
 
- - system tray icon
-     - notifications balloons for highlight (if !mainWindowFocused)
-
  - figure out how to make the window flash orange in the task bar
 }}}
 ---
