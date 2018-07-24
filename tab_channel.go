@@ -66,6 +66,8 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 
 	t.statusIcon = servState.tab.statusIcon
 	t.statusText = servState.tab.statusText
+
+	SetSystrayContextMenu()
 }
 
 func (t *tabChannel) updateNickList(chanState *channelState) {

@@ -14,6 +14,7 @@ type _clientState struct {
 
 func (clientState *_clientState) AppendTab(t tab) {
 	clientState.tabs = append(clientState.tabs, t)
+	SetSystrayContextMenu()
 }
 
 func (clientState *_clientState) RemoveTab(t tab) {
@@ -24,6 +25,7 @@ func (clientState *_clientState) RemoveTab(t tab) {
 			break
 		}
 	}
+	SetSystrayContextMenu()
 }
 
 func (clientState *_clientState) NumTabs() int {

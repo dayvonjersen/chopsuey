@@ -68,6 +68,7 @@ func (t *tabChannelList) Update(servState *serverState) {
 		t.tabTitle = "channels"
 	}
 	t.tabPage.SetTitle(t.tabTitle)
+	SetSystrayContextMenu()
 }
 
 func NewChannelList(servConn *serverConnection, servState *serverState) *tabChannelList {

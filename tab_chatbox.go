@@ -61,6 +61,7 @@ func (t *tabChatbox) Notify(asterisk bool) {
 		t.unread++
 		mw.WindowBase.Synchronize(func() {
 			t.tabPage.SetTitle(t.Title())
+			SetSystrayContextMenu()
 		})
 	}
 }
@@ -76,6 +77,7 @@ func (t *tabChatbox) Focus() {
 		SetStatusBarText(t.statusText)
 		t.textInput.SetFocus()
 		t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+		SetSystrayContextMenu()
 	})
 }
 

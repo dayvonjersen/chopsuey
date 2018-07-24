@@ -11,7 +11,6 @@ import (
 	"unsafe"
 
 	"github.com/fluffle/goirc/logging"
-	"github.com/kr/pretty"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
@@ -47,13 +46,13 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	if msg == win.WM_DRAWITEM {
 		// use foreground color in statusBar
 		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		log.Printf("got WM_DRAWITEM, item: % #v lParam: %v", pretty.Formatter(item), lParam)
+		// log.Printf("got WM_DRAWITEM, item: % #v lParam: %v", pretty.Formatter(item), lParam)
 		if item.HwndItem == mw.StatusBar().Handle() && item.ItemState <= 1 {
 			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
 			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
 			text := win.UTF16PtrToString(textptr)
 			textlen := int32(len(text))
-			log.Printf("text: % #v", pretty.Formatter(text))
+			// log.Printf("text: % #v", pretty.Formatter(text))
 			win.TextOut(item.HDC, item.RcItem.Left+20 /*16px icon size + 4px padding*/, item.RcItem.Top, textptr, textlen)
 			return win.TRUE
 		}
@@ -97,6 +96,13 @@ func main() {
 	}()
 
 	logging.SetLogger(&debugLogger{})
+
+	clientState = &_clientState{
+		connections: []*serverConnection{},
+		servers:     []*serverState{},
+		tabs:        []tab{},
+		mu:          &sync.Mutex{},
+	}
 
 	mw = new(myMainWindow)
 	MainWindow{
@@ -155,7 +161,7 @@ func main() {
 	mw.SetIcon(ico)
 	SetStatusBarIcon("chopsuey.ico")
 
-	systray, err = walk.NewNotifyIcon()
+	systray, err = walk.NewNotifyIcon(mw.Handle())
 	checkErr(err)
 	defer systray.Dispose()
 	systray.SetIcon(ico)
@@ -170,10 +176,8 @@ func main() {
 			mainWindowHidden = !mainWindowHidden
 		}
 	})
-	/*	action := walk.NewAction()
-		action.SetText("hello world")
-		systray.ContextMenu().Actions().Add(action)
-	*/
+	SetSystrayContextMenu()
+
 	font, err := walk.NewFont("Hack", 9, 0)
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
@@ -230,12 +234,6 @@ func main() {
 		}
 	})
 
-	clientState = &_clientState{
-		connections: []*serverConnection{},
-		servers:     []*serverState{},
-		tabs:        []tab{},
-		mu:          &sync.Mutex{},
-	}
 	clientState.cfg, err = getClientConfig()
 	if err != nil {
 		log.Println("error parsing config.json", err)

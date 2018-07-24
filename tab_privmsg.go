@@ -35,6 +35,7 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 		})
 	}
 
+	SetSystrayContextMenu()
 }
 
 func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {

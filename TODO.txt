@@ -6,8 +6,6 @@ rice is life {{{
      - pushbutton  bg[ ] fg[ ]
      - tableview   bg[ ] fg[ ] 
 
- - win98 status bar icons
-
  - set richedit font to Universalia 8pt if any unicode in text
    - or around unicode bits of text only 
 
@@ -275,12 +273,6 @@ walk {{{
 
  - system tray icon
      - notifications balloons for highlight (if !mainWindowFocused)
-       CONTEXT MENU:
-         - list of current networks and channels (and privmsgs) !!
-         - settings
-         - about
-         - report issue
-         - quit
 
  - figure out how to make the window flash orange in the task bar
 }}}

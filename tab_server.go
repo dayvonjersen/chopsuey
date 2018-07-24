@@ -67,6 +67,7 @@ func (t *tabServer) Update(servState *serverState) {
 	if servState.channelList != nil {
 		servState.channelList.Update(servState)
 	}
+	SetSystrayContextMenu()
 }
 
 func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer {
