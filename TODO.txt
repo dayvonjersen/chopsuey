@@ -270,8 +270,10 @@ CREATE NEW PROBLEMS:
 }}}
 ---
 walk {{{
-
  - figure out how to make the window flash orange in the task bar
+   - NOTE(tso): it's FlashWindow / FlashWindowEx but it's kind of an annoying feature
+                when I think about it, probably won't do it 
+     -tso 7/24/2018 12:36:47 PM
 }}}
 ---
 new feature {{{
@@ -549,6 +551,9 @@ https://docs.microsoft.com/en-us/windows/desktop/api/dwmapi/nf-dwmapi-dwmextendf
 
     ownerdraw status bar text (lifesaver):
 http://microsoft.public.win32.programmer.ui.narkive.com/dlstN3N0/change-color-of-text-in-status-bar
+
+    FlashWindowEx
+https://docs.microsoft.com/en-us/windows/desktop/api/winuser/ns-winuser-flashwinfo
 
 }}}
 ▒▒▒
