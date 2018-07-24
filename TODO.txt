@@ -1,3 +1,19 @@
+i need to reorganize this entire file again damn it {{{
+ - shift+esc to toggle boneless window
+ - (some key) to toggle transparency
+ - make a proper About dialog like a real professional windows applications developer
+ - /theme shouldn't exit() just because it couldn't find the file
+ - consider embedding all those themes as data 
+ - figure out resizing when nicklistbox is hidden...
+ - try adding ch := make(chan tab); mw.Synchronize( ... ch <- t ); return <-ch
+   see if that helps sync stuff up better
+ - clear nicklist colors after apply theme
+    - or determine color when we print 
+    - in that case fix parseString too
+ - nickPadding on highlight
+ - nickQueue.len = 10 and switch to Mode()
+}}}
+---
 rice is life {{{
  
  - themes
