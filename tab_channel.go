@@ -247,7 +247,6 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		}
 		origWndProcPtr = win.SetWindowLongPtr(t.nickListBox.Parent().Handle(), win.GWLP_WNDPROC, syscall.NewCallback(wndProc))
 
-		applyThemeToTab(t)
 		{
 			index := servState.tab.Index()
 			if servState.channelList != nil {
@@ -267,6 +266,7 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
+		applyThemeToTab(t)
 	})
 	chanState.tab = t
 	servState.channels[chanState.channel] = chanState

@@ -84,7 +84,6 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// remove borders
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
 
-		applyThemeToTab(t)
 		{
 			index := servState.tab.Index()
 			if servState.channelList != nil {
@@ -111,6 +110,7 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// index := tabWidget.Pages().Index(t.tabPage)
 		// checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
+		applyThemeToTab(t)
 	})
 	pmState.tab = t
 	servState.privmsgs[pmState.nick] = pmState
