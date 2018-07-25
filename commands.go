@@ -894,5 +894,7 @@ func screenshotCmd(ctx *commandContext, args ...string) {
 }
 
 func themeCmd(ctx *commandContext, args ...string) {
-	applyTheme(args[0])
+	if err := applyTheme(args[0]); err != nil {
+		clientError(ctx.tab, "error applying theme:", err.Error())
+	}
 }

@@ -235,13 +235,19 @@ func main() {
 		currentTab := clientState.CurrentTab()
 		if currentFocusedTab != currentTab {
 			currentFocusedTab = currentTab
-			currentTab.Focus()
+			// FIXME(tso): currentTab should never be nil
+			if currentTab != nil {
+				currentTab.Focus()
+			}
 		}
 	})
 	mw.Activating().Attach(func() {
 		mainWindowFocused = true
 		// always call Focus() when window regains focus
-		clientState.CurrentTab().Focus()
+		// FIXME(tso): CurrentTab() should never be nil
+		if clientState != nil && clientState.CurrentTab() != nil {
+			clientState.CurrentTab().Focus()
+		}
 	})
 	mw.Deactivating().Attach(func() {
 		mainWindowFocused = false
@@ -286,7 +292,9 @@ func main() {
 
 	} else {
 		if clientState.cfg.Theme != "" {
-			applyTheme(clientState.cfg.Theme)
+			if err := applyTheme(clientState.cfg.Theme); err != nil {
+				walk.MsgBox(mw, err.Error(), err.Error(), walk.MsgBoxIconError)
+			}
 		}
 		for _, cfg := range clientState.cfg.AutoConnect {
 			servState := &serverState{

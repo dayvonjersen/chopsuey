@@ -1,6 +1,5 @@
 i need to reorganize this entire file again damn it {{{
  - make a proper About dialog like a real professional windows applications developer
- - /theme shouldn't exit() just because it couldn't find the file
  - consider embedding all those themes as data 
  - figure out resizing when nicklistbox is hidden...
  - try adding ch := make(chan tab); mw.Synchronize( ... ch <- t ); return <-ch

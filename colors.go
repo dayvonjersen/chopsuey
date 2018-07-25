@@ -405,9 +405,11 @@ func applyThemeToTab(t tab) {
 	}
 }
 
-func applyTheme(filename string) {
+func applyTheme(filename string) error {
 	userTheme, err := loadPaletteFromFile(filename)
-	checkErr(err)
+	if err != nil {
+		return err
+	}
 	loadColorPalette(userTheme[:16])
 	globalBackgroundColor = userTheme[16]
 	globalForegroundColor = userTheme[17]
@@ -421,4 +423,5 @@ func applyTheme(filename string) {
 	for _, t := range clientState.tabs {
 		applyThemeToTab(t)
 	}
+	return nil
 }
