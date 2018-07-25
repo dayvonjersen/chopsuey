@@ -3,11 +3,18 @@ package main
 import (
 	"log"
 	"os/exec"
+	"sync"
 
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
+var mu = &sync.Mutex{}
+
 func SetSystrayContextMenu() {
+	mu.Lock()
+	defer mu.Unlock()
+
 	type menuItem struct {
 		separator bool
 
@@ -15,20 +22,32 @@ func SetSystrayContextMenu() {
 		fn   func()
 	}
 
-	menu := []menuItem{}
+	menu := make([]menuItem, len(clientState.tabs))
 
+	i := len(clientState.tabs) - 1
 	for _, t := range clientState.tabs {
 		tabTitle := t.Title()
 		_, split := t.(*tabServer)
-		menu = append(menu, menuItem{
+		// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
+		//             and t.Index() is -1 until the tab actually gets created...
+		idx := t.Index()
+		if idx == -1 {
+			idx = i
+			i--
+		}
+		menu[idx] = menuItem{
 			separator: split,
 			text:      tabTitle,
 			// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
 			//             and t.Index() is -1 until the tab actually gets created...
 			fn: func(t tab) func() {
-				return func() { tabWidget.SetCurrentIndex(t.Index()) }
+				return func() {
+					tabWidget.SetCurrentIndex(t.Index())
+					mainWindowHidden = false
+					win.ShowWindow(mw.Handle(), win.SW_NORMAL)
+				}
 			}(t),
-		})
+		}
 	}
 
 	menu = append(menu,

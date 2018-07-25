@@ -4,13 +4,8 @@ i need to reorganize this entire file again damn it {{{
  - figure out resizing when nicklistbox is hidden...
  - try adding ch := make(chan tab); mw.Synchronize( ... ch <- t ); return <-ch
    see if that helps sync stuff up better
- - setting RichEdit foreground color doesn't always work?
-    - but calling /theme afterwards fixes it
  - display hostnames in join/quit/part because people like to be clever and
    muh fomo
- - tab order in context menu
- - context menu switch to tab should show main window
- - contextmenu is fucked
 }}}
 ---
 rice is life {{{
