@@ -426,7 +426,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 
 		if who == servState.user.nick {
-			msg := fmt.Sprintf(" *** You have been kicked by %s", op)
+			msg := fmt.Sprintf("*** You have been kicked by %s", op)
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
@@ -434,7 +434,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			chanState.nickList = newNickList()
 			chanState.tab.updateNickList(chanState)
 		} else {
-			msg := fmt.Sprintf(" *** %s has been kicked by %s", who, op)
+			msg := fmt.Sprintf("*** %s has been kicked by %s", who, op)
 			if reason != op && reason != who {
 				msg += ": " + reason
 			}
@@ -456,7 +456,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				newNick.prefix = oldNick.prefix
 				chanState.nickList.Set(oldNick.name, newNick)
 				chanState.tab.updateNickList(chanState)
-				msg := " ** " + oldNick.name + " is now known as " + newNick.name
+				msg := "** " + oldNick.name + " is now known as " + newNick.name
 				updateMessage(chanState.tab, msg)
 			}
 		}
@@ -479,14 +479,14 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 				op = servState.networkName
 			}
 			if len(nicks) == 0 {
-				msg := fmt.Sprintf(" ** %s sets mode %s %s", op, mode, channel)
+				msg := fmt.Sprintf("** %s sets mode %s %s", op, mode, channel)
 				updateMessage(chanState.tab, msg)
 				return
 			}
 
 			nickStr := fmt.Sprintf("%s", nicks)
 			nickStr = nickStr[1 : len(nickStr)-1]
-			msg := fmt.Sprintf(" ** %s sets mode %s %s", op, mode, nickStr)
+			msg := fmt.Sprintf("** %s sets mode %s %s", op, mode, nickStr)
 			updateMessage(chanState.tab, msg)
 
 			var add bool
@@ -529,7 +529,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			nick := channel
 			for _, chanState := range servState.channels {
 				if chanState.nickList.Has(nick) || nick == servState.user.nick {
-					msg := fmt.Sprintf(" ** %s sets mode %s", nick, mode)
+					msg := fmt.Sprintf("** %s sets mode %s", nick, mode)
 					updateMessage(chanState.tab, msg)
 				}
 			}
