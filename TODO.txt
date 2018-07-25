@@ -12,6 +12,16 @@ i need to reorganize this entire file again damn it {{{
     - in that case fix parseString too
  - nickPadding on highlight
  - nickQueue.len = 10 and switch to Mode()
+ - setting RichEdit foreground color doesn't always work?
+    - but calling /theme afterwards fixes it
+ - display hostnames in join/quit/part because people like to be clever and
+   muh fomo
+ - tab order in context menu
+ - context menu switch to tab should show main window
+ - there are two spaces in "** whoever sets mode" messages
+ - remove checkErr on LoadImage
+   - windows just randomly decides files don't exist when they do
+ - contextmenu is fucked
 }}}
 ---
 rice is life {{{
@@ -353,6 +363,10 @@ need dialog box for better management of lists:
     - /uninvite
  - /kickban
 
+ - /amsg
+ - /awayall
+ - /unawayall
+
 }}}
 ---
 improvements {{{
@@ -517,6 +531,7 @@ RESOURCES/CITATIONS: {{{
 
 IRC:
 http://modern.ircdocs.horse/
+https://defs.ircdocs.horse/defs/numerics.html
 
 Tabs:
 
