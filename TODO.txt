@@ -16,8 +16,6 @@ i need to reorganize this entire file again damn it {{{
  - tab order in context menu
  - context menu switch to tab should show main window
  - there are two spaces in "** whoever sets mode" messages
- - remove checkErr on LoadImage
-   - windows just randomly decides files don't exist when they do
  - contextmenu is fucked
 }}}
 ---

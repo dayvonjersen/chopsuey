@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"log"
 	"path/filepath"
 	"syscall"
 	"unsafe"
@@ -30,7 +30,11 @@ func SetStatusBarIcon(icofile string) {
 		win.LR_LOADFROMFILE))
 
 	if hIcon == 0 {
-		checkErr(errors.New("LoadImage failed to load image: " + absFilePath))
+		// NOTE(tso): windows just randomly decides files don't exist when they do
+		//            just log the error and move on
+		// -tso 7/25/2018 2:53:42 PM
+		log.Println("LoadImage failed to load image:", icofile)
+		return
 	}
 
 	mw.StatusBar().SendMessage(win.SB_SETICON, 0, uintptr(hIcon))
