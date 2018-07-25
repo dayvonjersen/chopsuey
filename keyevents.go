@@ -1,7 +1,10 @@
 package main
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
 
+// TODO(tso): clean up this entire file
 func ctrlTab(key walk.Key) {
 	if key == walk.KeyTab && walk.ControlDown() {
 		max := tabWidget.Pages().Len() - 1
@@ -27,14 +30,25 @@ func ctrlTab(key walk.Key) {
 		mw.ToggleBorder()
 	}
 
-	if key == walk.KeyF2 {
-		mw.SetTransparency(-16)
+	if !walk.ControlDown() {
+		if key == walk.KeyF2 {
+			mw.SetTransparency(-16)
+		}
+		if key == walk.KeyF4 {
+			mw.SetTransparency(16)
+		}
+		if key == walk.KeyF3 {
+			mw.ToggleTransparency()
+		}
+
+		if walk.AltDown() && key == walk.KeyF4 {
+			exit()
+		}
 	}
-	if key == walk.KeyF4 {
-		mw.SetTransparency(16)
-	}
-	if key == walk.KeyF3 {
-		mw.ToggleTransparency()
+	if walk.ControlDown() {
+		if key == walk.KeyQ {
+			exit()
+		}
 	}
 }
 
@@ -56,4 +70,12 @@ func insertCharacter(key walk.Key) rune {
 		}
 	}
 	return 0
+}
+
+func ctrlF4(ctx *commandContext, key walk.Key) {
+	if walk.ControlDown() {
+		if key == walk.KeyF4 || key == walk.KeyW {
+			closeCmd(ctx)
+		}
+	}
 }

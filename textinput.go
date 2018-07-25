@@ -65,6 +65,9 @@ func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 	textInput := newMyLineEdit(tabPage)
 
 	textInput.KeyDown().Attach(func(key walk.Key) {
+		ctrlF4(ctx, key)
+	})
+	textInput.KeyDown().Attach(func(key walk.Key) {
 		if r := insertCharacter(key); r != 0 {
 			text := []rune(textInput.Text())
 			s, e := textInput.TextSelection()
