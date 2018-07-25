@@ -370,7 +370,11 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		if !chanState.nickList.Has(l.Nick) {
 			chanState.nickList.Add(l.Nick)
 			chanState.tab.updateNickList(chanState)
-			joinpartMessage(chanState.tab, "->", l.Nick, "has joined", l.Args[0])
+			hostname := ""
+			if !clientState.cfg.HideHostnames {
+				hostname = "(" + l.Ident + "@" + l.Host + ") "
+			}
+			joinpartMessage(chanState.tab, "->", l.Nick, hostname+"has joined", l.Args[0])
 		}
 	})
 
@@ -384,7 +388,11 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 		chanState.nickList.Remove(l.Nick)
 		chanState.tab.updateNickList(chanState)
-		msg := []string{"<-", l.Nick, "has left", l.Args[0]}
+		hostname := ""
+		if !clientState.cfg.HideHostnames {
+			hostname = "(" + l.Ident + "@" + l.Host + ") "
+		}
+		msg := []string{"<-", l.Nick, hostname + "has left", l.Args[0]}
 		if len(l.Args) > 1 {
 			msg = append(msg, " ("+l.Args[1]+")")
 		}
@@ -397,7 +405,11 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			reason = strings.TrimPrefix(reason, "Quit:")
 		}
 		reason = strings.TrimSpace(reason)
-		msg := []string{"<-", l.Nick, "has quit"}
+		hostname := ""
+		if !clientState.cfg.HideHostnames {
+			hostname = "(" + l.Ident + "@" + l.Host + ") "
+		}
+		msg := []string{"<-", l.Nick, hostname + "has quit"}
 		if reason != "" {
 			msg = append(msg, "("+reason+")")
 		}

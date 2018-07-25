@@ -4,8 +4,6 @@ i need to reorganize this entire file again damn it {{{
  - figure out resizing when nicklistbox is hidden...
  - try adding ch := make(chan tab); mw.Synchronize( ... ch <- t ); return <-ch
    see if that helps sync stuff up better
- - display hostnames in join/quit/part because people like to be clever and
-   muh fomo
 }}}
 ---
 rice is life {{{

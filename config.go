@@ -18,6 +18,7 @@ type connectionConfig struct {
 
 type clientConfig struct {
 	AutoConnect     []*connectionConfig `json:"autoconnect"`
+	HideHostnames   bool                `json:"hidehostnames"`
 	HideJoinParts   bool                `json:"hidejoinparts"`
 	ChatLogsEnabled bool                `json:"chatlogs"`
 	Theme           string              `json:"theme"`
