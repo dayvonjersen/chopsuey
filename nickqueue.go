@@ -1,6 +1,6 @@
 package main
 
-const Q_LEN = 5
+const Q_LEN = 20
 
 // NOTE(tso): alternatively, use make([]string, capacity)
 //            func NewNickQueue(capacity int) *nickQueue { // ...

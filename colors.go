@@ -390,6 +390,7 @@ func applyThemeToTab(t tab) {
 		applyThemeToLineEdit(&t.textInput.LineEdit, brush, rgb)
 	case *tabChannel:
 		t := t.(*tabChannel)
+		t.nickColors = map[string]int{}
 		applyThemeToTabPage(t.tabPage, brush)
 		applyThemeToRichEdit(t.textBuffer)
 		applyThemeToLineEdit(&t.textInput.LineEdit, brush, rgb)

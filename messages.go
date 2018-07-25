@@ -333,8 +333,8 @@ func colorNick(tab tabWithTextBuffer, hl bool, nick string) string {
 
 func leftpadNick(tab tabWithTextBuffer, nick string) string {
 	padamt := tab.Padlen(nick)
-	if padamt > len(nick) {
-		return strings.Repeat(" ", padamt-len(nick)) + nick
+	if padamt > len(stripFmtChars(nick)) {
+		return strings.Repeat(" ", padamt-len(stripFmtChars(nick))) + nick
 	}
 	return nick
 }

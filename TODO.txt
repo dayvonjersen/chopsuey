@@ -33,12 +33,8 @@ rice is life {{{
 }}}
 ---
 keyboard shortcuts {{{
-    - ctrl+q:     exit application
-    - alt+f4:     exit application
     - ctrl+m:     hide to tray
     - ctrl+t:     open/switch to empty server tab
-    - ctrl+f4:    close current tab
-    - ctrl+w:     close current tab
     - ctrl+f:     search textBuffer
     - ctrl+enter: insert \n
 }}}
@@ -319,6 +315,9 @@ new feature {{{
 big project/refactor {{{
 
  - new server tab/connection abstraction
+   - given any tab, clientState or something should be able
+     to return a servConn and a servState, possibly chanState
+     or pmState as well
 
  - make empty server tab possible
 
