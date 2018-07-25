@@ -22,6 +22,20 @@ func ctrlTab(key walk.Key) {
 		}
 		tabWidget.SetCurrentIndex(index)
 	}
+
+	if key == walk.KeyEscape && walk.ShiftDown() {
+		mw.ToggleBorder()
+	}
+
+	if key == walk.KeyF2 {
+		mw.SetTransparency(-16)
+	}
+	if key == walk.KeyF4 {
+		mw.SetTransparency(16)
+	}
+	if key == walk.KeyF3 {
+		mw.ToggleTransparency()
+	}
 }
 
 func insertCharacter(key walk.Key) rune {

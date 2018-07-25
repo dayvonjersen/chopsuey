@@ -1,6 +1,4 @@
 i need to reorganize this entire file again damn it {{{
- - shift+esc to toggle boneless window
- - (some key) to toggle transparency
  - make a proper About dialog like a real professional windows applications developer
  - /theme shouldn't exit() just because it couldn't find the file
  - consider embedding all those themes as data 

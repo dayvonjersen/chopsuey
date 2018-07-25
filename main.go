@@ -39,7 +39,51 @@ var (
 
 type myMainWindow struct {
 	*walk.MainWindow
-	textColor, bgColor walk.Color
+	transparent bool
+	alpha       int32
+	borderless  bool
+}
+
+func (mw *myMainWindow) SetTransparency(amt int32) {
+	mw.alpha += amt
+	if mw.alpha < 0 {
+		mw.alpha = 0
+	}
+	if mw.alpha > 0xff {
+		mw.alpha = 0xff
+	}
+	if mw.alpha == 0xff {
+		mw.transparent = false
+	} else {
+		mw.transparent = true
+	}
+	SetLayeredWindowAttributes(mw.Handle(), 0, mw.alpha, LWA_ALPHA)
+}
+
+func (mw *myMainWindow) ToggleTransparency() {
+	if mw.transparent {
+		SetLayeredWindowAttributes(mw.Handle(), 0, 0xff, LWA_ALPHA)
+	} else {
+		if mw.alpha == 0xff {
+			mw.alpha = 0xb4
+		}
+		SetLayeredWindowAttributes(mw.Handle(), 0, mw.alpha, LWA_ALPHA)
+	}
+	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
+	mw.transparent = !mw.transparent
+}
+
+func (mw *myMainWindow) ToggleBorder() {
+	if mw.borderless {
+		mw.StatusBar().SetVisible(true)
+		win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW)
+	} else {
+		mw.StatusBar().SetVisible(false)
+		//win.SetWindowLongPtr(mw.Handle(), win.GWL_STYLE, uintptr(win.WS_VISIBLE|win.WS_POPUP))
+		win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW&^win.WS_THICKFRAME&^win.WS_BORDER)
+	}
+	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
+	mw.borderless = !mw.borderless
 }
 
 func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -122,32 +166,17 @@ func main() {
 	}.Create()
 	walk.InitWrapperWindow(mw)
 
-	//
-	// transparency:
-	//
-	// required:
-	// win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED|win.WS_EX_STATICEDGE)
-	//
-	// entire window, 50% transparent
-	// SetLayeredWindowAttributes(mw.Handle(), 0, 0xff * 50, LWA_ALPHA)
-	//
-	// chromakey
-	// NOTE(tso): no
-	// SetLayeredWindowAttributes(mw.Handle(), 0xf0f0f0, 0, LWA_COLORKEY)
-
-	//
-	// ｂ ｏ ｎ ｅ ｌ ｅ ｓ ｓ
-	//
-	//win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|((win.WS_OVERLAPPEDWINDOW&(^win.WS_THICKFRAME))&(^win.WS_BORDER)))
-	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_STATICEDGE)
+	//  required for transparency:
+	mw.alpha = 0xb4 // a nice default value: ~70% opaque
+	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED|win.WS_EX_STATICEDGE)
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	var err error
 	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
 	checkErr(err)
-	tabWidget.SetPersistent(false)
+	tabWidget.SetPersistent(true)
 
-	mw.Children().Add(tabWidget)
+	mw.Children().Insert(0, tabWidget)
 
 	mw.SetBounds(walk.Rectangle{
 		X:      1536,
