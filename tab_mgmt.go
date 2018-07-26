@@ -20,7 +20,7 @@ type tabRequestCreate struct {
 
 type tabRequestSearch struct {
 	finder func(*tabWithContext) bool
-	ret    chan *tabWithContext
+	ret    chan []*tabWithContext
 }
 
 type tabRequestUpdate struct {
@@ -49,7 +49,7 @@ func (tabMan *tabManager) Shutdown() {
 	close(tabMan.destroy)
 }
 
-func (tabMan *tabManager) CreateTab(ctx *tabContext, index int) *tabWithContext {
+func (tabMan *tabManager) Create(ctx *tabContext, index int) *tabWithContext {
 	ret := make(chan *tabWithContext)
 	go func() {
 		tabMan.create <- &tabRequestCreate{ctx, index, ret}
@@ -57,8 +57,16 @@ func (tabMan *tabManager) CreateTab(ctx *tabContext, index int) *tabWithContext 
 	return <-ret
 }
 
-func (tabMan *tabManager) FindTab(finder func(*tabWithContext) bool) *tabWithContext {
-	ret := make(chan *tabWithContext)
+func (tabMan *tabManager) Find(finder func(*tabWithContext) bool) *tabWithContext {
+	ret := tabMan.FindAll(finder)
+	if len(ret) > 0 {
+		return ret[0]
+	}
+	return nil
+}
+
+func (tabMan *tabManager) FindAll(finder func(*tabWithContext) bool) []*tabWithContext {
+	ret := make(chan []*tabWithContext)
 	go func() {
 		tabMan.search <- &tabRequestSearch{finder, ret}
 	}()
@@ -67,10 +75,10 @@ func (tabMan *tabManager) FindTab(finder func(*tabWithContext) bool) *tabWithCon
 
 //
 // finder funcs
-// usage: tabMan.FindTabs(currentTabFinder)
-//        tabMan.FindTabs(serverTabFinder(servState))
-//        tabMan.FindTabs(channelTabFinder(chanState))
-//        tabMan.FindTabs(someotherTabFinder) ...
+// usage: tabMan.Find(currentTabFinder)
+//        tabMan.Find(serverTabFinder(servState))
+//        tabMan.Find(channelTabFinder(chanState))
+//        tabMan.Find(someotherTabFinder) ...
 //
 func currentTabFinder(t *tabWithContext) bool {
 	return t.tab.Index() == tabWidget.CurrentIndex()
@@ -87,7 +95,7 @@ func serverTabFinder(servState *serverState) func(*tabWithContext) bool {
 	}
 }
 
-func (tabMan *tabManager) DeleteTab(tabs ...tab) {
+func (tabMan *tabManager) Delete(tabs ...tab) {
 	ret := make(chan struct{})
 	go func() {
 		tabMan.delete <- &tabRequestDelete{tabs, ret}
@@ -120,7 +128,6 @@ func newTabManager() *tabManager {
 
 	go func() {
 		for {
-		here:
 			select {
 			case <-tabMan.destroy:
 				return
@@ -143,13 +150,13 @@ func newTabManager() *tabManager {
 				// tabMan.tabs = append(tabMan.tabs, &tabWithContext{ctx, t}
 
 			case req := <-tabMan.search:
+				ret := []*tabWithContext{}
 				for _, t := range tabMan.tabs {
 					if req.finder(t) {
-						req.ret <- t
-						break here
+						ret = append(ret, t)
 					}
 				}
-				req.ret <- nil
+				req.ret <- ret
 
 			case req := <-tabMan.update:
 				_ = req
