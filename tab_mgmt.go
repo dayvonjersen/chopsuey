@@ -50,13 +50,17 @@ func (tabMan *tabManager) Shutdown() {
 
 func (tabMan *tabManager) CreateTab(ctx *tabContext, index int) *tabWithContext {
 	ret := make(chan *tabWithContext)
-	tabMan.create <- &tabRequestCreate{ctx, index, ret}
+	go func() {
+		tabMan.create <- &tabRequestCreate{ctx, index, ret}
+	}()
 	return <-ret
 }
 
 func (tabMan *tabManager) FindTab(finder func(*tabWithContext) bool) *tabWithContext {
 	ret := make(chan *tabWithContext)
-	tabMan.search <- &tabRequestSearch{finder, ret}
+	go func() {
+		tabMan.search <- &tabRequestSearch{finder, ret}
+	}()
 	return <-ret
 }
 
@@ -83,7 +87,9 @@ func serverTabFinder(servState *serverState) func(*tabWithContext) bool {
 }
 
 func (tabMan *tabManager) DeleteTab(tabs ...tab) {
-	tabMan.delete <- &tabRequestDelete{tabs}
+	go func() {
+		tabMan.delete <- &tabRequestDelete{tabs}
+	}()
 }
 
 type dummyTab struct {
@@ -110,6 +116,7 @@ func newTabManager() *tabManager {
 
 	go func() {
 		for {
+		here:
 			select {
 			case <-tabMan.destroy:
 				return
@@ -135,7 +142,7 @@ func newTabManager() *tabManager {
 				for _, t := range tabMan.tabs {
 					if req.finder(t) {
 						req.ret <- t
-						break
+						break here
 					}
 				}
 				req.ret <- nil
