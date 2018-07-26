@@ -3,6 +3,7 @@
 *.sw*
 *.txt
 .log/
+.releases/
 .stuff/
 chatlogs/
 res/

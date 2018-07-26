@@ -133,7 +133,7 @@ func PrintlnWithHighlight(msgType int, hl highlighterFn, tabs []tabWithTextBuffe
 			tab.Println(parseString(actionMsg(h, nick, msg)))
 		}
 	default:
-		log.Println("highlighting unsupported for msgType %v", msgTypeString(msgType))
+		log.Printf("highlighting unsupported for msgType %v", msgTypeString(msgType))
 	}
 }
 
