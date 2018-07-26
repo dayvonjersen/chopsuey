@@ -29,6 +29,7 @@ type tabRequestUpdate struct {
 
 type tabRequestDelete struct {
 	tabs []tab
+	ret  chan struct{}
 }
 
 var tabMan = newTabManager()
@@ -87,9 +88,12 @@ func serverTabFinder(servState *serverState) func(*tabWithContext) bool {
 }
 
 func (tabMan *tabManager) DeleteTab(tabs ...tab) {
+	ret := make(chan struct{})
 	go func() {
-		tabMan.delete <- &tabRequestDelete{tabs}
+		tabMan.delete <- &tabRequestDelete{tabs, ret}
 	}()
+	<-ret
+	return
 }
 
 type dummyTab struct {
@@ -152,11 +156,22 @@ func newTabManager() *tabManager {
 				// stub
 
 			case req := <-tabMan.delete:
+				indices := []int{}
 				for _, t := range req.tabs {
-					_ = t
-					// delete(tabMan.tabs, t)
-					// t.Close()
+					indices = append(indices, t.Index())
 				}
+
+				for i, t := range tabMan.tabs {
+					for _, index := range indices {
+						if t.tab.Index() == index {
+							tabMan.tabs = append(tabMan.tabs[0:i], tabMan.tabs[i+1:]...)
+						}
+					}
+
+				}
+				req.ret <- struct{}{}
+
+				// t.Close()
 			}
 		}
 	}()
