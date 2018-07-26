@@ -116,3 +116,29 @@ func TestTabDelete(test *testing.T) {
 		test.Fail()
 	}
 }
+
+func TestNoDuplicateTabInsert(test *testing.T) {
+	tabMan := newTabManager()
+	defer tabMan.Shutdown()
+
+	wg := &sync.WaitGroup{}
+
+	race := func() {
+		tabMan.CreateIfNotFound(&tabContext{}, 0xff, func(t *tabWithContext) bool {
+			return t.tab.Index() == 0xff
+		})
+		wg.Done()
+	}
+
+	horses := 100000
+	wg.Add(horses)
+	for i := 0; i < horses; i++ {
+		go race()
+	}
+	wg.Wait()
+
+	if len(tabMan.tabs) != 1 {
+		printf(tabMan.tabs)
+		test.Fail()
+	}
+}

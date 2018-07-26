@@ -13,9 +13,10 @@ type tabContext struct {
 }
 
 type tabRequestCreate struct {
-	ctx   *tabContext
-	index int
-	ret   chan *tabWithContext
+	ctx    *tabContext
+	index  int
+	finder func(*tabWithContext) bool
+	ret    chan *tabWithContext
 }
 
 type tabRequestSearch struct {
@@ -51,9 +52,13 @@ func (tabMan *tabManager) Shutdown() {
 
 func (tabMan *tabManager) Create(ctx *tabContext, index int) *tabWithContext {
 	ret := make(chan *tabWithContext)
-	go func() {
-		tabMan.create <- &tabRequestCreate{ctx, index, ret}
-	}()
+	tabMan.create <- &tabRequestCreate{ctx, index, nil, ret}
+	return <-ret
+}
+
+func (tabMan *tabManager) CreateIfNotFound(ctx *tabContext, index int, finder func(*tabWithContext) bool) *tabWithContext {
+	ret := make(chan *tabWithContext)
+	tabMan.create <- &tabRequestCreate{ctx, index, finder, ret}
 	return <-ret
 }
 
@@ -67,9 +72,7 @@ func (tabMan *tabManager) Find(finder func(*tabWithContext) bool) *tabWithContex
 
 func (tabMan *tabManager) FindAll(finder func(*tabWithContext) bool) []*tabWithContext {
 	ret := make(chan []*tabWithContext)
-	go func() {
-		tabMan.search <- &tabRequestSearch{finder, ret}
-	}()
+	tabMan.search <- &tabRequestSearch{finder, ret}
 	return <-ret
 }
 
@@ -80,6 +83,10 @@ func (tabMan *tabManager) FindAll(finder func(*tabWithContext) bool) []*tabWithC
 //        tabMan.Find(channelTabFinder(chanState))
 //        tabMan.Find(someotherTabFinder) ...
 //
+func allTabsFinder(t *tabWithContext) bool {
+	return true
+}
+
 func currentTabFinder(t *tabWithContext) bool {
 	return t.tab.Index() == tabWidget.CurrentIndex()
 }
@@ -97,9 +104,7 @@ func serverTabFinder(servState *serverState) func(*tabWithContext) bool {
 
 func (tabMan *tabManager) Delete(tabs ...tab) {
 	ret := make(chan struct{})
-	go func() {
-		tabMan.delete <- &tabRequestDelete{tabs, ret}
-	}()
+	tabMan.delete <- &tabRequestDelete{tabs, ret}
 	<-ret
 	return
 }
@@ -128,11 +133,21 @@ func newTabManager() *tabManager {
 
 	go func() {
 		for {
+		here:
 			select {
 			case <-tabMan.destroy:
 				return
 
 			case req := <-tabMan.create:
+				if req.finder != nil {
+					for _, t := range tabMan.tabs {
+						if req.finder(t) {
+							req.ret <- t
+							break here
+						}
+					}
+				}
+
 				t := &tabWithContext{
 					tab: &dummyTab{index: req.index},
 				}
