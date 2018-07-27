@@ -169,7 +169,7 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 		}
 
 	case JOINPART_MESSAGE:
-		if !clientState.cfg.HideJoinParts {
+		if !clientCfg.HideJoinParts {
 			text, styles := parseString(joinpartMsg(msg...))
 			for _, tab := range tabs {
 				tab.Logln(text)

@@ -10,7 +10,7 @@ import (
 var invalidCharsInFilenamesRegex = regexp.MustCompile("[/<>:\"\\|?*]")
 
 func NewChatLogger(filename string) func(string) {
-	if !clientState.cfg.ChatLogsEnabled {
+	if !clientCfg.ChatLogsEnabled {
 		return func(string) {}
 	}
 

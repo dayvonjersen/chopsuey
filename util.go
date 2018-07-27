@@ -36,7 +36,7 @@ func pluralize(text string, count int) string {
 }
 
 func now() string {
-	return time.Now().Format(clientState.cfg.TimeFormat)
+	return time.Now().Format(clientCfg.TimeFormat)
 }
 
 func serverAddr(hostname string, port int) string {

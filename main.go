@@ -31,10 +31,11 @@ var (
 	statusBar *walk.StatusBarItem
 	systray   *walk.NotifyIcon
 
-	mainWindowFocused bool = true // start focused because windows
-	mainWindowHidden  bool = false
+	mainWindowFocused = true // start focused because windows
+	mainWindowHidden  = false
 
-	tabMan *tabManager
+	clientCfg *clientConfig
+	tabMan    *tabManager
 )
 
 type myMainWindow struct {
@@ -140,8 +141,6 @@ func main() {
 	// }()
 
 	logging.SetLogger(&debugLogger{})
-
-	clientState = &_clientState{}
 
 	tabMan = newTabManager()
 
@@ -269,25 +268,25 @@ func main() {
 		}
 	})
 
-	clientState.cfg, err = getClientConfig()
+	clientCfg, err = getClientConfig()
 	if err != nil {
 		log.Println("error parsing config.json", err)
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
 		SetStatusBarIcon("res/msg_error.ico")
 		SetStatusBarText("error parsing config.json")
 	} else {
-		if clientState.cfg.Theme != "" {
-			if err := applyTheme(clientState.cfg.Theme); err != nil {
+		if clientCfg.Theme != "" {
+			if err := applyTheme(clientCfg.Theme); err != nil {
 				walk.MsgBox(mw, err.Error(), err.Error(), walk.MsgBoxIconError)
 			}
 		}
-		if len(clientState.cfg.AutoConnect) == 0 {
+		if len(clientCfg.AutoConnect) == 0 {
 			go func() {
 				newEmptyServerTab()
 			}()
 		} else {
 			go func() {
-				for _, cfg := range clientState.cfg.AutoConnect {
+				for _, cfg := range clientCfg.AutoConnect {
 					// TODO(tso): abstract opening a new server connection/tab
 					servState := &serverState{
 						connState:   CONNECTION_EMPTY,

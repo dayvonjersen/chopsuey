@@ -1,10 +1,5 @@
 package main
 
-var clientState *_clientState // global instance
-type _clientState struct {
-	cfg *clientConfig
-}
-
 type userState struct {
 	nick string
 	// other stuff like OPER...

@@ -58,7 +58,7 @@ func getClientConfig() (*clientConfig, error) {
 func writeClientConfig() error {
 	f, err := os.Create("config.json")
 	if err == nil {
-		b, err := json.MarshalIndent(clientState.cfg, "", "    ")
+		b, err := json.MarshalIndent(clientCfg, "", "    ")
 		if err != nil {
 			return err
 		}
