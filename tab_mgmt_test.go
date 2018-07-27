@@ -167,3 +167,22 @@ func TestNoDuplicateTabInsert(test *testing.T) {
 		test.Fail()
 	}
 }
+
+func TestDoWeEvenNeedUpdate(test *testing.T) { // apparently we don't
+	tabMan := newTabManager()
+	defer tabMan.Shutdown()
+
+	servState := &serverState{connState: CONNECTED}
+	{
+		ctx := tabMan.Create(&tabContext{}, 0)
+		ctx.servState = servState
+	}
+
+	{
+		ctx := tabMan.Find(allTabsFinder)
+		if ctx.servState != servState {
+			test.Fail()
+		}
+	}
+
+}

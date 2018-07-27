@@ -32,10 +32,6 @@ type tabRequestSearch struct {
 	ret    chan []*tabWithContext
 }
 
-type tabRequestUpdate struct {
-	// stub
-}
-
 type tabRequestDelete struct {
 	tabs []*tabWithContext
 	ret  chan struct{}
@@ -47,7 +43,6 @@ type tabManager struct {
 	create chan *tabRequestCreate
 	count  chan *tabRequestCount
 	search chan *tabRequestSearch
-	update chan *tabRequestUpdate
 	delete chan *tabRequestDelete
 
 	destroy chan struct{}
@@ -140,7 +135,6 @@ func newTabManager() *tabManager {
 		create:  make(chan *tabRequestCreate),
 		count:   make(chan *tabRequestCount),
 		search:  make(chan *tabRequestSearch),
-		update:  make(chan *tabRequestUpdate),
 		delete:  make(chan *tabRequestDelete),
 		destroy: make(chan struct{}),
 	}
@@ -186,11 +180,6 @@ func newTabManager() *tabManager {
 					}
 				}
 				req.ret <- ret
-
-			case req := <-tabMan.update:
-				log.Printf("got update: %v", req)
-				_ = req
-				// stub
 
 			case req := <-tabMan.delete:
 				log.Printf("got delete: %v", req)
