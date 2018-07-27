@@ -194,8 +194,8 @@ func newTabManager() *tabManager {
 					indices = append(indices, t.tab.Index())
 				}
 
-				for i, t := range tabMan.tabs {
-					for _, index := range indices {
+				for _, index := range indices {
+					for i, t := range tabMan.tabs {
 						if t.tab.Index() == index {
 							tabMan.tabs = append(tabMan.tabs[0:i], tabMan.tabs[i+1:]...)
 						}

@@ -219,6 +219,7 @@ func quitCmd(ctx *commandContext, args ...string) {
 		ctx.servState.channelList.Close()
 		ctx.servState.channelList = nil
 	}
+	ctx.servState.tab.Close()
 
 	if tabMan.Len() == 0 {
 		empty := newEmptyServerTab()

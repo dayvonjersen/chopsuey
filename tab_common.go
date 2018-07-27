@@ -72,6 +72,7 @@ func (t *tabCommon) Close() {
 
 	if tabWidget.Pages().Len() == 0 {
 		tabWidget.Pages().Clear()
+		shouldChangeTabFocus = false
 	}
 	if shouldChangeTabFocus {
 		newIndex := myIndexWas - 1
