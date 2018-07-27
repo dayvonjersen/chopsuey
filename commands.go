@@ -43,7 +43,7 @@ var (
 		"connect":    clientCommandDoc{"/connect", "(if disconnected) reconnect to server\nspecify server with /server"},
 		"disconnect": clientCommandDoc{"/disconnect", "disconnect from server and do not try to reconnect"},
 		"quit":       clientCommandDoc{"/quit", "disconnect from server and close all associated tabs"},
-		"reconnect":  clientCommandDoc{"/recover", bold(color("broken", Red)) + " use /disconnect and /connect instead"},
+		"reconnect":  clientCommandDoc{"/recover", "disconnect and reconnect to server\nspecify server with /server"},
 		"server": clientCommandDoc{"/server [host]  [+][port (default 6667, ssl 6697)]",
 			"open a connection to an irc network, to use ssl prefix port number with +"},
 
@@ -231,25 +231,20 @@ func quitCmd(ctx *commandContext, args ...string) {
 }
 
 func reconnectCmd(ctx *commandContext, args ...string) {
-	usage(ctx, "reconnect")
-	return
-	/*
-		// FIXME(tso): either find out why goirc panics when we do this or replace goirc altogether
-			switch ctx.servState.connState {
-			case CONNECTION_EMPTY:
-				clientMessage(ctx.tab, "ERROR: no network specified (use /server)")
-			case CONNECTING, CONNECTION_START:
-				clientMessage(ctx.tab, "ERROR: connection in progress: " + serverAddr(ctx.servState.hostname, ctx.servState.port))
+	switch ctx.servState.connState {
+	case CONNECTION_EMPTY:
+		clientMessage(ctx.tab, "ERROR: no network specified (use /server)")
+	case CONNECTING, CONNECTION_START:
+		clientMessage(ctx.tab, "ERROR: connection in progress: "+serverAddr(ctx.servState.hostname, ctx.servState.port))
 
-			case CONNECTED:
-				disconnectCmd(ctx, args...)
-				<-time.After(time.Second * 3)
-				fallthrough
-			case DISCONNECTED, CONNECTION_ERROR:
-				ctx.servConn.retryConnectEnabled = true
-				connectCmd(ctx, args...)
-			}
-	*/
+	case CONNECTED:
+		disconnectCmd(ctx, args...)
+		fallthrough
+	case DISCONNECTED, CONNECTION_ERROR:
+		ctx.servConn.retryConnectEnabled = true
+		ctx.servConn.cancelRetryConnect = make(chan struct{})
+		connectCmd(ctx, args...)
+	}
 }
 
 func serverCmd(cmdctx *commandContext, args ...string) {
