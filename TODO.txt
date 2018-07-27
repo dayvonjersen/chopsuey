@@ -1,6 +1,12 @@
-todo {{{
+TODO {{{
  - channelList refactor
+   - always store all of the list results in a separate array on
+     serverState structure instead of relying on channelListModel
+     and add a Refresh button to channelList 
+     which is disabled until we get ENDOFLIST
  - nick padding and color refactor
+   - use nick type instead of nick as string in more places
+   - store color value in nickList
  - replace goirc refactor
    - get TLS working
    - get OAUTH working
@@ -41,14 +47,49 @@ todo {{{
      - update servState.user.nick regardless
    - /server
      - double-check that we use servState.user.nick for new connections
-   - /mode
-   - /topic
+   - /mode needs to be able to send just the channel e.g. MODE #test
+      to get a reply of what the mode is
+      expected: /mode #channel
+                Mode for #channel is +CSnpstz
+                /mode tso
+                tso (221: +Sirx)
+   - /topic: ditto
+       expected: /topic
+                 Topic for #channel is "words" set by tso at 7/12/2018 11:54:18 PM
+   - /welcome
+      - first run welcome message
+      - ascii art logo
+      - contact + link to github
+      - getting started
+        /server irc.example.org +
+        /join #channel
+        hi
+      - /help for more information
    - /part
+     - without closing tab
+     - chanState tracks whether "connected" to channel?
    - /screenshot
      - put a timeout on the POST and keep retrying until it succeeds
      - don't listen to that comment using net/http will add another 100 lines
        of code for literally no gain other than to say you did it the "right"
        way
+   - /script
+     - better scripting examples such as:
+        - rainbow text
+        - automatic translation
+        - emoticons
+        - tweet
+        - last.fm
+ - new commands to add
+   (need dialog box for better management of lists:)
+   - /ignore
+   - /unignore
+   - /invite
+   - /uninvite
+   - /kickban
+   - /amsg
+   - /awayall
+   - /unawayall
  - tab sort order
  - dcc
      - ui
@@ -57,6 +98,7 @@ todo {{{
        - file transfers tab
        - ___ is offering to send you [file]
        - save as dialog
+       - drag/drop
      - implementation
        - choose wanIP or localIP based on connection to server (difficulty: nightmare)
        - cancel-able
@@ -74,6 +116,7 @@ todo {{{
  - set richedit font to Universalia 8pt if any unicode in text
    - or around unicode bits of text only      
  - ctrl+f: search textBuffer
+   - jump to selection
  - tabcomplete
    - case-insensitive
    - show nicks in the nickqueue first
@@ -85,39 +128,58 @@ todo {{{
          the option to delete... more work on top of work it never ends
  - probably shouldn't send any JOINs until we get replies from NickServ 
    - iff NickServPASSWORD != nil
+ - richedit
+   - new features:
+     - selection automatically goes to clipboard on MOUSEUP
+     - contextmenu?
 
-}}}
-WONTFIX {{{
-   unstyled widgets:         literally impossible/can't be bothered {{{
-   WONTFIX(tso): literally impossible, can't be bothered
-   -tso 7/27/2018 7:56:43 AM
-   - background/foreground color need to be applied to:
-     - tabs        bg[ ] fg[ ]
-     - pushbutton  bg[ ] fg[ ]
-     - tableview   bg[ ] fg[ ]
-}}}
-   multiline send:           universally loathed {{{
-   WONTFIX(tso): 1) multiline send is universally loathed 
-   
-                 2) implementing it is trivial, but enabling it for the one 
-                    one time you want to paste 3 lines on purpose 
-                    doesn't make up for the countless times you
-                    accidentally paste 50 lines 
+   - issues:
+     - richedit jumps up like 20 lines or scrolls past the end find out whats
+       going on with that it has to do with when its focused or not
+       dont just spam WM_VSCROLL although thats probably the solution
 
-                 3) i don't want to enable spammers
-  -tso 7/27/2018 8:04:28 AM
-    - ctrl+enter: insert \n
-}}}
-  mouse input on tabWidget: literally impossible {{{
-  WONTFIX(tso): not possible to get mouse or keyboard events on TabWidget afaict
-                so rip the dream:
-  -tso 2018-07-19 18:25:42
-  - mouse input on tabWidget
-      - middle-click to close tabs
-      - scroll to cycle through tabs
-      - context menu
-      - mark as read
-      - close
+     - appendtext/linecount NOTE(tso): I don't know what I meant by this 7/27/2018 8:30:40 AM
+       
+     - WM_VSCROLL hack fires even when textBuffer has keyboard focus
+       OR call to SetTextSelection() in AppendText() is doing it
+       either way you can't scroll in a super active channel which is the only
+       time you really need scroll
+
+ - don't log lines if DISCONNECTED
+
+ - don't display lines if not sent
+    - e.g. cannot send to channel (+m)
+
+ - don't open privmsg tab if not sent
+    - e.g. no such nick/channel
+      
+ - topic widget should allow input and send /topic or whatever
+   after: replace topicInput with a RichEdit to display colors and links 
+
+ - highlight list
+    - probably should compile regexp for that since its more complex
+    - needs dialog, maybe just use TextEdit
+    - support for patterns
+
+ - word filter
+    - e.g. "fuck" => "****"
+    - or 4chan style "fam" => "desu"
+      
+ - limit scrollback to n lines
+
+ - load chatlog on join
+
+ - settings dialog
+
+ - hidejoinparts per channel(with list) or global
+
+ - ignore list
+
+ - highlight list
+    - disable highlight
+
+ - inline twitter links
+
 }}}}}}
 BUGS {{{
                priority    description
@@ -161,222 +223,113 @@ To see all goroutines, visit https://github.com/maruel/panicparse#GOTRACEBACK
     walk    form.go:402           (*FormBase).Run(*FormBase(0xc0420b6a80), 0x0)
     main    main.go:182           main()
 }}}}}}
-BUGS(uncategorized): {{{
+LINKS: {{{
 
- 
- - WM_VSCROLL hack fires even when textBuffer has keyboard focus
-   OR call to SetTextSelection() in AppendText() is doing it
-   either way you can't scroll in a super active channel which is the only
-   time you really need scroll
+IRC: {{{
+http://modern.ircdocs.horse/
+https://defs.ircdocs.horse/defs/numerics.html
+}}}
+Tabs: {{{
 
- - channelList not populated sometimes
-   - 321 ALWAYS comes before 322 
-     but if goirc.HandleFunc is just doing go handler() indiscriminately
-     which would cause a 322 to get handled before a 321 sometimes at random
-     that's another reason to get rid of goirc
+    About Tab Controls | Microsoft Docs
+https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
 
-     because we *do* want to ignore 322 if the channelList tab was closed atm
-
-     NOTE(tso): unrelated
-     userstory storytime:
-        " hey what channels are on this network
-        " oh shit there are 20,000
-        " */list*
-        " *server sends 20,000 lines*
-        " let's sort by most popular oh this one looks good
-        " *closes channel list tab*
-        " *client is still receiving 20,000 lines*
-        " oh nvm this channel is dead let's see that list again
-        " /list
-
-        WHAT SHOULD HAPPEN CHOOSE YOUR ADVENTURE:
-
-        [1] "still getting list results from last time, try again later"
-        (what we do now)
-
-        [2] display the still-incoming list results as-is 
-        (confusing to user)
-
-        [3] always store all of the list results in a separate array on
-            serverState structure instead of relying on channelListModel
-            and add a Refresh button to channelList 
-            which is disabled until we get ENDOFLIST (323 I assume)
-        (A WINNER IS YOU)
-
-        we're basically just recreating xchat at this point
-
-    -tso 7/13/2018 10:27:54 PM
-
-  - tab close behavior is screwy but I don't want to mess with it rn
-
-  - major: sync issues
-    - grep -r HACK for more information
-
-  - minor but looks really bad: adding/closing tabs to window causes ui
-    flicker
+    Hacking the Overall Background Color of a Windows Tab Control
+http://www.glennslayden.com/code/win32/tab-control-background-brush
 
 }}}
-
-richedit {{{
-
-FIX PROBLEMS:
- - richedit jumps up like 20 lines or scrolls past the end find out whats
-   going on with that it has to do with when its focused or not
-   dont just spam WM_VSCROLL although thats probably the solution
-
- - appendtext/linecount
-
-CREATE NEW PROBLEMS:
- - /search or /find or CTRL+F
-    - perfect world: reduce text buffer to matches, then restore
-    - real world: jump to selection
- 
- - selection automatically goes to clipboard
+RichEdit stuff: {{{
+https://docs.microsoft.com/en-us/windows/desktop/Controls/bumper-rich-edit-rich-edit-control-reference
+https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-tagrichedit_image_parameters
+https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-_charformat
+https://github.com/Microsoft/Windows-classic-samples/blob/master/Samples/DynamicDPI/cpp/SampleRichEditControl.cpp
+https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyle
+https://docs.microsoft.com/en-us/windows/desktop/Controls/em-seteventmask
+https://docs.microsoft.com/en-us/windows/desktop/Controls/rich-edit-control-event-mask-flags
+https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyleex
+https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
+https://blogs.msdn.microsoft.com/murrays/2015/03/27/richedit-colors/
 }}}
----
-(*actual todo list) {{{
+Useful/Misc: {{{
+    open urls from command line in any OS:
+https://www.dwheeler.com/essays/open-files-urls.html
 
- - /part without closing tab
-     - chanState tracks whether "connected" to channel?
+    get tab key messages in windows:
+http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
 
- - split extra long text input
-     - maxlen is 450..512
-     - ctrl+enter inserts \n
-     - split on \n, send multiple lines
-     - dialog box: warn about sending > 2 lines
+    numerical values for (some) Windows constants
+https://doc.pcsoft.fr/en-US/?6510001
+    windows messages:
+https://wiki.winehq.org/List_Of_Windows_Messages
+    typedefs for LONG DWORD LPSTR etc:
+https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
 
- - don't log lines if DISCONNECTED
+    window styles
+https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
 
- - don't display lines if not sent
-    - e.g. cannot send to channel (+m)
+    setlayeredwindowattributes (transparency)
+    example code:
+https://msdn.microsoft.com/en-us/library/ms997507.aspx
+    reference:
+https://msdn.microsoft.com/en-us/library/windows/desktop/ms633540(v=vs.85).aspx
 
- - don't open privmsg tab if not sent
-    - e.g. no such nick/channel
+    might be what we're looking for:
+https://docs.microsoft.com/en-us/windows/desktop/api/dwmapi/nf-dwmapi-dwmextendframeintoclientarea
+
+    ownerdraw status bar text (lifesaver):
+http://microsoft.public.win32.programmer.ui.narkive.com/dlstN3N0/change-color-of-text-in-status-bar
+
+    FlashWindowEx
+https://docs.microsoft.com/en-us/windows/desktop/api/winuser/ns-winuser-flashwinfo
+
+}}}}}}
+DONT COME HERE {{{
+THIS IS THE BADZONE {{{
+WONTFIX {{{
+   unstyled widgets:         literally impossible/can't be bothered {{{
+   WONTFIX(tso): literally impossible, can't be bothered
+   -tso 7/27/2018 7:56:43 AM
+   - background/foreground color need to be applied to:
+     - tabs        bg[ ] fg[ ]
+     - pushbutton  bg[ ] fg[ ]
+     - tableview   bg[ ] fg[ ]
 }}}
----
-walk {{{
- - figure out how to make the window flash orange in the task bar
+   multiline send:           universally loathed {{{
+   WONTFIX(tso): 1) multiline send is universally loathed 
+   
+                 2) implementing it is trivial, but enabling it for the one 
+                    one time you want to paste 3 lines on purpose 
+                    doesn't make up for the countless times you
+                    accidentally paste 50 lines 
+
+                 3) i don't want to enable spammers
+  -tso 7/27/2018 8:04:28 AM
+    - ctrl+enter: insert \n
+
+    - split extra long text input
+         - maxlen is 450..512
+         - split on \n, send multiple lines
+         - dialog box: warn about sending > 2 lines
+}}}
+  mouse input on tabWidget: literally impossible {{{
+  WONTFIX(tso): not possible to get mouse or keyboard events on TabWidget afaict
+                so rip the dream:
+  -tso 2018-07-19 18:25:42
+  - mouse input on tabWidget
+      - middle-click to close tabs
+      - scroll to cycle through tabs
+      - context menu
+      - mark as read
+      - close
+}}}
+  flash window in task bar: annoying tbh {{{
+- figure out how to make the window flash orange in the task bar
    - NOTE(tso): it's FlashWindow / FlashWindowEx but it's kind of an annoying feature
                 when I think about it, probably won't do it 
      -tso 7/24/2018 12:36:47 PM
-}}}
----
-new feature {{{
-
- - topic widget should allow input and send /topic or whatever
-   after: replace topicInput with a RichEdit to display colors and links 
-
- - highlight list
-    - probably should compile regexp for that since its more complex
-    - needs dialog, maybe just use TextEdit
-    - support for patterns
-
- - word filter
-    - e.g. "fuck" => "****"
-    - or 4chan style "fam" => "desu"
-
- - limit scrollback to n lines
-
- - load chatlog on join
-}}}
----
-big project/refactor {{{
-
- - new server tab/connection abstraction
-   - given any tab, clientState or something should be able
-     to return a servConn and a servState, possibly chanState
-     or pmState as well
-
- - make empty server tab possible
-
- - use nick type instead of nick as string in more places
-   - store color value in nickList
-}}}
----
-commands {{{
-
- - /mode needs to be able to send just the channel e.g. MODE #test
-   to get a reply of what the mode is
-   expected: /mode #channel
-             Mode for #channel is +CSnpstz
-             /mode tso
-             tso (221: +Sirx)
-
- - ditto for /topic
-   expected: /topic
-             Topic for #channel is "words" set by tso at 7/12/2018 11:54:18 PM
-
- - /welcome
-    - first run welcome message
-    - ascii art logo
-    - contact + link to github
-    - getting started
-      /server irc.example.org +
-      /join #channel
-      hi
-    - /help for more information
-
- - tab completion for commands
-
-need dialog box for better management of lists:
- - /ignore
-    - /unignore
- - /invite
-    - /uninvite
- - /kickban
-
- - /amsg
- - /awayall
- - /unawayall
-
-}}}
----
-improvements {{{
-
- - better scripting examples
-    - useful/common things: rainbow text, automatic translation, emoticons
-}}}
----
-config {{{
-
- - autoload registered scripts at startup
-
- - settings dialog
- 
- - write to config.json
-     - save current state as autojoin on exit (optional)
-
- - hidejoinparts per channel(with list) or global
-
- - ignore list
-
- - highlight list
-    - disable highlight
-}}}
----
-dcc {{{
-
- - /send 
-
- - file transfers tab
- 
- - Save As dialog on recv
-
- - drag/drop
-
- unrelated: maybe turn tsobot into a XDCC bot
-}}}
----
-extensions {{{
-
- - inline twitter links
-
- - be able to connect to irc.twitch.tv (implement OAUTH or whatever they use)
-}}}
----
-bikeshedding {{{
-
- - testing
+}}}}}}
+TALKING TO MYSELF {{{
+ - testing {{{
      - it would be nice if we could test the UI 
        without having to connect to a network 
          - one of each type of tab opens up 
@@ -396,8 +349,8 @@ bikeshedding {{{
        ":host@nowhere PRIVMSG #fakechannelfortesting :test\n"
        on a simple channel or something so there's nothing complicated about
        mocking a connection if only it were that easy
-
- - replace goirc with simple channels and goroutines
+}}}
+ - replace goirc with simple channels and goroutines {{{
     yay:
          - /reconnect is impossible for some reason
          - logger interface is inconvenient
@@ -458,8 +411,8 @@ bikeshedding {{{
          - it works
          - has anti-flooding stuff
          - line parsing might be harder than it looks
-
- - replace walk with qt 
+}}}
+ - replace walk with qt {{{
     ... for version 2.0
 
     yay:
@@ -486,73 +439,10 @@ bikeshedding {{{
      - *** this sort of thing might be against IRC network rules need to look into
        what the policy is and/or how znc does it so well
        or just use znc
+}}}}}}
+TALKING TO MYSELF EVEN MORE: {{{
 
-}}}
-░░░
-RESOURCES/CITATIONS: {{{
-
-IRC:
-http://modern.ircdocs.horse/
-https://defs.ircdocs.horse/defs/numerics.html
-
-Tabs:
-
-    About Tab Controls | Microsoft Docs
-https://docs.microsoft.com/en-us/windows/desktop/Controls/tab-controls#tc_image_lists
-
-    Hacking the Overall Background Color of a Windows Tab Control
-http://www.glennslayden.com/code/win32/tab-control-background-brush
-
-
-RichEdit stuff:
-https://docs.microsoft.com/en-us/windows/desktop/Controls/bumper-rich-edit-rich-edit-control-reference
-https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-tagrichedit_image_parameters
-https://docs.microsoft.com/en-us/windows/desktop/api/Richedit/ns-richedit-_charformat
-https://github.com/Microsoft/Windows-classic-samples/blob/master/Samples/DynamicDPI/cpp/SampleRichEditControl.cpp
-https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyle
-https://docs.microsoft.com/en-us/windows/desktop/Controls/em-seteventmask
-https://docs.microsoft.com/en-us/windows/desktop/Controls/rich-edit-control-event-mask-flags
-https://docs.microsoft.com/en-us/windows/desktop/Controls/em-geteditstyleex
-https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/richedit.h
-https://blogs.msdn.microsoft.com/murrays/2015/03/27/richedit-colors/
-
-Useful:
-    open urls from command line in any OS:
-https://www.dwheeler.com/essays/open-files-urls.html
-
-    get tab key messages in windows:
-http://forums.codeguru.com/showthread.php?60142-How-to-trap-WM_KILLFOCUS-with-Tab-key
-
-    numerical values for (some) Windows constants
-https://doc.pcsoft.fr/en-US/?6510001
-    windows messages:
-https://wiki.winehq.org/List_Of_Windows_Messages
-    typedefs for LONG DWORD LPSTR etc:
-https://docs.microsoft.com/en-us/windows/desktop/WinProg/windows-data-types
-
-    window styles
-https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
-
-    setlayeredwindowattributes (transparency)
-    example code:
-https://msdn.microsoft.com/en-us/library/ms997507.aspx
-    reference:
-https://msdn.microsoft.com/en-us/library/windows/desktop/ms633540(v=vs.85).aspx
-
-    might be what we're looking for:
-https://docs.microsoft.com/en-us/windows/desktop/api/dwmapi/nf-dwmapi-dwmextendframeintoclientarea
-
-    ownerdraw status bar text (lifesaver):
-http://microsoft.public.win32.programmer.ui.narkive.com/dlstN3N0/change-color-of-text-in-status-bar
-
-    FlashWindowEx
-https://docs.microsoft.com/en-us/windows/desktop/api/winuser/ns-winuser-flashwinfo
-
-}}}
-▒▒▒
-ADDENDUM: {{{
-
-RE: inserting images in RichEdit
+RE: inserting images in RichEdit {{{
 
 nvm OLE is exceptionally awful and I can't figure out how to get the
 OBJECTPOSITIONS messages so fuck it if we want more out of the UI than pretty
@@ -561,8 +451,8 @@ colors there's always walk.WebView, electron, Qt, or reinventing the wheel
 clipboard manually and invent a scrollbar and waste like a solid year on that)
 
 -tso, July Sun Jul 8 07:49:26 2018 -0400
-
-RE: splitting main into subpackages
+}}}
+RE: splitting main into subpackages {{{
 
 or "issues nobody raised yet but inevitably will part 1"
 
@@ -610,6 +500,5 @@ yourself and fork (off)
 WONTFIX
 -tso 7/14/2018 8:14:06 AM
 
-}}}
-
+}}}}}}}}}}}}
 # vim: tw=70 ft=help fdm=marker fmr={{{,}}} fdl=0 fen:
