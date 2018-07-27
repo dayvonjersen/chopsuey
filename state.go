@@ -62,6 +62,7 @@ func ensureChanState(servConn *serverConnection, servState *serverState, channel
 			nickList: newNickList(),
 		}
 
+		// TODO(tso): make a finderFunc instead
 		index := servState.tab.Index()
 		if servState.channelList != nil {
 			index = servState.channelList.Index()
@@ -90,6 +91,7 @@ func ensurePmState(servConn *serverConnection, servState *serverState, nick stri
 			nick: nick,
 		}
 
+		// TODO(tso): make a finderFunc instead
 		index := servState.tab.Index()
 		if servState.channelList != nil {
 			index = servState.channelList.Index()
@@ -108,6 +110,7 @@ func ensurePmState(servConn *serverConnection, servState *serverState, nick stri
 		}
 		index++
 		servState.privmsgs[nick] = pmState
+
 		ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState, pmState: pmState}, index)
 		tab := newPrivmsgTab(servConn, servState, pmState, index)
 		ctx.tab = tab

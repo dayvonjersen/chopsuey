@@ -250,12 +250,11 @@ func serverMsg(text ...string) string {
 		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%#v",
 			len(text), text)
 	}
-	// NOTE(tso): "R" for "reply" (maybe S is better or nothing at all)
-	return color(now()+"R("+text[0]+"): "+strings.Join(text[1:], " "), DarkGray)
+	return color(now()+"S("+text[0]+"): "+strings.Join(text[1:], " "), DarkGray)
 }
 
 func joinpartMsg(text ...string) string {
-	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), 53)) // XXX TEMPORARY SECRETARY (that default orange was bothering me)
+	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), Orange))
 }
 
 func updateMsg(text ...string) string {

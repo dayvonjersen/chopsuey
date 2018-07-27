@@ -2,6 +2,8 @@ TODO {{{
 [[[                                 the short list                              ]]] {{{
 REMINDER(tso): terse desc != easy
 
+ - clean up tab_channel, server, privmsg 
+ - Focus() isn't always being called
  - nicklist box resize behavior nonsense
  - implement fmtReverse
  - figure out a way to merge commandContext and tabWithContext
@@ -175,6 +177,7 @@ REMINDER(tso): terse desc != easy
      - contextmenu?
 
    - issues:
+     - richedit needs to handle the tab key (\t)
      - richedit jumps up like 20 lines or scrolls past the end find out whats
        going on with that it has to do with when its focused or not
        dont just spam WM_VSCROLL although thats probably the solution

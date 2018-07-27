@@ -32,8 +32,7 @@ func SetSystrayContextMenu() {
 		t := ctx.tab
 		tabTitle := t.Title()
 		_, split := t.(*tabServer)
-		// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
-		//             and t.Index() is -1 until the tab actually gets created...
+		// NOTE(tso): have to do this and the curried function because of reasons
 		idx := t.Index()
 		if idx == -1 {
 			idx = i
@@ -42,8 +41,6 @@ func SetSystrayContextMenu() {
 		menu[idx] = menuItem{
 			separator: split,
 			text:      tabTitle,
-			// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
-			//             and t.Index() is -1 until the tab actually gets created...
 			fn: func(t tab) func() {
 				return func() {
 					tabWidget.SetCurrentIndex(t.Index())
