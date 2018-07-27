@@ -217,7 +217,7 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 		}.Create(builder)
 		ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 
-		t.textBuffer.KeyPress().Attach(ctrlTab)
+		t.textBuffer.KeyPress().Attach(globalKeyHandler)
 		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 

@@ -45,6 +45,7 @@ func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 }
 
 func getCommandContext(t tabWithTextBuffer) *commandContext {
+	// FIXME(tso): resolve commandContext/tabWithContext
 	cmdctx := &commandContext{}
 	ctx := tabMan.Find(identityFinder(t))
 	if ctx == nil {
@@ -78,9 +79,6 @@ func NewTextInput(t tabWithTextBuffer) *MyLineEdit {
 	}
 	textInput := newMyLineEdit(tabPage)
 
-	textInput.KeyDown().Attach(func(key walk.Key) {
-		ctrlF4(getCommandContext(t), key)
-	})
 	textInput.KeyDown().Attach(func(key walk.Key) {
 		if r := insertCharacter(key); r != 0 {
 			text := []rune(textInput.Text())
@@ -149,7 +147,7 @@ func NewTextInput(t tabWithTextBuffer) *MyLineEdit {
 		}
 	})
 
-	textInput.KeyPress().Attach(ctrlTab)
+	textInput.KeyPress().Attach(globalKeyHandler)
 	textInput.KeyPress().Attach(func(key walk.Key) {
 		if key == walk.KeyUp || key == walk.KeyDown {
 			text := textInput.Text()

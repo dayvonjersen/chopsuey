@@ -83,7 +83,7 @@ func newServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		t.textBuffer, err = NewRichEdit(t.tabPage)
 		checkErr(err)
-		t.textBuffer.KeyPress().Attach(ctrlTab)
+		t.textBuffer.KeyPress().Attach(globalKeyHandler)
 		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
