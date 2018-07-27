@@ -34,32 +34,17 @@ type serverState struct {
 }
 
 func (servState *serverState) AllTabs() []tabWithTextBuffer {
-	ret := []tabWithTextBuffer{servState.tab}
-	for _, chanState := range servState.channels {
-		ret = append(ret, chanState.tab)
-	}
-	for _, pmState := range servState.privmsgs {
-		ret = append(ret, pmState.tab)
+	contexts := tabMan.FindAll(allServerTabsFinder(servState))
+	ret := make([]tabWithTextBuffer, len(contexts))
+	for i, ctx := range contexts {
+		ret[i] = ctx.tab.(tabWithTextBuffer)
 	}
 	return ret
 }
 
 func (servState *serverState) CurrentTab() tabWithTextBuffer {
-	index := tabWidget.CurrentIndex()
-	if servState.tab.Index() == index {
-		return servState.tab
-	}
-	for _, ch := range servState.channels {
-		if ch.tab.Index() == index {
-			return ch.tab
-		}
-	}
-	for _, pm := range servState.privmsgs {
-		if pm.tab.Index() == index {
-			return pm.tab
-		}
-	}
-	return servState.tab
+	ctx := tabMan.Find(currentServerTabFinder(servState))
+	return ctx.tab.(tabWithTextBuffer)
 }
 
 type channelState struct {

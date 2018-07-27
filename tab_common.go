@@ -62,12 +62,9 @@ func (t *tabCommon) HasFocus() bool {
 }
 
 func (t *tabCommon) Close() {
-
 	// for when we implement closing tabs in ways other than /close
 	shouldChangeTabFocus := t.HasFocus()
 	myIndexWas := t.Index()
-
-	tabMan.Delete(t)
 
 	checkErr(tabWidget.Pages().Remove(t.tabPage))
 	t.tabPage.Dispose()

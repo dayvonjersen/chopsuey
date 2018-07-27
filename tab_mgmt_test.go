@@ -111,7 +111,7 @@ func TestTabDelete(test *testing.T) {
 	}()
 	wg.Wait()
 
-	tabMan.Delete(t2.tab)
+	tabMan.Delete(t2)
 
 	finder := func(index int) func(t *tabWithContext) bool {
 		return func(t *tabWithContext) bool {

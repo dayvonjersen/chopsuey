@@ -37,7 +37,7 @@ type tabRequestUpdate struct {
 }
 
 type tabRequestDelete struct {
-	tabs []tab
+	tabs []*tabWithContext
 	ret  chan struct{}
 }
 
@@ -106,18 +106,28 @@ func currentTabFinder(t *tabWithContext) bool {
 	return t.tab.Index() == tabWidget.CurrentIndex()
 }
 
-func serverTabFinder(servState *serverState) finderFunc {
+func allServerTabsFinder(servState *serverState) finderFunc {
 	return func(t *tabWithContext) bool {
 		if t.servState == servState {
-			if _, ok := t.tab.(*tabServer); ok {
-				return true
-			}
+			return true
 		}
 		return false
 	}
 }
 
-func (tabMan *tabManager) Delete(tabs ...tab) {
+func currentServerTabFinder(servState *serverState) finderFunc {
+	return func(t *tabWithContext) bool {
+		if currentTabFinder(t) && t.servState == servState {
+			return true
+		}
+		if t.servState == servState && t.chanState == nil && t.pmState == nil {
+			return true
+		}
+		return false
+	}
+}
+
+func (tabMan *tabManager) Delete(tabs ...*tabWithContext) {
 	ret := make(chan struct{})
 	tabMan.delete <- &tabRequestDelete{tabs, ret}
 	<-ret
@@ -186,7 +196,7 @@ func newTabManager() *tabManager {
 				log.Printf("got delete: %v", req)
 				indices := []int{}
 				for _, t := range req.tabs {
-					indices = append(indices, t.Index())
+					indices = append(indices, t.tab.Index())
 				}
 
 				for i, t := range tabMan.tabs {

@@ -188,6 +188,9 @@ func disconnectCmd(ctx *commandContext, args ...string) {
 
 func quitCmd(ctx *commandContext, args ...string) {
 	disconnectCmd(ctx, args...)
+
+	tabMan.Delete(tabMan.FindAll(allServerTabsFinder(ctx.servState))...)
+
 	for k, chanState := range ctx.servState.channels {
 		chanState.tab.Close()
 		delete(ctx.servState.channels, k)
@@ -308,6 +311,12 @@ func closeCmd(ctx *commandContext, args ...string) {
 	} else if ctx.pmState != nil {
 		delete(ctx.servState.privmsgs, ctx.pmState.nick)
 	}
+	tabCtx := &tabWithContext{tab: ctx.tab}
+	tabCtx.servConn = ctx.servConn
+	tabCtx.servState = ctx.servState
+	tabCtx.chanState = ctx.chanState
+	tabCtx.pmState = ctx.pmState
+	tabMan.Delete(tabCtx)
 	ctx.tab.Close()
 }
 
