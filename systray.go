@@ -3,19 +3,13 @@ package main
 import (
 	"log"
 	"os/exec"
-	"sync"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
 
-var mu = &sync.Mutex{}
-
 func SetSystrayContextMenu() {
 	return
-	mu.Lock()
-	defer mu.Unlock()
-
 	type menuItem struct {
 		separator bool
 
@@ -23,10 +17,13 @@ func SetSystrayContextMenu() {
 		fn   func()
 	}
 
-	menu := make([]menuItem, len(clientState.tabs))
+	contexts := tabMan.FindAll(allTabsFinder)
 
-	i := len(clientState.tabs) - 1
-	for _, t := range clientState.tabs {
+	menu := make([]menuItem, len(contexts))
+
+	i := len(contexts) - 1
+	for _, ctx := range contexts {
+		t := ctx.tab
 		tabTitle := t.Title()
 		_, split := t.(*tabServer)
 		// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
@@ -64,7 +61,11 @@ func SetSystrayContextMenu() {
 		menuItem{
 			text: "Help",
 			fn: func() {
-				if t, ok := clientState.CurrentTab().(tabWithTextBuffer); ok {
+				ctx := tabMan.Find(currentTabFinder)
+				if ctx == nil {
+					return
+				}
+				if t, ok := ctx.tab.(tabWithTextBuffer); ok {
 					ctx := &commandContext{tab: t}
 					helpCmd(ctx)
 				}

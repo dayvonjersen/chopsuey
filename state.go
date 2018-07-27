@@ -1,45 +1,8 @@
 package main
 
-import "sync"
-
 var clientState *_clientState // global instance
 type _clientState struct {
 	cfg *clientConfig
-
-	connections []*serverConnection
-	servers     []*serverState
-	tabs        []tab
-	mu          *sync.Mutex
-}
-
-func (clientState *_clientState) AppendTab(t tab) {
-	clientState.tabs = append(clientState.tabs, t)
-	SetSystrayContextMenu()
-}
-
-func (clientState *_clientState) RemoveTab(t tab) {
-	index := t.Index()
-	for i, tab := range clientState.tabs {
-		if tab.Index() == index {
-			clientState.tabs = append(clientState.tabs[0:i], clientState.tabs[i+1:]...)
-			break
-		}
-	}
-	SetSystrayContextMenu()
-}
-
-func (clientState *_clientState) NumTabs() int {
-	return len(clientState.tabs)
-}
-
-func (clientState *_clientState) CurrentTab() tab {
-	index := tabWidget.CurrentIndex()
-	for _, t := range clientState.tabs {
-		if t.Index() == index {
-			return t
-		}
-	}
-	return nil
 }
 
 type userState struct {
@@ -144,8 +107,26 @@ func ensurePmState(servConn *serverConnection, servState *serverState, nick stri
 		pmState = &privmsgState{
 			nick: nick,
 		}
+
+		index := servState.tab.Index()
+		if servState.channelList != nil {
+			index = servState.channelList.Index()
+		}
+		for _, ch := range servState.channels {
+			i := ch.tab.Index()
+			if i > index {
+				index = i
+			}
+		}
+		for _, pm := range servState.privmsgs {
+			i := pm.tab.Index()
+			if i > index {
+				index = i
+			}
+		}
+		index++
 		servState.privmsgs[nick] = pmState
-		tabMan.Create(&tabContext{servConn: servConn, servState: servState, pmState: pmState}, tabMan.Len())
+		tabMan.Create(&tabContext{servConn: servConn, servState: servState, pmState: pmState}, index)
 	}
 	return pmState
 }

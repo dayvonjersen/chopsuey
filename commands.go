@@ -200,7 +200,7 @@ func quitCmd(ctx *commandContext, args ...string) {
 		ctx.servState.channelList.Close()
 		ctx.servState.channelList = nil
 	}
-	if clientState.NumTabs() > 1 {
+	if tabMan.Len() > 1 {
 		ctx.servState.tab.Close()
 	}
 }
@@ -251,7 +251,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 
 	servState := &serverState{}
 	// FIXME(tso): empty tab is a nightmare holy fuck
-	if clientState.NumTabs() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY {
+	if tabMan.Len() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY {
 		servState = ctx.servState
 	}
 
@@ -269,7 +269,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 	servConn := NewServerConnection(servState, func() {})
 
 	// FIXME(tso): empty tab is a nightmare holy fuck
-	if !(clientState.NumTabs() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY) {
+	if !(tabMan.Len() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY) {
 		tabMan.Create(&tabContext{servConn: servConn, servState: servState}, tabMan.Len())
 	}
 
@@ -284,7 +284,7 @@ func closeCmd(ctx *commandContext, args ...string) {
 	if ctx.tab == ctx.servState.tab {
 		quitCmd(ctx, args...)
 
-		if clientState.NumTabs() == 1 {
+		if tabMan.Len() == 1 {
 			ctx.servState = &serverState{
 				connState: CONNECTION_EMPTY,
 				channels:  map[string]*channelState{},

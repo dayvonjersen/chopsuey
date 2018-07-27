@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 	"unsafe"
 
@@ -142,12 +141,7 @@ func main() {
 
 	logging.SetLogger(&debugLogger{})
 
-	clientState = &_clientState{
-		connections: []*serverConnection{},
-		servers:     []*serverState{},
-		tabs:        []tab{},
-		mu:          &sync.Mutex{},
-	}
+	clientState = &_clientState{}
 
 	tabMan = newTabManager()
 
@@ -235,28 +229,31 @@ func main() {
 
 	var currentFocusedTab tab
 	tabWidget.CurrentIndexChanged().Attach(func() {
-		currentTab := clientState.CurrentTab()
+		ctx := tabMan.Find(currentTabFinder)
+		if ctx == nil {
+			return
+		}
+		currentTab := ctx.tab
 		if currentFocusedTab != currentTab {
 			currentFocusedTab = currentTab
-			// FIXME(tso): currentTab should never be nil
-			if currentTab != nil {
-				currentTab.Focus()
-			}
+			currentTab.Focus()
 		}
 	})
 	mw.Activating().Attach(func() {
 		mainWindowFocused = true
 		// always call Focus() when window regains focus
-		// FIXME(tso): CurrentTab() should never be nil
-		if clientState != nil && clientState.CurrentTab() != nil {
-			clientState.CurrentTab().Focus()
+		ctx := tabMan.Find(currentTabFinder)
+		if ctx == nil {
+			return
 		}
+		ctx.tab.Focus()
 	})
 	mw.Deactivating().Attach(func() {
 		mainWindowFocused = false
 	})
 	mw.SizeChanged().Attach(func() {
-		for _, t := range clientState.tabs {
+		for _, ctx := range tabMan.FindAll(allTabsFinder) {
+			t := ctx.tab
 			switch t.(type) {
 			case *tabServer:
 				t := t.(*tabServer)
@@ -327,7 +324,10 @@ func main() {
 						}
 					}(cfg.NickServPASSWORD, cfg.AutoJoin),
 				)
-				tabMan.Create(&tabContext{servConn: servConn, servState: servState}, tabMan.Len())
+				index := tabMan.Len()
+				log.Println("index:", index)
+				tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
+				log.Println("created tab")
 				servConn.Connect(servState)
 			}
 		}()

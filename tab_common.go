@@ -67,7 +67,7 @@ func (t *tabCommon) Close() {
 	shouldChangeTabFocus := t.HasFocus()
 	myIndexWas := t.Index()
 
-	clientState.RemoveTab(t)
+	tabMan.Delete(t)
 
 	checkErr(tabWidget.Pages().Remove(t.tabPage))
 	t.tabPage.Dispose()

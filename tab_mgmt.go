@@ -1,5 +1,7 @@
 package main
 
+import "log"
+
 type tabWithContext struct {
 	tabContext
 	tab tab
@@ -153,6 +155,7 @@ func newTabManager() *tabManager {
 				return
 
 			case req := <-tabMan.create:
+				log.Printf("got create: %v", req)
 				if req.finder != nil {
 					for _, t := range tabMan.tabs {
 						if req.finder(t) {
@@ -170,29 +173,36 @@ func newTabManager() *tabManager {
 
 				switch {
 				case t.servState != nil && t.chanState == nil && t.pmState == nil:
+					log.Println("server")
 					// server
 					t.tab = <-newServerTab(t.servConn, t.servState)
 
 				case t.servState != nil && t.chanState != nil && t.pmState == nil:
+					log.Println("channel")
 					// channel
 					t.tab = <-newChannelTab(t.servConn, t.servState, t.chanState, req.index)
 
 				case t.servState != nil && t.chanState == nil && t.pmState != nil:
+					log.Println("privmsg")
 					// privmsg
-					t.tab = <-newPrivmsgTab(t.servConn, t.servState, t.pmState)
+					t.tab = <-newPrivmsgTab(t.servConn, t.servState, t.pmState, req.index)
 
 				default:
+					log.Printf("unknown: %v", req.ctx)
 					// testing
 					t.tab = &dummyTab{index: req.index}
 				}
 
 				tabMan.tabs = append(tabMan.tabs, t)
 				req.ret <- t
+				log.Printf("created sent return value to caller")
 
 			case req := <-tabMan.count:
+				log.Printf("got count: %v", req)
 				req.ret <- len(tabMan.tabs)
 
 			case req := <-tabMan.search:
+				log.Printf("got search: %v", req)
 				ret := []*tabWithContext{}
 				for _, t := range tabMan.tabs {
 					if req.finder(t) {
@@ -202,10 +212,12 @@ func newTabManager() *tabManager {
 				req.ret <- ret
 
 			case req := <-tabMan.update:
+				log.Printf("got update: %v", req)
 				_ = req
 				// stub
 
 			case req := <-tabMan.delete:
+				log.Printf("got delete: %v", req)
 				indices := []int{}
 				for _, t := range req.tabs {
 					indices = append(indices, t.Index())

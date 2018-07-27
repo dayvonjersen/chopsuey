@@ -72,8 +72,9 @@ func (t *tabChannelList) Update(servState *serverState) {
 }
 
 func NewChannelList(servConn *serverConnection, servState *serverState) *tabChannelList {
+	return nil
 	t := &tabChannelList{}
-	clientState.AppendTab(t)
+	// clientState.AppendTab(t)
 	t.mu = &sync.Mutex{}
 	t.mdl = new(channelListModel)
 	t.complete = false

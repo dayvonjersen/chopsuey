@@ -97,16 +97,16 @@ func newServerTab(servConn *serverConnection, servState *serverState) <-chan *ta
 		// remove borders
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
 
+		servState.tab = t
+		ready <- t
+
+		// applyThemeToTab(t)
+
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-
-		applyThemeToTab(t)
-
-		servState.tab = t
-		ready <- t
 	})
 	return ready
 }

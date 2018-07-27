@@ -421,8 +421,8 @@ func applyTheme(filename string) error {
 	tabWidget.SetBackground(brush)
 	mw.StatusBar().SetBackground(brush)
 
-	for _, t := range clientState.tabs {
-		applyThemeToTab(t)
+	for _, t := range tabMan.FindAll(allTabsFinder) {
+		applyThemeToTab(t.tab)
 	}
 	return nil
 }
