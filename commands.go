@@ -256,7 +256,7 @@ func serverCmd(cmdctx *commandContext, args ...string) {
 		return
 	}
 
-	// FIXME(tso): abstract opening a new server connection/tab by reusing this code
+	// TODO(tso): abstract opening a new server connection/tab by reusing this code
 	hostname := args[0]
 	port := 6667
 	ssl := false

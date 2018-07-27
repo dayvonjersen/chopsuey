@@ -275,66 +275,54 @@ func main() {
 		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
 		SetStatusBarIcon("res/msg_error.ico")
 		SetStatusBarText("error parsing config.json")
-		/*}
-
-		// XXX TEMPORARY SECRETARY
-		for i := 0; i < 1; i++ {
-			emptyTab := NewServerTab(&serverConnection{}, &serverState{
-				networkName: "tab " + strconv.Itoa(i),
-				user:        &userState{nick: "tso"},
-			})
-
-			mw.WindowBase.Synchronize(func() {
-				paletteCmd(&commandContext{tab: emptyTab})
-			})
-		}
-		*/
-
 	} else {
 		if clientState.cfg.Theme != "" {
 			if err := applyTheme(clientState.cfg.Theme); err != nil {
 				walk.MsgBox(mw, err.Error(), err.Error(), walk.MsgBoxIconError)
 			}
 		}
-		go func() {
-			newEmptyServerTab()
-
-			// for _, cfg := range clientState.cfg.AutoConnect {
-			// 	servState := &serverState{
-			// 		connState:   CONNECTION_EMPTY,
-			// 		hostname:    cfg.Host,
-			// 		port:        cfg.Port,
-			// 		ssl:         cfg.Ssl,
-			// 		networkName: serverAddr(cfg.Host, cfg.Port),
-			// 		user: &userState{
-			// 			nick: cfg.Nick,
-			// 		},
-			// 		channels: map[string]*channelState{},
-			// 		privmsgs: map[string]*privmsgState{},
-			// 	}
-			// 	var servConn *serverConnection
-			// 	servConn = NewServerConnection(servState,
-			// 		func(nickservPASSWORD string, autojoin []string) func() {
-			// 			return func() {
-			// 				return
-			// 				if nickservPASSWORD != "" {
-			// 					servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
-			// 				}
-			// 				for _, channel := range autojoin {
-			// 					servConn.conn.Join(channel)
-			// 				}
-			// 			}
-			// 		}(cfg.NickServPASSWORD, cfg.AutoJoin),
-			// 	)
-			// 	index := tabMan.Len()
-			// 	ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
-			// 	tab := newServerTab(servConn, servState)
-			// 	// ctx.Update...
-			// 	ctx.tab = tab
-			// 	servState.tab = tab
-			// 	servConn.Connect(servState)
-			// }
-		}()
+		if len(clientState.cfg.AutoConnect) == 0 {
+			go func() {
+				newEmptyServerTab()
+			}()
+		} else {
+			go func() {
+				for _, cfg := range clientState.cfg.AutoConnect {
+					// TODO(tso): abstract opening a new server connection/tab
+					servState := &serverState{
+						connState:   CONNECTION_EMPTY,
+						hostname:    cfg.Host,
+						port:        cfg.Port,
+						ssl:         cfg.Ssl,
+						networkName: serverAddr(cfg.Host, cfg.Port),
+						user: &userState{
+							nick: cfg.Nick,
+						},
+						channels: map[string]*channelState{},
+						privmsgs: map[string]*privmsgState{},
+					}
+					var servConn *serverConnection
+					servConn = NewServerConnection(servState,
+						func(nickservPASSWORD string, autojoin []string) func() {
+							return func() {
+								if nickservPASSWORD != "" {
+									servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
+								}
+								for _, channel := range autojoin {
+									servConn.conn.Join(channel)
+								}
+							}
+						}(cfg.NickServPASSWORD, cfg.AutoJoin),
+					)
+					index := tabMan.Len()
+					ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
+					tab := newServerTab(servConn, servState)
+					ctx.tab = tab
+					servState.tab = tab
+					servConn.Connect(servState)
+				}
+			}()
+		}
 	}
 	/**/
 
