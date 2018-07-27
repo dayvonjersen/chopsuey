@@ -5,6 +5,18 @@ import (
 	"testing"
 )
 
+type dummyTab struct {
+	index int
+}
+
+func (t *dummyTab) Index() int         { return t.index }
+func (t *dummyTab) Title() string      { return "dummy tab" }
+func (t *dummyTab) StatusIcon() string { return "" }
+func (t *dummyTab) StatusText() string { return "" }
+func (t *dummyTab) HasFocus() bool     { return false }
+func (t *dummyTab) Focus()             {}
+func (t *dummyTab) Close()             {}
+
 func TestTabInsert(test *testing.T) {
 	tabMan := newTabManager()
 	defer tabMan.Shutdown()
@@ -14,22 +26,27 @@ func TestTabInsert(test *testing.T) {
 	var t0, t1, t2, t3, t4 *tabWithContext
 	go func() {
 		t0 = tabMan.Create(&tabContext{}, 0)
+		t0.tab = &dummyTab{index: 0}
 		wg.Done()
 	}()
 	go func() {
 		t1 = tabMan.Create(&tabContext{}, 1)
+		t1.tab = &dummyTab{index: 1}
 		wg.Done()
 	}()
 	go func() {
 		t2 = tabMan.Create(&tabContext{}, 2)
+		t2.tab = &dummyTab{index: 2}
 		wg.Done()
 	}()
 	go func() {
 		t3 = tabMan.Create(&tabContext{}, 3)
+		t3.tab = &dummyTab{index: 3}
 		wg.Done()
 	}()
 	go func() {
 		t4 = tabMan.Create(&tabContext{}, 4)
+		t4.tab = &dummyTab{index: 4}
 		wg.Done()
 	}()
 	wg.Wait()
@@ -69,22 +86,27 @@ func TestTabDelete(test *testing.T) {
 	var t0, t1, t2, t3, t4 *tabWithContext
 	go func() {
 		t0 = tabMan.Create(&tabContext{}, 0)
+		t0.tab = &dummyTab{index: 0}
 		wg.Done()
 	}()
 	go func() {
 		t1 = tabMan.Create(&tabContext{}, 1)
+		t1.tab = &dummyTab{index: 1}
 		wg.Done()
 	}()
 	go func() {
 		t2 = tabMan.Create(&tabContext{}, 2)
+		t2.tab = &dummyTab{index: 2}
 		wg.Done()
 	}()
 	go func() {
 		t3 = tabMan.Create(&tabContext{}, 3)
+		t3.tab = &dummyTab{index: 3}
 		wg.Done()
 	}()
 	go func() {
 		t4 = tabMan.Create(&tabContext{}, 4)
+		t4.tab = &dummyTab{index: 4}
 		wg.Done()
 	}()
 	wg.Wait()
@@ -124,9 +146,12 @@ func TestNoDuplicateTabInsert(test *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	race := func() {
-		tabMan.CreateIfNotFound(&tabContext{}, 0xff, func(t *tabWithContext) bool {
+		ctx := tabMan.CreateIfNotFound(&tabContext{}, 0xff, func(t *tabWithContext) bool {
 			return t.tab.Index() == 0xff
 		})
+		if ctx.tab == nil {
+			ctx.tab = &dummyTab{index: 0xff}
+		}
 		wg.Done()
 	}
 

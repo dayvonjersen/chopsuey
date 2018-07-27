@@ -124,18 +124,6 @@ func (tabMan *tabManager) Delete(tabs ...tab) {
 	return
 }
 
-type dummyTab struct {
-	index int
-}
-
-func (t *dummyTab) Index() int         { return t.index }
-func (t *dummyTab) Title() string      { return "dummy tab" }
-func (t *dummyTab) StatusIcon() string { return "" }
-func (t *dummyTab) StatusText() string { return "" }
-func (t *dummyTab) HasFocus() bool     { return false }
-func (t *dummyTab) Focus()             {}
-func (t *dummyTab) Close()             {}
-
 func newTabManager() *tabManager {
 	tabMan := &tabManager{
 		tabs:    []*tabWithContext{},
