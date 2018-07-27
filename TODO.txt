@@ -53,6 +53,7 @@ REMINDER(tso): terse desc != easy
        - when no config.json
        - when autowrite enabled
      - load scripts at startup 
+     - configurable font (and load at startup)
 }}}
  - themes and stuff {{{
      - applying font breaks richedit fg color

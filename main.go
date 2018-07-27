@@ -9,6 +9,7 @@ import (
 	"unsafe"
 
 	"github.com/fluffle/goirc/logging"
+	"github.com/kr/pretty"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
@@ -23,6 +24,8 @@ const (
 	CONNECT_RETRIES        = 1
 	CONNECT_RETRY_INTERVAL = time.Second
 	CONNECT_TIMEOUT        = time.Second * 30
+
+	TRANSPARENCY_DEFAULT_ALPHA = 0xb4 // a nice default value: ~70% opaque
 )
 
 var (
@@ -31,119 +34,45 @@ var (
 	statusBar *walk.StatusBarItem
 	systray   *walk.NotifyIcon
 
-	mainWindowFocused = true // start focused because windows
+	mainWindowFocused = true // start focused because windows (we don't get WM_ACTIVATE or WM_CREATE reliably)
 	mainWindowHidden  = false
 
 	clientCfg *clientConfig
 	tabMan    *tabManager
 )
 
-type myMainWindow struct {
-	*walk.MainWindow
-	transparent bool
-	alpha       int32
-	borderless  bool
-}
-
-func (mw *myMainWindow) SetTransparency(amt int32) {
-	mw.alpha += amt
-	if mw.alpha < 0 {
-		mw.alpha = 0
-	}
-	if mw.alpha > 0xff {
-		mw.alpha = 0xff
-	}
-	if mw.alpha == 0xff {
-		mw.transparent = false
-	} else {
-		mw.transparent = true
-	}
-	SetLayeredWindowAttributes(mw.Handle(), 0, mw.alpha, LWA_ALPHA)
-}
-
-func (mw *myMainWindow) ToggleTransparency() {
-	if mw.transparent {
-		SetLayeredWindowAttributes(mw.Handle(), 0, 0xff, LWA_ALPHA)
-	} else {
-		if mw.alpha == 0xff {
-			mw.alpha = 0xb4
-		}
-		SetLayeredWindowAttributes(mw.Handle(), 0, mw.alpha, LWA_ALPHA)
-	}
-	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
-	mw.transparent = !mw.transparent
-}
-
-func (mw *myMainWindow) ToggleBorder() {
-	if mw.borderless {
-		mw.StatusBar().SetVisible(true)
-		win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW)
-	} else {
-		mw.StatusBar().SetVisible(false)
-		//win.SetWindowLongPtr(mw.Handle(), win.GWL_STYLE, uintptr(win.WS_VISIBLE|win.WS_POPUP))
-		win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW&^win.WS_THICKFRAME&^win.WS_BORDER)
-	}
-	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
-	mw.borderless = !mw.borderless
-}
-
-func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	if msg == win.WM_DRAWITEM {
-		// use foreground color in statusBar
-		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		// log.Printf("got WM_DRAWITEM, item: % #v lParam: %v", pretty.Formatter(item), lParam)
-		if item.HwndItem == mw.StatusBar().Handle() && item.ItemState <= 1 {
-			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
-			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
-			text := win.UTF16PtrToString(textptr)
-			textlen := int32(len(text))
-			// log.Printf("text: % #v", pretty.Formatter(text))
-			win.TextOut(item.HDC, item.RcItem.Left+20 /*16px icon size + 4px padding*/, item.RcItem.Top, textptr, textlen)
-			return win.TRUE
-		}
-	}
-
-	if msg == win.WM_SYSCOMMAND {
-		// minimize/close to tray
-		if wParam == win.SC_MINIMIZE || wParam == win.SC_CLOSE {
-			win.ShowWindow(mw.Handle(), win.SW_HIDE)
-			mainWindowHidden = true
-			return 0
-		}
-	}
-	return mw.MainWindow.WndProc(hwnd, msg, wParam, lParam)
-}
-
-// show me the way-ay out
 func exit() {
-	// FIXME(tso): even cleaner shutdown
 	// TODO(tso): send QUIT to all active server connections
+	close(tabMan.destroy)
 	checkErr(mw.Close())
 	systray.Dispose()
 	os.Exit(1)
 }
 
 func main() {
-	// runtime.LockOSThread()
+	// ...
+	var err error
 
+	// handle ctrl+c
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		exit()
+	go func() { <-c; exit() }()
+
+	// print the state of the whole window on panic to catch winapi-related bugs
+	defer func() {
+		if x := recover(); x != nil {
+			printf(mw)
+			panic(x)
+		}
 	}()
 
-	// defer func() {
-	// 	if x := recover(); x != nil {
-	// 		printf(mw)
-	// 		panic(x)
-	// 	}
-	// }()
-
+	// goirc logging...
 	logging.SetLogger(&debugLogger{})
 
+	// tab management!
 	tabMan = newTabManager()
 
+	// create the window
 	mw = new(myMainWindow)
 	MainWindow{
 		AssignTo: &mw.MainWindow,
@@ -163,17 +92,18 @@ func main() {
 	walk.InitWrapperWindow(mw)
 
 	//  required for transparency:
-	mw.alpha = 0xb4 // a nice default value: ~70% opaque
+	mw.alpha = TRANSPARENCY_DEFAULT_ALPHA
 	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED|win.WS_EX_STATICEDGE)
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
-	var err error
+	// create tab widget
 	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
 	checkErr(err)
 	tabWidget.SetPersistent(true)
-
 	mw.Children().Insert(0, tabWidget)
 
+	// set main window size and position
+	// TODO(tso): configurable? save position? optional?
 	mw.SetBounds(walk.Rectangle{
 		X:      1536,
 		Y:      0,
@@ -181,11 +111,19 @@ func main() {
 		Height: 1050,
 	})
 
+	// set default font
+	// TODO(tso): configurable font
+	font, err := walk.NewFont("Hack", 9, 0)
+	checkErr(err)
+	mw.WindowBase.SetFont(font)
+
+	// set icons
 	ico, err := walk.NewIconFromFile("chopsuey.ico")
 	checkErr(err)
 	mw.SetIcon(ico)
 	SetStatusBarIcon("chopsuey.ico")
 
+	// create system tray
 	systray, err = walk.NewNotifyIcon(mw.Handle())
 	checkErr(err)
 	defer systray.Dispose()
@@ -202,10 +140,6 @@ func main() {
 		}
 	})
 	SetSystrayContextMenu()
-
-	font, err := walk.NewFont("Hack", 9, 0)
-	checkErr(err)
-	mw.WindowBase.SetFont(font)
 
 	// NOTE(tso): contrary to what the name of this event publisher implies
 	//            CurrentIndexChanged() fires every time you Insert() or Remove()
@@ -226,6 +160,9 @@ func main() {
 	//            something
 	// -tso 7/14/2018 11:29:50 PM
 
+	//
+	// f o c u s
+	//
 	var currentFocusedTab tab
 	tabWidget.CurrentIndexChanged().Attach(func() {
 		ctx := tabMan.Find(currentTabFinder)
@@ -240,16 +177,16 @@ func main() {
 	})
 	mw.Activating().Attach(func() {
 		mainWindowFocused = true
-		// always call Focus() when window regains focus
 		ctx := tabMan.Find(currentTabFinder)
 		if ctx == nil {
 			return
 		}
 		ctx.tab.Focus()
 	})
-	mw.Deactivating().Attach(func() {
-		mainWindowFocused = false
-	})
+	mw.Deactivating().Attach(func() { mainWindowFocused = false })
+
+	// resize
+	// FIXME(tso): @resizing
 	mw.SizeChanged().Attach(func() {
 		for _, ctx := range tabMan.FindAll(allTabsFinder) {
 			t := ctx.tab
@@ -268,12 +205,18 @@ func main() {
 		}
 	})
 
+	// config.json
 	clientCfg, err = getClientConfig()
 	if err != nil {
-		log.Println("error parsing config.json", err)
-		walk.MsgBox(mw, "error parsing config.json", err.Error(), walk.MsgBoxIconError)
-		SetStatusBarIcon("res/msg_error.ico")
-		SetStatusBarText("error parsing config.json")
+		msg := "error parsing config.json"
+		log.Println(msg, err)
+		mw.Synchronize(func() {
+			walk.MsgBox(mw, msg, err.Error(), walk.MsgBoxIconError)
+			SetStatusBarIcon("res/msg_error.ico")
+			SetStatusBarText(msg)
+			// TODO(tso): create+load+write default clientConfig
+			newEmptyServerTab()
+		})
 	} else {
 		if clientCfg.Theme != "" {
 			if err := applyTheme(clientCfg.Theme); err != nil {
@@ -281,11 +224,12 @@ func main() {
 			}
 		}
 		if len(clientCfg.AutoConnect) == 0 {
-			go func() {
+			mw.Synchronize(func() {
 				newEmptyServerTab()
-			}()
+			})
 		} else {
 			go func() {
+				// autojoin
 				for _, cfg := range clientCfg.AutoConnect {
 					// TODO(tso): abstract opening a new server connection/tab
 					servState := &serverState{
@@ -323,14 +267,96 @@ func main() {
 			}()
 		}
 	}
-	/**/
 
 	mw.Run()
 }
 
+// goirc logging...
 type debugLogger struct{}
 
 func (l *debugLogger) Debug(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
 func (l *debugLogger) Info(f string, a ...interface{})  { fmt.Printf(f+"\n", a...) }
 func (l *debugLogger) Warn(f string, a ...interface{})  { fmt.Printf(f+"\n", a...) }
 func (l *debugLogger) Error(f string, a ...interface{}) { fmt.Printf(f+"\n", a...) }
+
+// here be dragons
+type myMainWindow struct {
+	*walk.MainWindow
+
+	transparent bool
+	alpha       int32
+
+	borderless bool
+}
+
+func (mw *myMainWindow) SetTransparency(amt int32) {
+	mw.alpha += amt
+	if mw.alpha < 0 {
+		mw.alpha = 0
+	}
+	if mw.alpha > 0xff {
+		mw.alpha = 0xff
+	}
+	if mw.alpha == 0xff {
+		mw.transparent = false
+	} else {
+		mw.transparent = true
+	}
+	SetLayeredWindowAttributes(mw.Handle(), 0, mw.alpha, LWA_ALPHA)
+}
+
+func (mw *myMainWindow) ToggleTransparency() {
+	if mw.transparent {
+		SetLayeredWindowAttributes(mw.Handle(), 0, 0xff, LWA_ALPHA)
+	} else {
+		if mw.alpha == 0xff {
+			mw.alpha = TRANSPARENCY_DEFAULT_ALPHA
+		}
+		SetLayeredWindowAttributes(mw.Handle(), 0, mw.alpha, LWA_ALPHA)
+	}
+	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
+	mw.transparent = !mw.transparent
+}
+
+func (mw *myMainWindow) ToggleBorder() {
+	if mw.borderless {
+		mw.StatusBar().SetVisible(true)
+		win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW)
+	} else {
+		mw.StatusBar().SetVisible(false)
+		// NOTE(tso): SFML does this:
+		//win.SetWindowLongPtr(mw.Handle(), win.GWL_STYLE, uintptr(win.WS_VISIBLE|win.WS_POPUP))
+		win.SetWindowLong(mw.Handle(), win.GWL_STYLE, win.WS_OVERLAPPEDWINDOW&^win.WS_THICKFRAME&^win.WS_BORDER)
+	}
+	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
+	mw.borderless = !mw.borderless
+}
+
+func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case win.WM_DRAWITEM:
+		// use foreground color for statusBar text
+		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
+		log.Printf("got WM_DRAWITEM, item: % #v lParam: %v", pretty.Formatter(item), lParam)
+		if item.HwndItem == mw.StatusBar().Handle() && item.ItemState <= 1 {
+			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
+
+			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
+			text := win.UTF16PtrToString(textptr)
+			textlen := int32(len(text))
+			log.Printf("text: % #v", pretty.Formatter(text))
+
+			win.TextOut(item.HDC, item.RcItem.Left+20 /*16px icon size + 4px padding*/, item.RcItem.Top, textptr, textlen)
+			return win.TRUE
+		}
+
+	case win.WM_SYSCOMMAND:
+		// minimize/close to tray
+		if wParam == win.SC_MINIMIZE || wParam == win.SC_CLOSE {
+			win.ShowWindow(mw.Handle(), win.SW_HIDE)
+			mainWindowHidden = true
+			return 0
+		}
+	}
+	return mw.MainWindow.WndProc(hwnd, msg, wParam, lParam)
+}
