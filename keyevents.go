@@ -49,6 +49,9 @@ func ctrlTab(key walk.Key) {
 		if key == walk.KeyQ {
 			exit()
 		}
+		if key == walk.KeyT {
+			newEmptyServerTab()
+		}
 	}
 }
 
