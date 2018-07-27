@@ -3,13 +3,19 @@ package main
 import (
 	"log"
 	"os/exec"
+	"sync"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
 
+// NOTE(tso): mutex needed because the ContextMenu is stored in a map...
+var mu = &sync.Mutex{}
+
 func SetSystrayContextMenu() {
-	return
+	mu.Lock()
+	defer mu.Unlock()
+
 	type menuItem struct {
 		separator bool
 

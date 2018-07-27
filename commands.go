@@ -226,6 +226,8 @@ func quitCmd(ctx *commandContext, args ...string) {
 		empty.servState = ctx.servState
 		empty.servConn = nil
 	}
+
+	SetSystrayContextMenu()
 }
 
 func reconnectCmd(ctx *commandContext, args ...string) {
@@ -336,6 +338,7 @@ func closeCmd(ctx *commandContext, args ...string) {
 	tabCtx.pmState = ctx.pmState
 	tabMan.Delete(tabCtx)
 	ctx.tab.Close()
+	SetSystrayContextMenu()
 }
 
 func ctcpCmd(ctx *commandContext, args ...string) {
