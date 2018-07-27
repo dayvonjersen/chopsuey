@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
 	"sync"
 	"time"
 	"unsafe"
@@ -35,6 +34,8 @@ var (
 
 	mainWindowFocused bool = true // start focused because windows
 	mainWindowHidden  bool = false
+
+	tabMan *tabManager
 )
 
 type myMainWindow struct {
@@ -123,7 +124,7 @@ func exit() {
 }
 
 func main() {
-	runtime.LockOSThread()
+	// runtime.LockOSThread()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -132,12 +133,12 @@ func main() {
 		exit()
 	}()
 
-	defer func() {
-		if x := recover(); x != nil {
-			printf(mw)
-			panic(x)
-		}
-	}()
+	// defer func() {
+	// 	if x := recover(); x != nil {
+	// 		printf(mw)
+	// 		panic(x)
+	// 	}
+	// }()
 
 	logging.SetLogger(&debugLogger{})
 
@@ -147,6 +148,8 @@ func main() {
 		tabs:        []tab{},
 		mu:          &sync.Mutex{},
 	}
+
+	tabMan = newTabManager()
 
 	mw = new(myMainWindow)
 	MainWindow{
@@ -296,38 +299,38 @@ func main() {
 				walk.MsgBox(mw, err.Error(), err.Error(), walk.MsgBoxIconError)
 			}
 		}
-		for _, cfg := range clientState.cfg.AutoConnect {
-			servState := &serverState{
-				connState:   CONNECTION_EMPTY,
-				hostname:    cfg.Host,
-				port:        cfg.Port,
-				ssl:         cfg.Ssl,
-				networkName: serverAddr(cfg.Host, cfg.Port),
-				user: &userState{
-					nick: cfg.Nick,
-				},
-				channels: map[string]*channelState{},
-				privmsgs: map[string]*privmsgState{},
+		go func() {
+			for _, cfg := range clientState.cfg.AutoConnect {
+				servState := &serverState{
+					connState:   CONNECTION_EMPTY,
+					hostname:    cfg.Host,
+					port:        cfg.Port,
+					ssl:         cfg.Ssl,
+					networkName: serverAddr(cfg.Host, cfg.Port),
+					user: &userState{
+						nick: cfg.Nick,
+					},
+					channels: map[string]*channelState{},
+					privmsgs: map[string]*privmsgState{},
+				}
+				var servConn *serverConnection
+				servConn = NewServerConnection(servState,
+					func(nickservPASSWORD string, autojoin []string) func() {
+						return func() {
+							return
+							if nickservPASSWORD != "" {
+								servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
+							}
+							for _, channel := range autojoin {
+								servConn.conn.Join(channel)
+							}
+						}
+					}(cfg.NickServPASSWORD, cfg.AutoJoin),
+				)
+				tabMan.Create(&tabContext{servConn: servConn, servState: servState}, tabMan.Len())
+				servConn.Connect(servState)
 			}
-			var servConn *serverConnection
-			servConn = NewServerConnection(servState,
-				func(nickservPASSWORD string, autojoin []string) func() {
-					return func() {
-						if nickservPASSWORD != "" {
-							servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
-						}
-						for _, channel := range autojoin {
-							servConn.conn.Join(channel)
-						}
-					}
-				}(cfg.NickServPASSWORD, cfg.AutoJoin),
-			)
-			clientState.mu.Lock()
-			servView := NewServerTab(servConn, servState)
-			clientState.mu.Unlock()
-			servState.tab = servView
-			servConn.Connect(servState)
-		}
+		}()
 	}
 	/**/
 

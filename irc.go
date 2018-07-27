@@ -24,7 +24,7 @@ type serverConnection struct {
 }
 
 func connect(servConn *serverConnection, servState *serverState) (success bool) {
-	Println(CLIENT_MESSAGE, servState.AllTabs(), now(), "connecting to:", serverAddr(servState.hostname, servState.port), "...")
+	// Println(CLIENT_MESSAGE, servState.AllTabs(), now(), "connecting to:", serverAddr(servState.hostname, servState.port), "...")
 	servState.connState = CONNECTING
 	servState.tab.Update(servState)
 
@@ -58,10 +58,10 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 					<-time.After(CONNECT_RETRY_INTERVAL)
 				}
 			}
-			Println(CLIENT_ERROR, servState.AllTabs(),
-				fmt.Sprintf("couldn't connect to %s after %d retries.",
-					serverAddr(servState.hostname, servState.port), CONNECT_RETRIES),
-			)
+			// Println(CLIENT_ERROR, servState.AllTabs(),
+			// 	fmt.Sprintf("couldn't connect to %s after %d retries.",
+			// 		serverAddr(servState.hostname, servState.port), CONNECT_RETRIES),
+			// )
 		}()
 	}
 }

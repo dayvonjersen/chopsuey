@@ -10,6 +10,7 @@ import (
 )
 
 func SetStatusBarIcon(icofile string) {
+	return
 	if icofile == "" {
 		return
 	}
@@ -41,6 +42,7 @@ func SetStatusBarIcon(icofile string) {
 }
 
 func SetStatusBarText(text string) {
+	return
 	txt, err := syscall.UTF16PtrFromString(text)
 	checkErr(err)
 	mw.StatusBar().SendMessage(win.SB_SETTEXT, win.SBT_OWNERDRAW, uintptr(unsafe.Pointer(txt)))

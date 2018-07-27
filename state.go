@@ -118,10 +118,21 @@ func ensureChanState(servConn *serverConnection, servState *serverState, channel
 			channel:  channel,
 			nickList: newNickList(),
 		}
-		clientState.mu.Lock()
-		chanState.tab = NewChannelTab(servConn, servState, chanState)
-		clientState.mu.Unlock()
+
+		index := servState.tab.Index()
+		if servState.channelList != nil {
+			index = servState.channelList.Index()
+		}
+		for _, ch := range servState.channels {
+			i := ch.tab.Index()
+			if i > index {
+				index = i
+			}
+		}
+		index++
 		servState.channels[channel] = chanState
+
+		tabMan.Create(&tabContext{servConn: servConn, servState: servState, chanState: chanState}, index)
 	}
 	return chanState
 }
@@ -133,10 +144,8 @@ func ensurePmState(servConn *serverConnection, servState *serverState, nick stri
 		pmState = &privmsgState{
 			nick: nick,
 		}
-		clientState.mu.Lock()
-		pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
-		clientState.mu.Unlock()
 		servState.privmsgs[nick] = pmState
+		tabMan.Create(&tabContext{servConn: servConn, servState: servState, pmState: pmState}, tabMan.Len())
 	}
 	return pmState
 }

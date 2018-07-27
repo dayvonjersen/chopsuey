@@ -38,9 +38,8 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 	SetSystrayContextMenu()
 }
 
-func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {
+func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) <-chan *tabPrivmsg {
 	t := &tabPrivmsg{}
-	clientState.AppendTab(t)
 	t.tabTitle = pmState.nick
 
 	t.send = func(msg string) {
@@ -59,6 +58,7 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + pmState.nick)
 
+	ready := make(chan *tabPrivmsg)
 	mw.WindowBase.Synchronize(func() {
 		var err error
 		t.tabPage, err = walk.NewTabPage()
@@ -111,9 +111,11 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		applyThemeToTab(t)
+		pmState.tab = t
+		servState.privmsgs[pmState.nick] = pmState
+		servState.tab.Update(servState)
+		ready <- t
 	})
-	pmState.tab = t
-	servState.privmsgs[pmState.nick] = pmState
-	servState.tab.Update(servState)
-	return t
+
+	return ready
 }

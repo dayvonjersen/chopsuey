@@ -39,12 +39,11 @@ type tabRequestDelete struct {
 	ret  chan struct{}
 }
 
-var tabMan = newTabManager()
-
 type tabManager struct {
 	tabs []*tabWithContext
 
 	create chan *tabRequestCreate
+	count  chan *tabRequestCount
 	search chan *tabRequestSearch
 	update chan *tabRequestUpdate
 	delete chan *tabRequestDelete
@@ -58,7 +57,9 @@ func (tabMan *tabManager) Shutdown() {
 
 func (tabMan *tabManager) Create(ctx *tabContext, index int) *tabWithContext {
 	ret := make(chan *tabWithContext)
-	tabMan.create <- &tabRequestCreate{ctx, index, nil, ret}
+	go func() {
+		tabMan.create <- &tabRequestCreate{ctx, index, nil, ret}
+	}()
 	return <-ret
 }
 
@@ -137,6 +138,7 @@ func newTabManager() *tabManager {
 	tabMan := &tabManager{
 		tabs:    []*tabWithContext{},
 		create:  make(chan *tabRequestCreate),
+		count:   make(chan *tabRequestCount),
 		search:  make(chan *tabRequestSearch),
 		update:  make(chan *tabRequestUpdate),
 		delete:  make(chan *tabRequestDelete),
@@ -160,21 +162,35 @@ func newTabManager() *tabManager {
 					}
 				}
 
-				t := &tabWithContext{
-					tab: &dummyTab{index: req.index},
-				}
+				t := &tabWithContext{}
 				t.servConn = req.ctx.servConn
 				t.servState = req.ctx.servState
 				t.chanState = req.ctx.chanState
 				t.pmState = req.ctx.pmState
 
+				switch {
+				case t.servState != nil && t.chanState == nil && t.pmState == nil:
+					// server
+					t.tab = <-newServerTab(t.servConn, t.servState)
+
+				case t.servState != nil && t.chanState != nil && t.pmState == nil:
+					// channel
+					t.tab = <-newChannelTab(t.servConn, t.servState, t.chanState, req.index)
+
+				case t.servState != nil && t.chanState == nil && t.pmState != nil:
+					// privmsg
+					t.tab = <-newPrivmsgTab(t.servConn, t.servState, t.pmState)
+
+				default:
+					// testing
+					t.tab = &dummyTab{index: req.index}
+				}
+
 				tabMan.tabs = append(tabMan.tabs, t)
 				req.ret <- t
 
-				// switch on request type
-				//      create tab of type
-				// t = new tab
-				// tabMan.tabs = append(tabMan.tabs, &tabWithContext{ctx, t}
+			case req := <-tabMan.count:
+				req.ret <- len(tabMan.tabs)
 
 			case req := <-tabMan.search:
 				ret := []*tabWithContext{}

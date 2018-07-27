@@ -12,6 +12,7 @@ import (
 var mu = &sync.Mutex{}
 
 func SetSystrayContextMenu() {
+	return
 	mu.Lock()
 	defer mu.Unlock()
 

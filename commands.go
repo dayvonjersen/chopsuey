@@ -270,10 +270,7 @@ func serverCmd(ctx *commandContext, args ...string) {
 
 	// FIXME(tso): empty tab is a nightmare holy fuck
 	if !(clientState.NumTabs() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY) {
-		clientState.mu.Lock()
-		servView := NewServerTab(servConn, servState)
-		clientState.mu.Unlock()
-		servState.tab = servView
+		tabMan.Create(&tabContext{servConn: servConn, servState: servState}, tabMan.Len())
 	}
 
 	servConn.Connect(servState)
