@@ -325,9 +325,11 @@ func main() {
 					}(cfg.NickServPASSWORD, cfg.AutoJoin),
 				)
 				index := tabMan.Len()
-				log.Println("index:", index)
-				tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
-				log.Println("created tab")
+				ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
+				tab := newServerTab(servConn, servState)
+				// ctx.Update...
+				ctx.tab = tab
+				servState.tab = tab
 				servConn.Connect(servState)
 			}
 		}()

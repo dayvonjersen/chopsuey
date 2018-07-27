@@ -70,12 +70,11 @@ func (t *tabServer) Update(servState *serverState) {
 	SetSystrayContextMenu()
 }
 
-func newServerTab(servConn *serverConnection, servState *serverState) <-chan *tabServer {
+func newServerTab(servConn *serverConnection, servState *serverState) *tabServer {
 	t := &tabServer{}
 	t.tabTitle = servState.networkName
 	t.chatlogger = NewChatLogger(servState.networkName)
 
-	ready := make(chan *tabServer)
 	mw.WindowBase.Synchronize(func() {
 		var err error
 		t.tabPage, err = walk.NewTabPage()
@@ -98,9 +97,8 @@ func newServerTab(servConn *serverConnection, servState *serverState) <-chan *ta
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
 
 		servState.tab = t
-		ready <- t
 
-		// applyThemeToTab(t)
+		applyThemeToTab(t)
 
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
@@ -108,5 +106,5 @@ func newServerTab(servConn *serverConnection, servState *serverState) <-chan *ta
 		tabWidget.SaveState()
 		t.Focus()
 	})
-	return ready
+	return t
 }

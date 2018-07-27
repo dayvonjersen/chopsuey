@@ -119,7 +119,7 @@ func (t *tabChannel) Resize() {
 	})
 }
 
-func newChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState, tabIndex int) <-chan *tabChannel {
+func newChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState, tabIndex int) *tabChannel {
 	t := &tabChannel{}
 	t.nickColors = map[string]int{}
 	t.tabTitle = chanState.channel
@@ -141,7 +141,6 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 	t.nickListHidden = false
 	t.nickListBoxSize = walk.Size{}
 
-	ready := make(chan *tabChannel)
 	mw.WindowBase.Synchronize(func() {
 		var err error
 		t.tabPage, err = walk.NewTabPage()
@@ -250,8 +249,7 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 		chanState.tab = t
 		servState.channels[chanState.channel] = chanState
 		servState.tab.Update(servState)
-		ready <- t
-		// applyThemeToTab(t)
+		applyThemeToTab(t)
 
 		checkErr(tabWidget.Pages().Insert(tabIndex, t.tabPage))
 
@@ -261,5 +259,5 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 		t.Focus()
 	})
 
-	return ready
+	return t
 }

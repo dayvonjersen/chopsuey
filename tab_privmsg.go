@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math/rand"
 
 	"github.com/lxn/walk"
@@ -39,7 +38,7 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 	SetSystrayContextMenu()
 }
 
-func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState, tabIndex int) <-chan *tabPrivmsg {
+func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState, tabIndex int) *tabPrivmsg {
 	t := &tabPrivmsg{}
 	t.tabTitle = pmState.nick
 
@@ -59,9 +58,7 @@ func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 
 	t.chatlogger = NewChatLogger(servState.networkName + "-" + pmState.nick)
 
-	ready := make(chan *tabPrivmsg)
 	mw.WindowBase.Synchronize(func() {
-		log.Println("hello?")
 		var err error
 		t.tabPage, err = walk.NewTabPage()
 		checkErr(err)
@@ -116,8 +113,7 @@ func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		pmState.tab = t
 		servState.privmsgs[pmState.nick] = pmState
 		servState.tab.Update(servState)
-		ready <- t
 	})
 
-	return ready
+	return t
 }

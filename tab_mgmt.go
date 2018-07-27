@@ -171,28 +171,6 @@ func newTabManager() *tabManager {
 				t.chanState = req.ctx.chanState
 				t.pmState = req.ctx.pmState
 
-				switch {
-				case t.servState != nil && t.chanState == nil && t.pmState == nil:
-					log.Println("server")
-					// server
-					t.tab = <-newServerTab(t.servConn, t.servState)
-
-				case t.servState != nil && t.chanState != nil && t.pmState == nil:
-					log.Println("channel")
-					// channel
-					t.tab = <-newChannelTab(t.servConn, t.servState, t.chanState, req.index)
-
-				case t.servState != nil && t.chanState == nil && t.pmState != nil:
-					log.Println("privmsg")
-					// privmsg
-					t.tab = <-newPrivmsgTab(t.servConn, t.servState, t.pmState, req.index)
-
-				default:
-					log.Printf("unknown: %v", req.ctx)
-					// testing
-					t.tab = &dummyTab{index: req.index}
-				}
-
 				tabMan.tabs = append(tabMan.tabs, t)
 				req.ret <- t
 				log.Printf("created sent return value to caller")
