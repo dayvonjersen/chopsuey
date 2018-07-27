@@ -753,16 +753,28 @@ func unregisterCmd(ctx *commandContext, args ...string) {
 	clientMessage(ctx.tab, "/"+name+" ("+alias+") unregistered")
 }
 
-func paletteCmd(ctx *commandContext, args ...string) {
-	clientMessage(ctx.tab, "palette test:")
-	for c := 0; c < 16; c++ {
-		str := fmt.Sprintf("%02d:% 9s", c, colorCodeString(c))
-		Println(CUSTOM_MESSAGE, T(ctx.tab),
-			color(str, White, c),
-			color(str, Black, c),
-			color(str, c),
-		)
+func contextCmd(ctx *commandContext, args ...string) {
+	servConn := serverConnection{}
+	servConnHasConn := false
+	if ctx.servConn != nil {
+		servConn = *ctx.servConn
+		servConnHasConn = ctx.servConn.conn != nil
 	}
+	servState := serverState{}
+	servStateHasTab := false
+	if ctx.servState != nil {
+		servState = *ctx.servState
+		servStateHasTab = ctx.servState.tab != nil
+		servState.tab = nil
+	}
+
+	log.Println("pointers:\n\t", strings.Join(strings.Split(fmt.Sprintf("%#v", ctx), ", "), "\n\t"))
+	log.Println("servConn:")
+	printf(servConn)
+	log.Println("servConn has goirc.Conn:", servConnHasConn)
+	log.Println("servState:")
+	printf(servState)
+	log.Println("servState has serverTab:", servStateHasTab)
 }
 
 func fontCmd(ctx *commandContext, args ...string) {
@@ -776,6 +788,18 @@ func fontCmd(ctx *commandContext, args ...string) {
 	checkErr(err)
 
 	mw.WindowBase.SetFont(font)
+}
+
+func paletteCmd(ctx *commandContext, args ...string) {
+	clientMessage(ctx.tab, "palette test:")
+	for c := 0; c < 16; c++ {
+		str := fmt.Sprintf("%02d:% 9s", c, colorCodeString(c))
+		Println(CUSTOM_MESSAGE, T(ctx.tab),
+			color(str, White, c),
+			color(str, Black, c),
+			color(str, c),
+		)
+	}
 }
 
 func rawCmd(ctx *commandContext, args ...string) {
@@ -885,28 +909,4 @@ func themeCmd(ctx *commandContext, args ...string) {
 	if err := applyTheme(args[0]); err != nil {
 		clientError(ctx.tab, "error applying theme:", err.Error())
 	}
-}
-
-func contextCmd(ctx *commandContext, args ...string) {
-	servConn := serverConnection{}
-	servConnHasConn := false
-	if ctx.servConn != nil {
-		servConn = *ctx.servConn
-		servConnHasConn = ctx.servConn.conn != nil
-	}
-	servState := serverState{}
-	servStateHasTab := false
-	if ctx.servState != nil {
-		servState = *ctx.servState
-		servStateHasTab = ctx.servState.tab != nil
-		servState.tab = nil
-	}
-
-	log.Println("pointers:\n\t", strings.Join(strings.Split(fmt.Sprintf("%#v", ctx), ", "), "\n\t"))
-	log.Println("servConn:")
-	printf(servConn)
-	log.Println("servConn has goirc.Conn:", servConnHasConn)
-	log.Println("servState:")
-	printf(servState)
-	log.Println("servState has serverTab:", servStateHasTab)
 }

@@ -78,13 +78,11 @@ func ensureChanState(servConn *serverConnection, servState *serverState, channel
 		ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState, chanState: chanState}, index)
 		tab := newChannelTab(servConn, servState, chanState, index)
 		ctx.tab = tab
-		// tabMan.Update...
 		chanState.tab = tab
 	}
 	return chanState
 }
 
-// ok so maybe generics might be useful sometimes
 func ensurePmState(servConn *serverConnection, servState *serverState, nick string) *privmsgState {
 	pmState, ok := servState.privmsgs[nick]
 	if !ok {
@@ -113,10 +111,7 @@ func ensurePmState(servConn *serverConnection, servState *serverState, nick stri
 		ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState, pmState: pmState}, index)
 		tab := newPrivmsgTab(servConn, servState, pmState, index)
 		ctx.tab = tab
-		// tabMan.Update...
 		pmState.tab = tab
 	}
 	return pmState
 }
-
-// ... is ensureServerState() our solution??? :o

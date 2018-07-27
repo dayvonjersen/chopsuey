@@ -1,3 +1,74 @@
+todo {{{
+ - channelList refactor
+ - nick padding and color refactor
+ - replace goirc refactor
+   - get TLS working
+   - get OAUTH working
+   - use atoi and fucking CONSTANTS_PLZ
+   - catch-all for unhandled messages
+   - handle connection errors
+   - anti-flood
+   - timeout
+ - config.json
+     - write clientConfig to config.json
+       - when no config.json
+       - when autowrite enabled
+     - load scripts at startup 
+ - themes and stuff
+     - applying font breaks richedit fg color
+       - reapplying /theme doesn't fix it but /clear does
+       - not sure how to fix...
+     - double-check we're applying styles correctly
+       - sometimes have to call /theme multiple times to set the fg color in the
+         richedit but idk if we fixed that at some point
+     - list of theme
+     - custom/new theme
+       - file based???
+     - consider removing colors 16-98
+       - I'm not sure anyone actually uses these on any network in the world
+       - clash/unusable for e.g. nick colors 
+
+ - nicklist box resize behavior nonsense
+ - implement fmtReverse
+ - figure out a way to merge commandContext and tabWithContext
+ - documentation
+   - ALL clientCommands
+   - keyboard shortcuts
+   - welcome message
+ - change behavior of commands:
+   - /nick
+     - update servState.user.nick regardless
+   - /server
+     - double-check that we use servState.user.nick for new connections
+   - /mode
+   - /topic
+   - /part
+   - /screenshot
+     - put a timeout on the POST and keep retrying until it succeeds
+     - don't listen to that comment using net/http will add another 100 lines
+       of code for literally no gain other than to say you did it the "right"
+       way
+ - tab sort order
+ - dcc
+     - ui
+       - contextmenu item "Send File" on nickList
+       - open file dialog
+       - file transfers tab
+       - ___ is offering to send you [file]
+       - save as dialog
+     - implementation
+       - choose wanIP or localIP based on connection to server (difficulty: nightmare)
+       - cancel-able
+       - retry-able
+       - throttle-able?
+     - NOTE(tso): looks like we already have basic SEND and ACCEPT working at
+                  a proof-of-concept level
+       -tso 7/27/2018 7:24:40 AM
+ - handle more ERR_* codes
+ - openURL abstraction?
+
+}}}
+---
 i need to reorganize this entire file again damn it {{{
  - make a proper About dialog like a real professional windows applications developer
  - consider embedding all those themes as data 
