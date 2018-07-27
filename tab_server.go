@@ -84,13 +84,7 @@ func newServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		t.textBuffer, err = NewRichEdit(t.tabPage)
 		checkErr(err)
 		t.textBuffer.KeyPress().Attach(ctrlTab)
-		t.textInput = NewTextInput(t, &commandContext{
-			servConn:  servConn,
-			tab:       t,
-			servState: servState,
-			chanState: nil,
-			pmState:   nil,
-		})
+		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
 		// remove borders

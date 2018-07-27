@@ -44,7 +44,21 @@ func (le *MyLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
+func getCommandContext(t tabWithTextBuffer) *commandContext {
+	cmdctx := &commandContext{}
+	ctx := tabMan.Find(identityFinder(t))
+	if ctx == nil {
+		panic("textInput owner tab is not in tabManager!")
+	}
+	cmdctx.servConn = ctx.servConn
+	cmdctx.servState = ctx.servState
+	cmdctx.chanState = ctx.chanState
+	cmdctx.pmState = ctx.pmState
+	cmdctx.tab = t
+	return cmdctx
+}
+
+func NewTextInput(t tabWithTextBuffer) *MyLineEdit {
 	var tabPage *walk.TabPage
 	var sendFn func(string)
 	switch t.(type) {
@@ -65,7 +79,7 @@ func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 	textInput := newMyLineEdit(tabPage)
 
 	textInput.KeyDown().Attach(func(key walk.Key) {
-		ctrlF4(ctx, key)
+		ctrlF4(getCommandContext(t), key)
 	})
 	textInput.KeyDown().Attach(func(key walk.Key) {
 		if r := insertCharacter(key); r != 0 {
@@ -94,7 +108,7 @@ func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 						args = []string{}
 					}
 					if cmdFn, ok := clientCommands[cmd]; ok {
-						cmdFn(ctx, args...)
+						cmdFn(getCommandContext(t), args...)
 					} else {
 						clientError(t, "unrecognized command: ", cmd)
 					}
@@ -150,6 +164,7 @@ func NewTextInput(t tabWithTextBuffer, ctx *commandContext) *MyLineEdit {
 			} else {
 				term := text[len(text)-1]
 				res := []string{}
+				ctx := getCommandContext(t)
 				if ctx.chanState != nil {
 					res = ctx.chanState.nickList.Search(term)
 				}

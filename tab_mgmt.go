@@ -122,6 +122,15 @@ func currentServerTabFinder(servState *serverState) finderFunc {
 	}
 }
 
+func identityFinder(me tab) finderFunc {
+	return func(t *tabWithContext) bool {
+		if t.tab == me {
+			return true
+		}
+		return false
+	}
+}
+
 func (tabMan *tabManager) Delete(tabs ...*tabWithContext) {
 	ret := make(chan struct{})
 	tabMan.delete <- &tabRequestDelete{tabs, ret}

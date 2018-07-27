@@ -218,13 +218,7 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 		ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 
 		t.textBuffer.KeyPress().Attach(ctrlTab)
-		t.textInput = NewTextInput(t, &commandContext{
-			servConn:  servConn,
-			tab:       t,
-			servState: servState,
-			chanState: chanState,
-			pmState:   nil,
-		})
+		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
 		// remove borders
