@@ -297,41 +297,43 @@ func main() {
 			}
 		}
 		go func() {
-			for _, cfg := range clientState.cfg.AutoConnect {
-				servState := &serverState{
-					connState:   CONNECTION_EMPTY,
-					hostname:    cfg.Host,
-					port:        cfg.Port,
-					ssl:         cfg.Ssl,
-					networkName: serverAddr(cfg.Host, cfg.Port),
-					user: &userState{
-						nick: cfg.Nick,
-					},
-					channels: map[string]*channelState{},
-					privmsgs: map[string]*privmsgState{},
-				}
-				var servConn *serverConnection
-				servConn = NewServerConnection(servState,
-					func(nickservPASSWORD string, autojoin []string) func() {
-						return func() {
-							return
-							if nickservPASSWORD != "" {
-								servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
-							}
-							for _, channel := range autojoin {
-								servConn.conn.Join(channel)
-							}
-						}
-					}(cfg.NickServPASSWORD, cfg.AutoJoin),
-				)
-				index := tabMan.Len()
-				ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
-				tab := newServerTab(servConn, servState)
-				// ctx.Update...
-				ctx.tab = tab
-				servState.tab = tab
-				servConn.Connect(servState)
-			}
+			newEmptyServerTab()
+
+			// for _, cfg := range clientState.cfg.AutoConnect {
+			// 	servState := &serverState{
+			// 		connState:   CONNECTION_EMPTY,
+			// 		hostname:    cfg.Host,
+			// 		port:        cfg.Port,
+			// 		ssl:         cfg.Ssl,
+			// 		networkName: serverAddr(cfg.Host, cfg.Port),
+			// 		user: &userState{
+			// 			nick: cfg.Nick,
+			// 		},
+			// 		channels: map[string]*channelState{},
+			// 		privmsgs: map[string]*privmsgState{},
+			// 	}
+			// 	var servConn *serverConnection
+			// 	servConn = NewServerConnection(servState,
+			// 		func(nickservPASSWORD string, autojoin []string) func() {
+			// 			return func() {
+			// 				return
+			// 				if nickservPASSWORD != "" {
+			// 					servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
+			// 				}
+			// 				for _, channel := range autojoin {
+			// 					servConn.conn.Join(channel)
+			// 				}
+			// 			}
+			// 		}(cfg.NickServPASSWORD, cfg.AutoJoin),
+			// 	)
+			// 	index := tabMan.Len()
+			// 	ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
+			// 	tab := newServerTab(servConn, servState)
+			// 	// ctx.Update...
+			// 	ctx.tab = tab
+			// 	servState.tab = tab
+			// 	servConn.Connect(servState)
+			// }
 		}()
 	}
 	/**/

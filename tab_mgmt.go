@@ -147,11 +147,11 @@ func newTabManager() *tabManager {
 				return
 
 			case req := <-tabMan.create:
-				log.Printf("got create: %v", req)
 				if req.finder != nil {
 					for _, t := range tabMan.tabs {
 						if req.finder(t) {
 							req.ret <- t
+							log.Println("found ctx:", t)
 							break here
 						}
 					}
@@ -164,15 +164,13 @@ func newTabManager() *tabManager {
 				t.pmState = req.ctx.pmState
 
 				tabMan.tabs = append(tabMan.tabs, t)
+				log.Println("created ctx:", t)
 				req.ret <- t
-				log.Printf("created sent return value to caller")
 
 			case req := <-tabMan.count:
-				log.Printf("got count: %v", req)
 				req.ret <- len(tabMan.tabs)
 
 			case req := <-tabMan.search:
-				log.Printf("got search: %v", req)
 				ret := []*tabWithContext{}
 				for _, t := range tabMan.tabs {
 					if req.finder(t) {
@@ -182,7 +180,6 @@ func newTabManager() *tabManager {
 				req.ret <- ret
 
 			case req := <-tabMan.delete:
-				log.Printf("got delete: %v", req)
 				indices := []int{}
 				for _, t := range req.tabs {
 					indices = append(indices, t.tab.Index())

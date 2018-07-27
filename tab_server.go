@@ -108,3 +108,21 @@ func newServerTab(servConn *serverConnection, servState *serverState) *tabServer
 	})
 	return t
 }
+
+func newEmptyServerTab() *tabWithContext {
+	empty := &tabContext{}
+	servState := &serverState{
+		connState: CONNECTION_EMPTY,
+		user: &userState{
+			nick: "nobody",
+		},
+		channels: map[string]*channelState{},
+		privmsgs: map[string]*privmsgState{},
+	}
+	empty.servState = servState
+	ctx := tabMan.Create(empty, tabMan.Len())
+	tab := newServerTab(nil, servState)
+	ctx.tab = tab
+	servState.tab = tab
+	return ctx
+}
