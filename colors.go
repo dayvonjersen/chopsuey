@@ -43,6 +43,44 @@ const (
 	LightGrey = 15 // >_>
 )
 
+func colorCodeString(code int) string {
+	switch code {
+	case White:
+		return "White"
+	case Black:
+		return "Black"
+	case Navy:
+		return "Navy"
+	case Green:
+		return "Green"
+	case Red:
+		return "Red"
+	case Maroon:
+		return "Maroon"
+	case Purple:
+		return "Purple"
+	case Orange:
+		return "Orange"
+	case Yellow:
+		return "Yellow"
+	case Lime:
+		return "Lime"
+	case Teal:
+		return "Teal"
+	case Cyan:
+		return "Cyan"
+	case Blue:
+		return "Blue"
+	case Pink:
+		return "Pink"
+	case DarkGray:
+		return "DarkGray"
+	case LightGray:
+		return "LightGray"
+	}
+	return ""
+}
+
 func color(text string, colors ...int) string {
 	str := ""
 	if len(colors) > 0 {

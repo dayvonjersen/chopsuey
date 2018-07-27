@@ -446,9 +446,6 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 	nick := args[0]
 	msg := strings.Join(args[1:], " ")
 
-	// FIXME(tso): always inline messages to services
-	//             probably should add an option to disable it too
-
 	if isService(nick) {
 		ctx.servConn.conn.Privmsg(nick, msg)
 		noticeMessage(
@@ -756,108 +753,16 @@ func unregisterCmd(ctx *commandContext, args ...string) {
 	clientMessage(ctx.tab, "/"+name+" ("+alias+") unregistered")
 }
 
-// XXX TEMPORARY SECRETARY
 func paletteCmd(ctx *commandContext, args ...string) {
-	Println(99999, T(ctx.tab),
-		color("0:White     ", White, White),
-		color("0:White     ", Black, White),
-		color("0:White     ", White),
-		color("1:Black     ", White, Black),
-		color("1:Black     ", Black, Black),
-		color("1:Black     ", Black))
-	Println(99999, T(ctx.tab),
-		color("2:Navy      ", White, Navy),
-		color("2:Navy      ", Black, Navy),
-		color("2:Navy      ", Navy),
-		color("3:Green     ", White, Green),
-		color("3:Green     ", Black, Green),
-		color("3:Green     ", Green))
-	Println(99999, T(ctx.tab),
-		color("4:Red       ", White, Red),
-		color("4:Red       ", Black, Red),
-		color("4:Red       ", Red),
-		color("5:Maroon    ", White, Maroon),
-		color("5:Maroon    ", Black, Maroon),
-		color("5:Maroon    ", Maroon))
-	Println(99999, T(ctx.tab),
-		color("6:Purple    ", White, Purple),
-		color("6:Purple    ", Black, Purple),
-		color("6:Purple    ", Purple),
-		color("7:Orange    ", White, Orange),
-		color("7:Orange    ", Black, Orange),
-		color("7:Orange    ", Orange))
-	Println(99999, T(ctx.tab),
-		color("8:Yellow    ", White, Yellow),
-		color("8:Yellow    ", Black, Yellow),
-		color("8:Yellow    ", Yellow),
-		color("9:Lime      ", White, Lime),
-		color("9:Lime      ", Black, Lime),
-		color("9:Lime      ", Lime))
-	Println(99999, T(ctx.tab),
-		color("10:Teal     ", White, Teal),
-		color("10:Teal     ", Black, Teal),
-		color("10:Teal     ", Teal),
-		color("11:Cyan     ", White, Cyan),
-		color("11:Cyan     ", Black, Cyan),
-		color("11:Cyan     ", Cyan))
-	Println(99999, T(ctx.tab),
-		color("12:Blue     ", White, Blue),
-		color("12:Blue     ", Black, Blue),
-		color("12:Blue     ", Blue),
-		color("13:Pink     ", White, Pink),
-		color("13:Pink     ", Black, Pink),
-		color("13:Pink     ", Pink))
-	Println(99999, T(ctx.tab),
-		color("14:DarkGray ", White, DarkGray),
-		color("14:DarkGray ", Black, DarkGray),
-		color("14:DarkGray ", DarkGray),
-		color("15:LightGray", White, LightGray),
-		color("15:LightGray", Black, LightGray),
-		color("15:LightGray", LightGray))
-
-	for i := 16; i < 91; i += 6 {
-		j, k, l, m, n := i+1, i+2, i+3, i+4, i+5
-		Println(99999, T(ctx.tab),
-			color(strconv.Itoa(i), White, i),
-			color(strconv.Itoa(i), Black, i),
-			color(strconv.Itoa(i), i),
-			color(strconv.Itoa(j), White, j),
-			color(strconv.Itoa(j), Black, j),
-			color(strconv.Itoa(j), j),
-			color(strconv.Itoa(k), White, k),
-			color(strconv.Itoa(k), Black, k),
-			color(strconv.Itoa(k), k),
-			color(strconv.Itoa(l), White, l),
-			color(strconv.Itoa(l), Black, l),
-			color(strconv.Itoa(l), l),
-			color(strconv.Itoa(m), White, m),
-			color(strconv.Itoa(m), Black, m),
-			color(strconv.Itoa(m), m),
-			color(strconv.Itoa(n), White, n),
-			color(strconv.Itoa(n), Black, n),
-			color(strconv.Itoa(n), n),
+	clientMessage(ctx.tab, "palette test:")
+	for c := 0; c < 16; c++ {
+		str := fmt.Sprintf("%02d:% 9s", c, colorCodeString(c))
+		Println(CUSTOM_MESSAGE, T(ctx.tab),
+			color(str, White, c),
+			color(str, Black, c),
+			color(str, c),
 		)
 	}
-	i, j := 97, 98
-	Println(99999, T(ctx.tab),
-		color(strconv.Itoa(i), White, i),
-		color(strconv.Itoa(i), Black, i),
-		color(strconv.Itoa(i), i),
-		color(strconv.Itoa(j), White, j),
-		color(strconv.Itoa(j), Black, j),
-		color(strconv.Itoa(j), j),
-	)
-	clientError(ctx.tab, "client error")
-	clientMessage(ctx.tab, "client message")
-	serverMessage(ctx.tab, "123", "server message")
-	serverError(ctx.tab, "123", "server error")
-	joinpartMessage(ctx.tab, "<->", "user123 has joined quit parted")
-	updateMessage(ctx.tab, "topic for #channel is there is no spoon")
-	noticeMessage(ctx.tab, "colbert", "nation", "you're on notice")
-	actionMessage(ctx.tab, "puts", "on robe and wizard hat")
-	privateMessage(ctx.tab, "user456", "hello world")
-	actionMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "owo", "nuzzles")
-	privateMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "anon", "here's your (You)")
 }
 
 func fontCmd(ctx *commandContext, args ...string) {

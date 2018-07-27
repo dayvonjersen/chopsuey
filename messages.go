@@ -17,6 +17,7 @@ const (
 	NOTICE_MESSAGE
 	ACTION_MESSAGE
 	PRIVATE_MESSAGE
+	CUSTOM_MESSAGE
 )
 
 func msgTypeString(t int) string {
@@ -39,6 +40,8 @@ func msgTypeString(t int) string {
 		return "ACTION_MESSAGE"
 	case PRIVATE_MESSAGE:
 		return "PRIVATE_MESSAGE"
+	case CUSTOM_MESSAGE:
+		return "CUSTOM_MESSAGE"
 	}
 	return "(unknown)"
 }
@@ -213,32 +216,14 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 			tab.Println(parseString(actionMsg(false, nick, msg)))
 		}
 
-	default:
-		/*
-			log.Printf(`
-
-			--------------------------------------------------------------------
-			HEY!
-
-
-			should this message be logged and displayed in the text buffer?
-
-
-			%v
-
-
-			??? default is yes...
-
-
-			also msgType %d isn't defined. add it to messages.go`, msg, msgType)
-		*/
-
+	case CUSTOM_MESSAGE:
 		text, styles := parseString(strings.Join(msg, " "))
 		for _, tab := range tabs {
-			tab.Notify(false)
-			tab.Logln(text)
 			tab.Println(text, styles)
 		}
+
+	default:
+		log.Printf("Println: unhandled msgType: %v", msgType)
 	}
 }
 
