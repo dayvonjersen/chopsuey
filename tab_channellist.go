@@ -72,9 +72,7 @@ func (t *tabChannelList) Update(servState *serverState) {
 }
 
 func NewChannelList(servConn *serverConnection, servState *serverState) *tabChannelList {
-	return nil
 	t := &tabChannelList{}
-	// clientState.AppendTab(t)
 	t.mu = &sync.Mutex{}
 	t.mdl = new(channelListModel)
 	t.complete = false
@@ -126,7 +124,9 @@ func NewChannelList(servConn *serverConnection, servState *serverState) *tabChan
 				mw.WindowBase.Synchronize(func() {
 					t.Clear()
 					t.Close()
+					tabMan.Delete(tabMan.Find(identityFinder(t)))
 					servState.channelList = nil
+					SetSystrayContextMenu()
 				})
 			},
 		}.Create(builder)

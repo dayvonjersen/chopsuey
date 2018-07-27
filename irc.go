@@ -577,13 +577,17 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	// LISTSTART
 	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
+			// FIXME(tso): @channelList
+			ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, servState.tab.Index()+1)
 			servState.channelList = NewChannelList(servConn, servState)
+			ctx.tab = servState.channelList
 		}
 		servState.channelList.inProgress = true
 	})
 
 	// LIST
 	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
+		// FIXME(tso): @channelList
 		if servState.channelList == nil {
 			return
 		}
