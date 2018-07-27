@@ -12,15 +12,21 @@ type tabContext struct {
 	pmState   *privmsgState
 }
 
+type finderFunc func(*tabWithContext) bool
+
 type tabRequestCreate struct {
 	ctx    *tabContext
 	index  int
-	finder func(*tabWithContext) bool
+	finder finderFunc
 	ret    chan *tabWithContext
 }
 
+type tabRequestCount struct {
+	ret chan int
+}
+
 type tabRequestSearch struct {
-	finder func(*tabWithContext) bool
+	finder finderFunc
 	ret    chan []*tabWithContext
 }
 
@@ -56,13 +62,19 @@ func (tabMan *tabManager) Create(ctx *tabContext, index int) *tabWithContext {
 	return <-ret
 }
 
-func (tabMan *tabManager) CreateIfNotFound(ctx *tabContext, index int, finder func(*tabWithContext) bool) *tabWithContext {
+func (tabMan *tabManager) CreateIfNotFound(ctx *tabContext, index int, finder finderFunc) *tabWithContext {
 	ret := make(chan *tabWithContext)
 	tabMan.create <- &tabRequestCreate{ctx, index, finder, ret}
 	return <-ret
 }
 
-func (tabMan *tabManager) Find(finder func(*tabWithContext) bool) *tabWithContext {
+func (tabMan *tabManager) Len() int {
+	ret := make(chan int)
+	tabMan.count <- &tabRequestCount{ret}
+	return <-ret
+}
+
+func (tabMan *tabManager) Find(finder finderFunc) *tabWithContext {
 	ret := tabMan.FindAll(finder)
 	if len(ret) > 0 {
 		return ret[0]
@@ -70,7 +82,7 @@ func (tabMan *tabManager) Find(finder func(*tabWithContext) bool) *tabWithContex
 	return nil
 }
 
-func (tabMan *tabManager) FindAll(finder func(*tabWithContext) bool) []*tabWithContext {
+func (tabMan *tabManager) FindAll(finder finderFunc) []*tabWithContext {
 	ret := make(chan []*tabWithContext)
 	tabMan.search <- &tabRequestSearch{finder, ret}
 	return <-ret
@@ -91,7 +103,7 @@ func currentTabFinder(t *tabWithContext) bool {
 	return t.tab.Index() == tabWidget.CurrentIndex()
 }
 
-func serverTabFinder(servState *serverState) func(*tabWithContext) bool {
+func serverTabFinder(servState *serverState) finderFunc {
 	return func(t *tabWithContext) bool {
 		if t.servState == servState {
 			if _, ok := t.tab.(*tabServer); ok {
