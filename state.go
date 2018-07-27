@@ -1,47 +1,5 @@
 package main
 
-import "sync"
-
-var clientState *_clientState // global instance
-type _clientState struct {
-	cfg *clientConfig
-
-	connections []*serverConnection
-	servers     []*serverState
-	tabs        []tab
-	mu          *sync.Mutex
-}
-
-func (clientState *_clientState) AppendTab(t tab) {
-	clientState.tabs = append(clientState.tabs, t)
-	SetSystrayContextMenu()
-}
-
-func (clientState *_clientState) RemoveTab(t tab) {
-	index := t.Index()
-	for i, tab := range clientState.tabs {
-		if tab.Index() == index {
-			clientState.tabs = append(clientState.tabs[0:i], clientState.tabs[i+1:]...)
-			break
-		}
-	}
-	SetSystrayContextMenu()
-}
-
-func (clientState *_clientState) NumTabs() int {
-	return len(clientState.tabs)
-}
-
-func (clientState *_clientState) CurrentTab() tab {
-	index := tabWidget.CurrentIndex()
-	for _, t := range clientState.tabs {
-		if t.Index() == index {
-			return t
-		}
-	}
-	return nil
-}
-
 type userState struct {
 	nick string
 	// other stuff like OPER...
@@ -71,32 +29,17 @@ type serverState struct {
 }
 
 func (servState *serverState) AllTabs() []tabWithTextBuffer {
-	ret := []tabWithTextBuffer{servState.tab}
-	for _, chanState := range servState.channels {
-		ret = append(ret, chanState.tab)
-	}
-	for _, pmState := range servState.privmsgs {
-		ret = append(ret, pmState.tab)
+	contexts := tabMan.FindAll(allServerTabsFinder(servState))
+	ret := make([]tabWithTextBuffer, len(contexts))
+	for i, ctx := range contexts {
+		ret[i] = ctx.tab.(tabWithTextBuffer)
 	}
 	return ret
 }
 
 func (servState *serverState) CurrentTab() tabWithTextBuffer {
-	index := tabWidget.CurrentIndex()
-	if servState.tab.Index() == index {
-		return servState.tab
-	}
-	for _, ch := range servState.channels {
-		if ch.tab.Index() == index {
-			return ch.tab
-		}
-	}
-	for _, pm := range servState.privmsgs {
-		if pm.tab.Index() == index {
-			return pm.tab
-		}
-	}
-	return servState.tab
+	ctx := tabMan.Find(currentServerTabFinder(servState))
+	return ctx.tab.(tabWithTextBuffer)
 }
 
 type channelState struct {
@@ -118,27 +61,60 @@ func ensureChanState(servConn *serverConnection, servState *serverState, channel
 			channel:  channel,
 			nickList: newNickList(),
 		}
-		clientState.mu.Lock()
-		chanState.tab = NewChannelTab(servConn, servState, chanState)
-		clientState.mu.Unlock()
+
+		// TODO(tso): make a finderFunc instead
+		index := servState.tab.Index()
+		if servState.channelList != nil {
+			index = servState.channelList.Index()
+		}
+		for _, ch := range servState.channels {
+			i := ch.tab.Index()
+			if i > index {
+				index = i
+			}
+		}
+		index++
 		servState.channels[channel] = chanState
+
+		ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState, chanState: chanState}, index)
+		tab := newChannelTab(servConn, servState, chanState, index)
+		ctx.tab = tab
+		chanState.tab = tab
 	}
 	return chanState
 }
 
-// ok so maybe generics might be useful sometimes
 func ensurePmState(servConn *serverConnection, servState *serverState, nick string) *privmsgState {
 	pmState, ok := servState.privmsgs[nick]
 	if !ok {
 		pmState = &privmsgState{
 			nick: nick,
 		}
-		clientState.mu.Lock()
-		pmState.tab = NewPrivmsgTab(servConn, servState, pmState)
-		clientState.mu.Unlock()
+
+		// TODO(tso): make a finderFunc instead
+		index := servState.tab.Index()
+		if servState.channelList != nil {
+			index = servState.channelList.Index()
+		}
+		for _, ch := range servState.channels {
+			i := ch.tab.Index()
+			if i > index {
+				index = i
+			}
+		}
+		for _, pm := range servState.privmsgs {
+			i := pm.tab.Index()
+			if i > index {
+				index = i
+			}
+		}
+		index++
 		servState.privmsgs[nick] = pmState
+
+		ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState, pmState: pmState}, index)
+		tab := newPrivmsgTab(servConn, servState, pmState, index)
+		ctx.tab = tab
+		pmState.tab = tab
 	}
 	return pmState
 }
-
-// ... is ensureServerState() our solution??? :o

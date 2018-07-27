@@ -9,6 +9,7 @@ import (
 	"github.com/lxn/win"
 )
 
+// NOTE(tso): mutex needed because the ContextMenu is stored in a map...
 var mu = &sync.Mutex{}
 
 func SetSystrayContextMenu() {
@@ -22,14 +23,16 @@ func SetSystrayContextMenu() {
 		fn   func()
 	}
 
-	menu := make([]menuItem, len(clientState.tabs))
+	contexts := tabMan.FindAll(allTabsFinder)
 
-	i := len(clientState.tabs) - 1
-	for _, t := range clientState.tabs {
+	menu := make([]menuItem, len(contexts))
+
+	i := len(contexts) - 1
+	for _, ctx := range contexts {
+		t := ctx.tab
 		tabTitle := t.Title()
 		_, split := t.(*tabServer)
-		// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
-		//             and t.Index() is -1 until the tab actually gets created...
+		// NOTE(tso): have to do this and the curried function because of reasons
 		idx := t.Index()
 		if idx == -1 {
 			idx = i
@@ -38,8 +41,6 @@ func SetSystrayContextMenu() {
 		menu[idx] = menuItem{
 			separator: split,
 			text:      tabTitle,
-			// FIXME(tso): have to do this because tab creation is happening in a mw.Synchronize
-			//             and t.Index() is -1 until the tab actually gets created...
 			fn: func(t tab) func() {
 				return func() {
 					tabWidget.SetCurrentIndex(t.Index())
@@ -63,7 +64,11 @@ func SetSystrayContextMenu() {
 		menuItem{
 			text: "Help",
 			fn: func() {
-				if t, ok := clientState.CurrentTab().(tabWithTextBuffer); ok {
+				ctx := tabMan.Find(currentTabFinder)
+				if ctx == nil {
+					return
+				}
+				if t, ok := ctx.tab.(tabWithTextBuffer); ok {
 					ctx := &commandContext{tab: t}
 					helpCmd(ctx)
 				}

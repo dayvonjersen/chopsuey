@@ -14,11 +14,7 @@ func SetStatusBarIcon(icofile string) {
 		return
 	}
 
-	// ico, err := walk.NewIconFromFile(icofile)
-	// checkErr(err)
-	// statusBar.SetIcon(ico)
-	// lol jk that's too easy hold my beer
-
+	// doing it the hard way just to set the right icon size...
 	absFilePath, err := filepath.Abs(icofile)
 	checkErr(err)
 	hIcon := win.HICON(win.LoadImage(

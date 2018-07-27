@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	col "image/color"
 	"image/png"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -41,7 +43,7 @@ var (
 		"connect":    clientCommandDoc{"/connect", "(if disconnected) reconnect to server\nspecify server with /server"},
 		"disconnect": clientCommandDoc{"/disconnect", "disconnect from server and do not try to reconnect"},
 		"quit":       clientCommandDoc{"/quit", "disconnect from server and close all associated tabs"},
-		"reconnect":  clientCommandDoc{"/recover", bold(color("broken", Red)) + " use /disconnect and /connect instead"},
+		"reconnect":  clientCommandDoc{"/recover", "disconnect and reconnect to server\nspecify server with /server"},
 		"server": clientCommandDoc{"/server [host]  [+][port (default 6667, ssl 6697)]",
 			"open a connection to an irc network, to use ssl prefix port number with +"},
 
@@ -141,6 +143,7 @@ func init() {
 		"unregister": unregisterCmd,
 
 		// developer commands do not use
+		"context":    contextCmd,
 		"font":       fontCmd,
 		"palette":    paletteCmd,
 		"raw":        rawCmd,
@@ -149,10 +152,20 @@ func init() {
 	}
 }
 
+// helpers
 func usage(ctx *commandContext, cmd string) {
 	clientMessage(ctx.tab, clientCommandDox[cmd].usage)
 }
 
+func requireServConn(ctx *commandContext) bool {
+	if ctx.servState.connState != CONNECTED {
+		clientError(ctx.tab, "not connected to any network!!!")
+		return false
+	}
+	return true
+}
+
+// commands
 func connectCmd(ctx *commandContext, args ...string) {
 	switch ctx.servState.connState {
 	case CONNECTION_EMPTY:
@@ -187,7 +200,13 @@ func disconnectCmd(ctx *commandContext, args ...string) {
 }
 
 func quitCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	disconnectCmd(ctx, args...)
+
+	tabMan.Delete(tabMan.FindAll(allServerTabsFinder(ctx.servState))...)
+
 	for k, chanState := range ctx.servState.channels {
 		chanState.tab.Close()
 		delete(ctx.servState.channels, k)
@@ -200,40 +219,41 @@ func quitCmd(ctx *commandContext, args ...string) {
 		ctx.servState.channelList.Close()
 		ctx.servState.channelList = nil
 	}
-	if clientState.NumTabs() > 1 {
-		ctx.servState.tab.Close()
+	ctx.servState.tab.Close()
+
+	if tabMan.Len() == 0 {
+		empty := newEmptyServerTab()
+		empty.servState = ctx.servState
+		empty.servConn = nil
 	}
+
+	SetSystrayContextMenu()
 }
 
 func reconnectCmd(ctx *commandContext, args ...string) {
-	usage(ctx, "reconnect")
-	return
-	/*
-		// FIXME(tso): either find out why goirc panics when we do this or replace goirc altogether
-			switch ctx.servState.connState {
-			case CONNECTION_EMPTY:
-				clientMessage(ctx.tab, "ERROR: no network specified (use /server)")
-			case CONNECTING, CONNECTION_START:
-				clientMessage(ctx.tab, "ERROR: connection in progress: " + serverAddr(ctx.servState.hostname, ctx.servState.port))
+	switch ctx.servState.connState {
+	case CONNECTION_EMPTY:
+		clientMessage(ctx.tab, "ERROR: no network specified (use /server)")
+	case CONNECTING, CONNECTION_START:
+		clientMessage(ctx.tab, "ERROR: connection in progress: "+serverAddr(ctx.servState.hostname, ctx.servState.port))
 
-			case CONNECTED:
-				disconnectCmd(ctx, args...)
-				<-time.After(time.Second * 3)
-				fallthrough
-			case DISCONNECTED, CONNECTION_ERROR:
-				ctx.servConn.retryConnectEnabled = true
-				connectCmd(ctx, args...)
-			}
-	*/
+	case CONNECTED:
+		disconnectCmd(ctx, args...)
+		fallthrough
+	case DISCONNECTED, CONNECTION_ERROR:
+		ctx.servConn.retryConnectEnabled = true
+		ctx.servConn.cancelRetryConnect = make(chan struct{})
+		connectCmd(ctx, args...)
+	}
 }
 
-func serverCmd(ctx *commandContext, args ...string) {
+func serverCmd(cmdctx *commandContext, args ...string) {
 	if len(args) < 1 {
-		usage(ctx, "server")
+		usage(cmdctx, "server")
 		return
 	}
 
-	// FIXME(tso): abstract opening a new server connection/tab by reusing this code
+	// TODO(tso): abstract opening a new server connection/tab by reusing this code
 	hostname := args[0]
 	port := 6667
 	ssl := false
@@ -250,31 +270,30 @@ func serverCmd(ctx *commandContext, args ...string) {
 	}
 
 	servState := &serverState{}
-	// FIXME(tso): empty tab is a nightmare holy fuck
-	if clientState.NumTabs() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY {
-		servState = ctx.servState
-	}
-
 	servState.connState = CONNECTION_EMPTY
 	servState.hostname = hostname
 	servState.port = port
 	servState.ssl = ssl
 	servState.networkName = serverAddr(hostname, port)
 	servState.user = &userState{
-		nick: ctx.servState.user.nick,
+		nick: cmdctx.servState.user.nick,
 	}
 	servState.channels = map[string]*channelState{}
 	servState.privmsgs = map[string]*privmsgState{}
 
 	servConn := NewServerConnection(servState, func() {})
 
-	// FIXME(tso): empty tab is a nightmare holy fuck
-	if !(clientState.NumTabs() == 1 && ctx.servState != nil && ctx.servState.tab != nil && ctx.servState.connState == CONNECTION_EMPTY) {
-		clientState.mu.Lock()
-		servView := NewServerTab(servConn, servState)
-		clientState.mu.Unlock()
-		servState.tab = servView
+	ctx := tabMan.CreateIfNotFound(&tabContext{servConn: servConn, servState: servState}, tabMan.Len(), func(t *tabWithContext) bool {
+		return t.servConn == nil
+	})
+	ctx.servConn = servConn
+	ctx.servState = servState
+
+	if ctx.tab == nil {
+		tab := newServerTab(servConn, servState)
+		ctx.tab = tab
 	}
+	servState.tab = ctx.tab.(*tabServer)
 
 	servConn.Connect(servState)
 }
@@ -287,7 +306,7 @@ func closeCmd(ctx *commandContext, args ...string) {
 	if ctx.tab == ctx.servState.tab {
 		quitCmd(ctx, args...)
 
-		if clientState.NumTabs() == 1 {
+		if tabMan.Len() == 1 {
 			ctx.servState = &serverState{
 				connState: CONNECTION_EMPTY,
 				channels:  map[string]*channelState{},
@@ -307,10 +326,20 @@ func closeCmd(ctx *commandContext, args ...string) {
 	} else if ctx.pmState != nil {
 		delete(ctx.servState.privmsgs, ctx.pmState.nick)
 	}
+	tabCtx := &tabWithContext{tab: ctx.tab}
+	tabCtx.servConn = ctx.servConn
+	tabCtx.servState = ctx.servState
+	tabCtx.chanState = ctx.chanState
+	tabCtx.pmState = ctx.pmState
+	tabMan.Delete(tabCtx)
 	ctx.tab.Close()
+	SetSystrayContextMenu()
 }
 
 func ctcpCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) < 2 {
 		usage(ctx, "ctcp")
 		return
@@ -319,6 +348,9 @@ func ctcpCmd(ctx *commandContext, args ...string) {
 }
 
 func joinCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) != 1 || len(args[0]) < 2 || args[0][0] != '#' {
 		usage(ctx, "join")
 		return
@@ -327,6 +359,9 @@ func joinCmd(ctx *commandContext, args ...string) {
 }
 
 func kickCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) < 1 {
 		usage(ctx, "kick")
 		return
@@ -339,10 +374,10 @@ func kickCmd(ctx *commandContext, args ...string) {
 }
 
 func listCmd(ctx *commandContext, args ...string) {
-	if ctx.servState.connState != CONNECTED {
-		clientError(ctx.tab, "Can't LIST: not connected to any network")
+	if !requireServConn(ctx) {
 		return
 	}
+
 	if ctx.servState.channelList != nil {
 		if ctx.servState.channelList.complete {
 			clientMessage(ctx.tab, "refreshing LIST...")
@@ -357,6 +392,9 @@ func listCmd(ctx *commandContext, args ...string) {
 }
 
 func meCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	msg := strings.Join(args, " ")
 	if len(args) == 0 {
 		usage(ctx, "me")
@@ -376,6 +414,9 @@ func meCmd(ctx *commandContext, args ...string) {
 }
 
 func modeCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	// NOTE(tso): /mode
 	// /mode                -> channel is assumed to be chanState.channel
 	// /mode nick           -> channel is assumed to be chanState.channel
@@ -395,15 +436,15 @@ func modeCmd(ctx *commandContext, args ...string) {
 }
 
 func privmsgCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) < 2 || isChannel(args[0]) {
 		usage(ctx, "msg")
 		return
 	}
 	nick := args[0]
 	msg := strings.Join(args[1:], " ")
-
-	// FIXME(tso): always inline messages to services
-	//             probably should add an option to disable it too
 
 	if isService(nick) {
 		ctx.servConn.conn.Privmsg(nick, msg)
@@ -423,6 +464,9 @@ func privmsgCmd(ctx *commandContext, args ...string) {
 }
 
 func nickCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) != 1 {
 		usage(ctx, "nick")
 		return
@@ -431,6 +475,9 @@ func nickCmd(ctx *commandContext, args ...string) {
 }
 
 func noticeCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) < 2 {
 		usage(ctx, "notice")
 		return
@@ -441,6 +488,9 @@ func noticeCmd(ctx *commandContext, args ...string) {
 }
 
 func partCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if ctx.chanState != nil {
 		ctx.servConn.Part(ctx.chanState.channel, strings.Join(args, " "), ctx.servState)
 	} else {
@@ -449,6 +499,9 @@ func partCmd(ctx *commandContext, args ...string) {
 }
 
 func rejoinCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if ctx.chanState != nil {
 		ctx.servConn.Part(ctx.chanState.channel, "rejoining...", ctx.servState)
 		ctx.servConn.conn.Join(ctx.chanState.channel)
@@ -458,6 +511,9 @@ func rejoinCmd(ctx *commandContext, args ...string) {
 }
 
 func topicCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) < 1 {
 		usage(ctx, "topic")
 		return
@@ -470,6 +526,9 @@ func topicCmd(ctx *commandContext, args ...string) {
 }
 
 func versionCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) != 1 {
 		usage(ctx, "version")
 		return
@@ -478,6 +537,9 @@ func versionCmd(ctx *commandContext, args ...string) {
 }
 
 func whoisCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) != 1 {
 		usage(ctx, "whois")
 		return
@@ -486,6 +548,9 @@ func whoisCmd(ctx *commandContext, args ...string) {
 }
 
 func awayCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	msg := strings.Join(args, " ")
 	if len(args) == 0 {
 		msg = "(Away!)"
@@ -494,6 +559,9 @@ func awayCmd(ctx *commandContext, args ...string) {
 }
 
 func unawayCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	ctx.servConn.conn.Away()
 }
 
@@ -552,12 +620,18 @@ func exitCmd(ctx *commandContext, args ...string) {
 }
 
 func sendCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	who := args[0]
 	file := "rfc2812.txt"
 	fileTransfer(ctx.servConn, who, file)
 }
 
 func scriptCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	if len(args) < 0 {
 		usage(ctx, "script")
 		return
@@ -679,108 +753,28 @@ func unregisterCmd(ctx *commandContext, args ...string) {
 	clientMessage(ctx.tab, "/"+name+" ("+alias+") unregistered")
 }
 
-// XXX TEMPORARY SECRETARY
-func paletteCmd(ctx *commandContext, args ...string) {
-	Println(99999, T(ctx.tab),
-		color("0:White     ", White, White),
-		color("0:White     ", Black, White),
-		color("0:White     ", White),
-		color("1:Black     ", White, Black),
-		color("1:Black     ", Black, Black),
-		color("1:Black     ", Black))
-	Println(99999, T(ctx.tab),
-		color("2:Navy      ", White, Navy),
-		color("2:Navy      ", Black, Navy),
-		color("2:Navy      ", Navy),
-		color("3:Green     ", White, Green),
-		color("3:Green     ", Black, Green),
-		color("3:Green     ", Green))
-	Println(99999, T(ctx.tab),
-		color("4:Red       ", White, Red),
-		color("4:Red       ", Black, Red),
-		color("4:Red       ", Red),
-		color("5:Maroon    ", White, Maroon),
-		color("5:Maroon    ", Black, Maroon),
-		color("5:Maroon    ", Maroon))
-	Println(99999, T(ctx.tab),
-		color("6:Purple    ", White, Purple),
-		color("6:Purple    ", Black, Purple),
-		color("6:Purple    ", Purple),
-		color("7:Orange    ", White, Orange),
-		color("7:Orange    ", Black, Orange),
-		color("7:Orange    ", Orange))
-	Println(99999, T(ctx.tab),
-		color("8:Yellow    ", White, Yellow),
-		color("8:Yellow    ", Black, Yellow),
-		color("8:Yellow    ", Yellow),
-		color("9:Lime      ", White, Lime),
-		color("9:Lime      ", Black, Lime),
-		color("9:Lime      ", Lime))
-	Println(99999, T(ctx.tab),
-		color("10:Teal     ", White, Teal),
-		color("10:Teal     ", Black, Teal),
-		color("10:Teal     ", Teal),
-		color("11:Cyan     ", White, Cyan),
-		color("11:Cyan     ", Black, Cyan),
-		color("11:Cyan     ", Cyan))
-	Println(99999, T(ctx.tab),
-		color("12:Blue     ", White, Blue),
-		color("12:Blue     ", Black, Blue),
-		color("12:Blue     ", Blue),
-		color("13:Pink     ", White, Pink),
-		color("13:Pink     ", Black, Pink),
-		color("13:Pink     ", Pink))
-	Println(99999, T(ctx.tab),
-		color("14:DarkGray ", White, DarkGray),
-		color("14:DarkGray ", Black, DarkGray),
-		color("14:DarkGray ", DarkGray),
-		color("15:LightGray", White, LightGray),
-		color("15:LightGray", Black, LightGray),
-		color("15:LightGray", LightGray))
-
-	for i := 16; i < 91; i += 6 {
-		j, k, l, m, n := i+1, i+2, i+3, i+4, i+5
-		Println(99999, T(ctx.tab),
-			color(strconv.Itoa(i), White, i),
-			color(strconv.Itoa(i), Black, i),
-			color(strconv.Itoa(i), i),
-			color(strconv.Itoa(j), White, j),
-			color(strconv.Itoa(j), Black, j),
-			color(strconv.Itoa(j), j),
-			color(strconv.Itoa(k), White, k),
-			color(strconv.Itoa(k), Black, k),
-			color(strconv.Itoa(k), k),
-			color(strconv.Itoa(l), White, l),
-			color(strconv.Itoa(l), Black, l),
-			color(strconv.Itoa(l), l),
-			color(strconv.Itoa(m), White, m),
-			color(strconv.Itoa(m), Black, m),
-			color(strconv.Itoa(m), m),
-			color(strconv.Itoa(n), White, n),
-			color(strconv.Itoa(n), Black, n),
-			color(strconv.Itoa(n), n),
-		)
+func contextCmd(ctx *commandContext, args ...string) {
+	servConn := serverConnection{}
+	servConnHasConn := false
+	if ctx.servConn != nil {
+		servConn = *ctx.servConn
+		servConnHasConn = ctx.servConn.conn != nil
 	}
-	i, j := 97, 98
-	Println(99999, T(ctx.tab),
-		color(strconv.Itoa(i), White, i),
-		color(strconv.Itoa(i), Black, i),
-		color(strconv.Itoa(i), i),
-		color(strconv.Itoa(j), White, j),
-		color(strconv.Itoa(j), Black, j),
-		color(strconv.Itoa(j), j),
-	)
-	clientError(ctx.tab, "client error")
-	clientMessage(ctx.tab, "client message")
-	serverMessage(ctx.tab, "123", "server message")
-	serverError(ctx.tab, "123", "server error")
-	joinpartMessage(ctx.tab, "<->", "user123 has joined quit parted")
-	updateMessage(ctx.tab, "topic for #channel is there is no spoon")
-	noticeMessage(ctx.tab, "colbert", "nation", "you're on notice")
-	actionMessage(ctx.tab, "puts", "on robe and wizard hat")
-	privateMessage(ctx.tab, "user456", "hello world")
-	actionMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "owo", "nuzzles")
-	privateMessageWithHighlight(ctx.tab, func(string, string) bool { return true }, "anon", "here's your (You)")
+	servState := serverState{}
+	servStateHasTab := false
+	if ctx.servState != nil {
+		servState = *ctx.servState
+		servStateHasTab = ctx.servState.tab != nil
+		servState.tab = nil
+	}
+
+	log.Println("pointers:\n\t", strings.Join(strings.Split(fmt.Sprintf("%#v", ctx), ", "), "\n\t"))
+	log.Println("servConn:")
+	printf(servConn)
+	log.Println("servConn has goirc.Conn:", servConnHasConn)
+	log.Println("servState:")
+	printf(servState)
+	log.Println("servState has serverTab:", servStateHasTab)
 }
 
 func fontCmd(ctx *commandContext, args ...string) {
@@ -796,7 +790,22 @@ func fontCmd(ctx *commandContext, args ...string) {
 	mw.WindowBase.SetFont(font)
 }
 
+func paletteCmd(ctx *commandContext, args ...string) {
+	clientMessage(ctx.tab, "palette test:")
+	for c := 0; c < 16; c++ {
+		str := fmt.Sprintf("%02d:% 9s", c, colorCodeString(c))
+		Println(CUSTOM_MESSAGE, T(ctx.tab),
+			color(str, White, c),
+			color(str, Black, c),
+			color(str, c),
+		)
+	}
+}
+
 func rawCmd(ctx *commandContext, args ...string) {
+	if !requireServConn(ctx) {
+		return
+	}
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
 }
 
@@ -872,6 +881,9 @@ func screenshotCmd(ctx *commandContext, args ...string) {
 			checkErr(err)
 			clientMessage(ctx.tab, now(), "screenshot:", "file:///"+strings.Replace(abspath, "\\", "/", -1))
 
+			if !requireServConn(ctx) {
+				return
+			}
 			if ctx.chanState != nil || ctx.pmState != nil {
 				// FIXME(tso): stop being lazy and do this with net/http instead
 				cmd := exec.Command("curl", "-silent", "-F", "file=@"+fname, "https://0x0.st")

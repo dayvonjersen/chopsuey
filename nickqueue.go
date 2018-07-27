@@ -1,10 +1,10 @@
 package main
 
-const Q_LEN = 20
-
 // NOTE(tso): alternatively, use make([]string, capacity)
 //            func NewNickQueue(capacity int) *nickQueue { // ...
 //            for i := cap(q) - 1; // ... in Push()
+
+const Q_LEN = 20
 
 type nickQueue [Q_LEN]string
 

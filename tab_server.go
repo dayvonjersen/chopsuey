@@ -70,9 +70,8 @@ func (t *tabServer) Update(servState *serverState) {
 	SetSystrayContextMenu()
 }
 
-func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer {
+func newServerTab(servConn *serverConnection, servState *serverState) *tabServer {
 	t := &tabServer{}
-	clientState.AppendTab(t)
 	t.tabTitle = servState.networkName
 	t.chatlogger = NewChatLogger(servState.networkName)
 
@@ -84,26 +83,40 @@ func NewServerTab(servConn *serverConnection, servState *serverState) *tabServer
 		t.tabPage.SetLayout(walk.NewVBoxLayout())
 		t.textBuffer, err = NewRichEdit(t.tabPage)
 		checkErr(err)
-		t.textBuffer.KeyPress().Attach(ctrlTab)
-		t.textInput = NewTextInput(t, &commandContext{
-			servConn:  servConn,
-			tab:       t,
-			servState: servState,
-			chanState: nil,
-			pmState:   nil,
-		})
+		t.textBuffer.KeyPress().Attach(globalKeyHandler)
+		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
 		// remove borders
 		win.SetWindowLong(t.textInput.Handle(), win.GWL_EXSTYLE, 0)
+
+		servState.tab = t
+
+		applyThemeToTab(t)
 
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-
-		applyThemeToTab(t)
 	})
 	return t
+}
+
+func newEmptyServerTab() *tabWithContext {
+	empty := &tabContext{}
+	servState := &serverState{
+		connState: CONNECTION_EMPTY,
+		user: &userState{
+			nick: "nobody",
+		},
+		channels: map[string]*channelState{},
+		privmsgs: map[string]*privmsgState{},
+	}
+	empty.servState = servState
+	ctx := tabMan.Create(empty, tabMan.Len())
+	tab := newServerTab(nil, servState)
+	ctx.tab = tab
+	servState.tab = tab
+	return ctx
 }

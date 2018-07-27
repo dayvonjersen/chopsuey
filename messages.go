@@ -17,6 +17,7 @@ const (
 	NOTICE_MESSAGE
 	ACTION_MESSAGE
 	PRIVATE_MESSAGE
+	CUSTOM_MESSAGE
 )
 
 func msgTypeString(t int) string {
@@ -39,6 +40,8 @@ func msgTypeString(t int) string {
 		return "ACTION_MESSAGE"
 	case PRIVATE_MESSAGE:
 		return "PRIVATE_MESSAGE"
+	case CUSTOM_MESSAGE:
+		return "CUSTOM_MESSAGE"
 	}
 	return "(unknown)"
 }
@@ -169,7 +172,7 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 		}
 
 	case JOINPART_MESSAGE:
-		if !clientState.cfg.HideJoinParts {
+		if !clientCfg.HideJoinParts {
 			text, styles := parseString(joinpartMsg(msg...))
 			for _, tab := range tabs {
 				tab.Logln(text)
@@ -213,32 +216,14 @@ func Println(msgType int, tabs []tabWithTextBuffer, msg ...string) {
 			tab.Println(parseString(actionMsg(false, nick, msg)))
 		}
 
-	default:
-		/*
-			log.Printf(`
-
-			--------------------------------------------------------------------
-			HEY!
-
-
-			should this message be logged and displayed in the text buffer?
-
-
-			%v
-
-
-			??? default is yes...
-
-
-			also msgType %d isn't defined. add it to messages.go`, msg, msgType)
-		*/
-
+	case CUSTOM_MESSAGE:
 		text, styles := parseString(strings.Join(msg, " "))
 		for _, tab := range tabs {
-			tab.Notify(false)
-			tab.Logln(text)
 			tab.Println(text, styles)
 		}
+
+	default:
+		log.Printf("Println: unhandled msgType: %v", msgType)
 	}
 }
 
@@ -265,12 +250,11 @@ func serverMsg(text ...string) string {
 		return fmt.Sprintf("wrong argument count for server message: want 2 got %d:\n%#v",
 			len(text), text)
 	}
-	// NOTE(tso): "R" for "reply" (maybe S is better or nothing at all)
-	return color(now()+"R("+text[0]+"): "+strings.Join(text[1:], " "), DarkGray)
+	return color(now()+"S("+text[0]+"): "+strings.Join(text[1:], " "), DarkGray)
 }
 
 func joinpartMsg(text ...string) string {
-	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), 53)) // XXX TEMPORARY SECRETARY (that default orange was bothering me)
+	return color(now(), LightGray) + " " + italic(color(strings.Join(text, " "), Orange))
 }
 
 func updateMsg(text ...string) string {

@@ -38,9 +38,8 @@ func (t *tabPrivmsg) Update(servState *serverState, pmState *privmsgState) {
 	SetSystrayContextMenu()
 }
 
-func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState) *tabPrivmsg {
+func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *privmsgState, tabIndex int) *tabPrivmsg {
 	t := &tabPrivmsg{}
-	clientState.AppendTab(t)
 	t.tabTitle = pmState.nick
 
 	t.send = func(msg string) {
@@ -72,13 +71,7 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		//           *doesn't happen* when you use the walk/declarative interface
 		// wtf -tso 7/12/2018 1:54:43 AM
 		// checkErr(t.tabPage.Children().Add(t.textBuffer))
-		t.textInput = NewTextInput(t, &commandContext{
-			servConn:  servConn,
-			tab:       t,
-			servState: servState,
-			chanState: nil,
-			pmState:   pmState,
-		})
+		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
 		// remove borders
@@ -111,9 +104,10 @@ func NewPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		applyThemeToTab(t)
+		pmState.tab = t
+		servState.privmsgs[pmState.nick] = pmState
+		servState.tab.Update(servState)
 	})
-	pmState.tab = t
-	servState.privmsgs[pmState.nick] = pmState
-	servState.tab.Update(servState)
+
 	return t
 }

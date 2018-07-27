@@ -87,8 +87,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	ident := "chopsuey"
 	name := "github.com/generaltso/chopsuey"
 	cfg := goirc.NewConfig(servState.user.nick, ident, name)
-	cfg.Version = clientState.cfg.Version
-	cfg.QuitMessage = clientState.cfg.QuitMessage
+	cfg.Version = clientCfg.Version
+	cfg.QuitMessage = clientCfg.QuitMessage
 	if servState.ssl {
 		cfg.SSL = true
 		cfg.SSLConfig = &tls.Config{
@@ -371,7 +371,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			chanState.nickList.Add(l.Nick)
 			chanState.tab.updateNickList(chanState)
 			hostname := ""
-			if !clientState.cfg.HideHostnames {
+			if !clientCfg.HideHostnames {
 				hostname = "(" + l.Ident + "@" + l.Host + ") "
 			}
 			joinpartMessage(chanState.tab, "->", l.Nick, hostname+"has joined", l.Args[0])
@@ -389,7 +389,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		chanState.nickList.Remove(l.Nick)
 		chanState.tab.updateNickList(chanState)
 		hostname := ""
-		if !clientState.cfg.HideHostnames {
+		if !clientCfg.HideHostnames {
 			hostname = "(" + l.Ident + "@" + l.Host + ") "
 		}
 		msg := []string{"<-", l.Nick, hostname + "has left", l.Args[0]}
@@ -406,7 +406,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		}
 		reason = strings.TrimSpace(reason)
 		hostname := ""
-		if !clientState.cfg.HideHostnames {
+		if !clientCfg.HideHostnames {
 			hostname = "(" + l.Ident + "@" + l.Host + ") "
 		}
 		msg := []string{"<-", l.Nick, hostname + "has quit"}
@@ -577,13 +577,17 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	// LISTSTART
 	conn.HandleFunc("321", func(c *goirc.Conn, l *goirc.Line) {
 		if servState.channelList == nil {
+			// FIXME(tso): @channelList
+			ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, servState.tab.Index()+1)
 			servState.channelList = NewChannelList(servConn, servState)
+			ctx.tab = servState.channelList
 		}
 		servState.channelList.inProgress = true
 	})
 
 	// LIST
 	conn.HandleFunc("322", func(c *goirc.Conn, l *goirc.Line) {
+		// FIXME(tso): @channelList
 		if servState.channelList == nil {
 			return
 		}

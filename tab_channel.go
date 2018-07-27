@@ -119,10 +119,9 @@ func (t *tabChannel) Resize() {
 	})
 }
 
-func NewChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState) *tabChannel {
+func newChannelTab(servConn *serverConnection, servState *serverState, chanState *channelState, tabIndex int) *tabChannel {
 	t := &tabChannel{}
 	t.nickColors = map[string]int{}
-	clientState.AppendTab(t)
 	t.tabTitle = chanState.channel
 
 	chanState.nickList = newNickList()
@@ -218,14 +217,8 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		}.Create(builder)
 		ShowScrollBar(t.nickListBox.Handle(), win.SB_HORZ, 0)
 
-		t.textBuffer.KeyPress().Attach(ctrlTab)
-		t.textInput = NewTextInput(t, &commandContext{
-			servConn:  servConn,
-			tab:       t,
-			servState: servState,
-			chanState: chanState,
-			pmState:   nil,
-		})
+		t.textBuffer.KeyPress().Attach(globalKeyHandler)
+		t.textInput = NewTextInput(t)
 		checkErr(t.tabPage.Children().Add(t.textInput))
 
 		// remove borders
@@ -247,29 +240,18 @@ func NewChannelTab(servConn *serverConnection, servState *serverState, chanState
 		}
 		origWndProcPtr = win.SetWindowLongPtr(t.nickListBox.Parent().Handle(), win.GWLP_WNDPROC, syscall.NewCallback(wndProc))
 
-		{
-			index := servState.tab.Index()
-			if servState.channelList != nil {
-				index = servState.channelList.Index()
-			}
-			for _, ch := range servState.channels {
-				i := ch.tab.Index()
-				if i > index {
-					index = i
-				}
-			}
-			index++
+		chanState.tab = t
+		servState.channels[chanState.channel] = chanState
+		servState.tab.Update(servState)
+		applyThemeToTab(t)
 
-			checkErr(tabWidget.Pages().Insert(index, t.tabPage))
-		}
+		checkErr(tabWidget.Pages().Insert(tabIndex, t.tabPage))
+
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
-		applyThemeToTab(t)
 	})
-	chanState.tab = t
-	servState.channels[chanState.channel] = chanState
-	servState.tab.Update(servState)
+
 	return t
 }
