@@ -9,7 +9,6 @@ import (
 	"unsafe"
 
 	"github.com/fluffle/goirc/logging"
-	"github.com/kr/pretty"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
@@ -337,14 +336,12 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	case win.WM_DRAWITEM:
 		// use foreground color for statusBar text
 		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		log.Printf("got WM_DRAWITEM, item: % #v lParam: %v", pretty.Formatter(item), lParam)
-		if item.HwndItem == mw.StatusBar().Handle() && item.ItemState <= 1 {
+		if item.HwndItem == mw.StatusBar().Handle() && item.CtlType == 0 {
 			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
 
 			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
 			text := win.UTF16PtrToString(textptr)
 			textlen := int32(len(text))
-			log.Printf("text: % #v", pretty.Formatter(text))
 
 			win.TextOut(item.HDC, item.RcItem.Left+20 /*16px icon size + 4px padding*/, item.RcItem.Top, textptr, textlen)
 			return win.TRUE
