@@ -40,36 +40,36 @@ contents:
 
  - lightweight, fast, free
 
+ - no input lag when typing
+
  - everything you need, nothing you don't
 
- - customizable <sup>[1](#customization)</sup>
+ - themes
 
- - scripting maybe <sup>[2](#scripting)</sup>
+ - very basic scripting
+
+  - see documentation for `/script` below
 
 ### Known Issues
 
- - shit's broke yo
+>See [TODO.txt](https://github.com/generaltso/chopsuey/blob/master/TODO.txt)
 
 ### List of Commands
 
  #### /connect
 reconnect to server (if disconnected) (specify with **/server**)
 
-
 #### /disconnect
 
 disconnect from server and do not try to reconnect
-
 
 #### /quit
 
 disconnect from server and close all associated tabs (sends quit message)
 
-
 #### /reconnect
 
 disconnect and reconnect to server (specify with **/server**)
-
 
 #### /server [host]  [+][port (default 6667, ssl 6697)]
 
@@ -88,7 +88,6 @@ closes current tab with optional part or quit message
 if on a channel, same as **/part**
 
 if on a server same as **/quit**
-
 
 #### /ctcp [nick] [message] [args...]
 
@@ -167,6 +166,10 @@ exits the application
 #### /script [file in `scripts/`] [args...]
 
 run an external program and send its output as a message in the current channel or private message tab
+
+See examples in [scripts/](https://github.com/generaltso/chopsuey/tree/master/scripts)
+
+>**NOTE**(tso): no ability to hook into irc or client state/events...yet
 
 recognized filetypes: (**iff you have the associated interpreter installed on your system**):
 
@@ -272,7 +275,7 @@ change font (*destroys previous text colors in buffer currently*)
 
 ### Building from Source
 
->NOTE(tso): This is for **64-bit windows-only**.
+>**NOTE**(tso): This is for **64-bit windows-only**.
 It might compile on other systems if you set `GOOS` and `GOARCH`
 but it won't run. I have not tested it in wine or on ReactOS or any version of
 Windows other than 7SP1.
