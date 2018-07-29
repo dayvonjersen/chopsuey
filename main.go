@@ -337,7 +337,7 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	case win.WM_DRAWITEM:
 		// use foreground color for statusBar text
 		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		if item.HwndItem == mw.StatusBar().Handle() && item.ItemState&ODS_SELECTED == ODS_SELECTED {
+		if item.HwndItem == mw.StatusBar().Handle() && item.ItemAction == 0 && item.ItemState&ODS_SELECTED == ODS_SELECTED {
 
 			var iconOffset int32 = 20 /*16px icon size + 4px padding*/
 			item.RcItem.Left += iconOffset
