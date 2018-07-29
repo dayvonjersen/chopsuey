@@ -92,7 +92,8 @@ func main() {
 
 	//  required for transparency:
 	mw.alpha = TRANSPARENCY_DEFAULT_ALPHA
-	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_LAYERED|win.WS_EX_STATICEDGE)
+	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_STATICEDGE|win.WS_EX_LAYERED)
+	SetLayeredWindowAttributes(mw.Handle(), 0, 0xff, LWA_ALPHA) // have to do this for the window to draw if aero is disabled
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	// create tab widget
@@ -336,14 +337,43 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	case win.WM_DRAWITEM:
 		// use foreground color for statusBar text
 		item := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-		if item.HwndItem == mw.StatusBar().Handle() && item.CtlType == 0 {
-			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
+		if item.HwndItem == mw.StatusBar().Handle() && item.ItemState&ODS_SELECTED == ODS_SELECTED {
+
+			var iconOffset int32 = 20 /*16px icon size + 4px padding*/
+			item.RcItem.Left += iconOffset
+			item.RcItem.Right += iconOffset
+
+			bg := rgb2COLORREF(globalBackgroundColor)
+
+			/* slow, but I'm done with figuring out winapi bullshit right now. */
+			for x := item.RcItem.Left; x < item.RcItem.Right; x++ {
+				for y := item.RcItem.Top; y < item.RcItem.Bottom; y++ {
+					win.SetPixel(item.HDC, x, y, bg)
+				}
+			}
+
+			/*
+				width := item.RcItem.Right - item.RcItem.Left
+				height := item.RcItem.Bottom - item.RcItem.Top
+				bmpHeader := &win.BITMAPINFOHEADER{
+				   BiWidth:    width,
+				   BiHeight:   height,
+				   BiPlanes:   1,
+				   BiBitCount: 32,
+				   BiClrUsed:  uint32(bg),
+				}
+				bmpHeader.BiSize = uint32(unsafe.Sizeof(bmpHeader))
+				whatever := 0
+				dontcare := unsafe.Pointer(&whatever)
+				bmp := win.CreateDIBSection(item.HDC, bmpHeader, 0, &dontcare, 0, 0)
+				win.SetDIBits(item.HDC, bmp, 0, 0, nil, nil, 0)
+			*/
 
 			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
 			text := win.UTF16PtrToString(textptr)
 			textlen := int32(len(text))
-
-			win.TextOut(item.HDC, item.RcItem.Left+20 /*16px icon size + 4px padding*/, item.RcItem.Top, textptr, textlen)
+			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
+			win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, textlen)
 			return win.TRUE
 		}
 

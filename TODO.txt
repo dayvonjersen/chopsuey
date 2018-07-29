@@ -306,6 +306,9 @@ http://microsoft.public.win32.programmer.ui.narkive.com/dlstN3N0/change-color-of
     FlashWindowEx
 https://docs.microsoft.com/en-us/windows/desktop/api/winuser/ns-winuser-flashwinfo
 
+    "The status bar control forgot to set the CtlType when it sends the WM_DRAWITEM message, 
+    so the value is uninitialized garbage."
+https://blogs.msdn.microsoft.com/oldnewthing/20141211-00/?p=43423
 }}}}}}
 {{{
 
