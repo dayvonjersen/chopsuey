@@ -304,7 +304,9 @@ func clearCmd(ctx *commandContext, args ...string) {
 
 func closeCmd(ctx *commandContext, args ...string) {
 	if ctx.tab == ctx.servState.tab {
-		quitCmd(ctx, args...)
+		if ctx.servState.connState == CONNECTED {
+			quitCmd(ctx, args...)
+		}
 
 		if tabMan.Len() == 1 {
 			ctx.servState = &serverState{

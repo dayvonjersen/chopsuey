@@ -31,7 +31,7 @@ func (t *tabServer) Update(servState *serverState) {
 	switch servState.connState {
 	case CONNECTION_EMPTY:
 		t.disconnected = true
-		t.statusIcon = "res/conn_pcs_no_network.ico"
+		t.statusIcon = "chopsuey.ico"
 		t.statusText = "not connected to any network"
 	case DISCONNECTED:
 		t.disconnected = true

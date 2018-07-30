@@ -84,7 +84,6 @@ func main() {
 		StatusBarItems: []StatusBarItem{
 			StatusBarItem{
 				AssignTo: &statusBar,
-				Text:     "not connected to any networks...",
 			},
 		},
 	}.Create()
@@ -121,7 +120,6 @@ func main() {
 	ico, err := walk.NewIconFromFile("chopsuey.ico")
 	checkErr(err)
 	mw.SetIcon(ico)
-	SetStatusBarIcon("chopsuey.ico")
 
 	// create system tray
 	systray, err = walk.NewNotifyIcon(mw.Handle())
@@ -205,18 +203,65 @@ func main() {
 		}
 	})
 
+	// always start with an empty tab
+	mw.Synchronize(func() {
+		ctx := newEmptyServerTab()
+		t := ctx.tab.(*tabServer)
+		t.Update(ctx.servState)
+		SetStatusBarIcon("chopsuey.ico")
+	})
+
+	// FIXME(tso): @synchronization
+	// FIXME(tso): @synchronization
+	// FIXME(tso): @synchronization
+	// FIXME(tso): @synchronization
+	ch := make(chan *tabServer, 1)
+	go func() {
+		emptyTab := tabMan.Find(currentTabFinder)
+		for emptyTab == nil || emptyTab.tab == nil {
+			<-time.After(time.Millisecond * 50)
+			emptyTab = tabMan.Find(currentTabFinder)
+		}
+		t := emptyTab.tab.(*tabServer)
+		ch <- t
+	}()
+
+	welcome := func() {
+		t := <-ch
+		clientMessage(t, "chopsuey "+VERSION_STRING)
+		clientMessage(t, "https://github.com/generaltso/chopsuey")
+		clientMessage(t, "")
+		clientMessage(t, "to connect to a network type:")
+		clientMessage(t, "/server ["+bold("hostname")+"] ["+bold("+")+"]["+bold("port")+"]")
+		clientMessage(t, "")
+		clientMessage(t, "for a list of all commands type "+bold("/help"))
+		ch <- t
+	}
+
 	// config.json
 	clientCfg, err = getClientConfig()
 	if err != nil {
-		msg := "error parsing config.json"
-		log.Println(msg, err)
-		mw.Synchronize(func() {
-			walk.MsgBox(mw, msg, err.Error(), walk.MsgBoxIconError)
-			SetStatusBarIcon("res/msg_error.ico")
-			SetStatusBarText(msg)
-			// TODO(tso): create+load+write default clientConfig
-			newEmptyServerTab()
-		})
+		go welcome()
+		if os.IsNotExist(err) {
+			log.Println("config.json not found, writing default config")
+			checkErr(writeClientConfig())
+			go func() {
+				t := <-ch
+				clientMessage(t, "")
+				clientMessage(t, color("wrote default config to config.json", LightGrey))
+				ch <- t
+			}()
+		} else {
+			go func() {
+				t := <-ch
+				clientError(t, "error parsing config.json")
+				clientMessage(t, color(err.Error(), Red))
+				clientMessage(t, "")
+				clientMessage(t, bold("default configuration loaded")+", but "+italic("not written"))
+				clientMessage(t, "please edit or delete config.json manually")
+				ch <- t
+			}()
+		}
 	} else {
 		if clientCfg.Theme != "" {
 			if err := applyTheme(clientCfg.Theme); err != nil {
@@ -224,11 +269,12 @@ func main() {
 			}
 		}
 		if len(clientCfg.AutoConnect) == 0 {
-			mw.Synchronize(func() {
-				newEmptyServerTab()
-			})
+			go welcome()
 		} else {
 			go func() {
+				// FIXME(tso): @synchronization
+				t := <-ch
+				empty := true
 				// autojoin
 				for _, cfg := range clientCfg.AutoConnect {
 					// TODO(tso): abstract opening a new server connection/tab
@@ -258,10 +304,18 @@ func main() {
 						}(cfg.NickServPASSWORD, cfg.AutoJoin),
 					)
 					index := tabMan.Len()
-					ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
-					tab := newServerTab(servConn, servState)
-					ctx.tab = tab
-					servState.tab = tab
+					if index == 1 && empty {
+						ctx := tabMan.Find(identityFinder(t))
+						ctx.servConn = servConn
+						servState.tab = t
+						ctx.servState = servState
+						empty = false
+					} else {
+						ctx := tabMan.Create(&tabContext{servConn: servConn, servState: servState}, index)
+						tab := newServerTab(servConn, servState)
+						ctx.tab = tab
+						servState.tab = tab
+					}
 					servConn.Connect(servState)
 				}
 			}()

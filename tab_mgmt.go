@@ -81,6 +81,9 @@ func (tabMan *tabManager) Find(finder finderFunc) *tabWithContext {
 }
 
 func (tabMan *tabManager) FindAll(finder finderFunc) []*tabWithContext {
+	if len(tabMan.tabs) == 0 {
+		return nil
+	}
 	ret := make(chan []*tabWithContext)
 	tabMan.search <- &tabRequestSearch{finder, ret}
 	return <-ret
@@ -98,7 +101,7 @@ func allTabsFinder(t *tabWithContext) bool {
 }
 
 func currentTabFinder(t *tabWithContext) bool {
-	return t.tab.Index() == tabWidget.CurrentIndex()
+	return t.tab != nil && t.tab.Index() == tabWidget.CurrentIndex()
 }
 
 func allServerTabsFinder(servState *serverState) finderFunc {
