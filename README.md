@@ -4,8 +4,6 @@
 
     an IRC client for Windows
 
-(screenshots go here)
-
 contents:
                        [Downloads](#download) |
                         [Features](#features) |
@@ -14,6 +12,18 @@ contents:
     [Keyboard Shortcuts](#keyboard-shortcuts) |
 [Building from Source](#building-from-source) |
 [Contributing](#contributing-and-feedback)
+
+![](./screenshots/demo-channel-hemisu-light-winclassic-hack9.png)
+![](./screenshots/demo-channellist-winclassic-hack9.png)
+> windows classic, `hemisu-light` theme, font: Hack 9pt
+
+![](./screenshots/demo-channel-hemisu-dark-aero-profontwindows9.png)
+
+> aero, `hemisu-dark`, ProfontWindows 9pt
+
+![](./screenshots/demo-borderless-transparent-multilinetabs-aero.png)
+
+> multi-line tabs, borderless and transparent window
 
 ### Download
 
@@ -210,7 +220,7 @@ change font (*destroys previous text colors in buffer currently*)
 
 #### /palette
 
-(screenshot here)
+![](./screenshots/demo-palette.png)
 
 ### Keyboard Shortcuts
 
