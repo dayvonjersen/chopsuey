@@ -1,4 +1,4 @@
-![[](#contributing-and-feedback)](https://img.shields.io/badge/feedback-welcome-%23ff086e.svg)
+[![](https://img.shields.io/badge/feedback-welcome-%23ff086e.svg)](#contributing-and-feedback)
 
 # ![](chopsuey.ico) chopsuey
 
@@ -27,7 +27,7 @@ contents:
 
 ### Download
 
- - ## [LATEST VERSION: 0.7[BETA] Windows 64-bit (x86_64) :point_left: ](about:blank)
+ - ## [LATEST VERSION: 0.7[BETA] Windows 64-bit (x86_64) :point_left: ](https://github.com/generaltso/chopsuey/releases/download/0.7BETA/chopsuey-v0.7-BETA.tso.zip)
    - (*no win32 build sorry*)
 
 ##### Previous Releases:
