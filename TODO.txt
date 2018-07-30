@@ -1,8 +1,13 @@
 TODO {{{
 [[[                                 the short list                              ]]] {{{
 REMINDER(tso): terse desc != easy
-
- - clean up tab_channel, server, privmsg 
+ - statusbar still gets messed up 
+    - on resize
+ - tab creation synchronization
+    - try using a chan string for AppendText
+ - applyTheme() after Close()'ing multiple tabs seems to repaint nonexistent tabs
+ - need more SetSuspended(true), Dispose(), Invalidate()
+ - clean up tab_*.go 
  - Focus() isn't always being called
  - nicklist box resize behavior nonsense
  - implement fmtReverse
@@ -51,9 +56,6 @@ REMINDER(tso): terse desc != easy
    - timeout
 }}}
  - config.json {{{
-     - write clientConfig to config.json
-       - when no config.json
-       - when autowrite enabled
      - load scripts at startup 
      - configurable font (and load at startup)
 }}}
@@ -63,20 +65,15 @@ REMINDER(tso): terse desc != easy
        - not sure how to fix...
      - double-check we're applying styles correctly
        - sometimes have to call /theme multiple times to set the fg color in the
-         richedit but idk if we fixed that at some point
-     - list of theme
-     - custom/new theme
+         richedit 
+     - list of themes
+     - custom/new themes
        - file based???
      - consider removing colors 16-98
        - I'm not sure anyone actually uses these on any network in the world
        - clash/unusable for e.g. nick colors 
      - consider embedding all those themes as data 
        - or store/load them as binary ([18][4]byte)
-}}}
- - documentation {{{
-   - ALL clientCommands
-   - keyboard shortcuts
-   - welcome message
 }}}
  - change behavior of commands: {{{
    - /nick {{{
@@ -99,21 +96,12 @@ REMINDER(tso): terse desc != easy
      expected: /topic
                Topic for #channel is "words" set by tso at 7/12/2018 11:54:18 PM
 }}}
-   - /welcome {{{
-      - first run welcome message
-      - ascii art logo
-      - contact + link to github
-      - getting started
-        /server irc.example.org +
-        /join #channel
-        hi
-      - /help for more information
-}}}
    - /part {{{
      - without closing tab
      - chanState tracks whether "connected" to channel?
 }}}
    - /screenshot {{{
+     - fix in windows classic mode
      - put a timeout on the POST and keep retrying until it succeeds
      - don't listen to that comment using net/http will add another 100 lines
        of code for literally no gain other than to say you did it the "right"
@@ -204,7 +192,6 @@ REMINDER(tso): terse desc != easy
     - e.g. "fuck" => "****"
     - or 4chan style "fam" => "desu"
 }}}
-
 }}}}}}
 BUGS {{{
                priority    description
