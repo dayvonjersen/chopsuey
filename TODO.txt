@@ -1,6 +1,9 @@
 TODO {{{
 [[[                                 the short list                              ]]] {{{
 REMINDER(tso): terse desc != easy
+ - autoconnect/reconnect: /msg NickServ IDENTIFY not sent
+ - /rejoin shouldn't close tab (fix /part first)
+ - nick prefix not cleared on /rejoin (fix in NAMES? dunno)
  - statusbar still gets messed up 
     - on resize
  - tab creation synchronization
