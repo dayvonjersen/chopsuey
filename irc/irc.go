@@ -2,6 +2,7 @@ package irc
 
 import (
 	"bufio"
+	"crypto/tls"
 	"io"
 	"log"
 	"net"
@@ -15,7 +16,9 @@ func MockConnection(filename string) (send, recv chan string, done chan struct{}
 
 	go func() {
 		f, err := os.Open(filename)
-		checkErr(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 		defer f.Close()
 		scanner := bufio.NewScanner(f)
 		for {
@@ -40,14 +43,30 @@ func MockConnection(filename string) (send, recv chan string, done chan struct{}
 }
 
 func Dial(addr string) (send, recv chan string, done chan struct{}) {
-
-	done = make(chan struct{})
-	send, recv = make(chan string), make(chan string)
-
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return dial(conn)
+}
+
+func DialTLS(addr string, cfg *tls.Config) (send, recv chan string, done chan struct{}) {
+	if cfg == nil {
+		cfg = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+	conn, err := tls.Dial("tcp", addr, cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return dial(conn)
+}
+
+func dial(conn net.Conn) (send, recv chan string, done chan struct{}) {
+	done = make(chan struct{})
+	send, recv = make(chan string), make(chan string)
+
 	scanner := bufio.NewScanner(conn)
 	go func() {
 		for scanner.Scan() {
