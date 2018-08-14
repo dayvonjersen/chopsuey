@@ -1,8 +1,10 @@
 package main
 
 import (
+	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/lxn/walk"
@@ -74,6 +76,13 @@ func (t *tabChannel) updateNickList(chanState *channelState) {
 	nicks := chanState.nickList.StringSlice()
 	count := len(nicks)
 	ops := 0
+	for i, n := range nicks {
+		if strings.Contains(n, "\x00") {
+			log.Printf("NUL byte in string!!!: %v", n)
+			nicks[i] = strings.Replace(n, "\x00", "", -1)
+		}
+	}
+
 	for _, n := range nicks {
 		m := nickRegex.FindAllStringSubmatch(n, 01)
 		if m[0][1] != "" && m[0][1] != "+" {
