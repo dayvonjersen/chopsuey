@@ -92,13 +92,14 @@ func newServerTab(servConn *serverConnection, servState *serverState) *tabServer
 
 		servState.tab = t
 
-		applyThemeToTab(t)
-
 		checkErr(tabWidget.Pages().Add(t.tabPage))
 		index := tabWidget.Pages().Index(t.tabPage)
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
+	})
+	mw.Synchronize(func() {
+		applyThemeToTab(t)
 	})
 	return t
 }

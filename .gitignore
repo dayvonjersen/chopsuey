@@ -11,3 +11,4 @@ screenshots/
 scripts/
 config.json
 version.go
+*.log

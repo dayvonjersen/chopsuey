@@ -243,7 +243,6 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 		chanState.tab = t
 		servState.channels[chanState.channel] = chanState
 		servState.tab.Update(servState)
-		applyThemeToTab(t)
 
 		checkErr(tabWidget.Pages().Insert(tabIndex, t.tabPage))
 
@@ -251,6 +250,9 @@ func newChannelTab(servConn *serverConnection, servState *serverState, chanState
 		checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
 		t.Focus()
+	})
+	mw.Synchronize(func() {
+		applyThemeToTab(t)
 	})
 
 	return t

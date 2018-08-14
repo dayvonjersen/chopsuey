@@ -103,11 +103,13 @@ func newPrivmsgTab(servConn *serverConnection, servState *serverState, pmState *
 		// index := tabWidget.Pages().Index(t.tabPage)
 		// checkErr(tabWidget.SetCurrentIndex(index))
 		tabWidget.SaveState()
-		applyThemeToTab(t)
 		pmState.tab = t
 		servState.privmsgs[pmState.nick] = pmState
 		servState.tab.Update(servState)
 	})
 
+	mw.Synchronize(func() {
+		applyThemeToTab(t)
+	})
 	return t
 }
