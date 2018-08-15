@@ -185,7 +185,7 @@ func newTabManager() *tabManager {
 			case req := <-tabMan.search:
 				ret := []*tabWithContext{}
 				for _, t := range tabMan.tabs {
-					if req.finder(t) {
+					if t.tab != nil && req.finder(t) {
 						ret = append(ret, t)
 					}
 				}
