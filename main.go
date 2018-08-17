@@ -294,8 +294,10 @@ func main() {
 					servConn = NewServerConnection(servState,
 						func(nickservPASSWORD string, autojoin []string) func() {
 							return func() {
+								log.Println("in connectedCallback, nickserv_pass: %v autojoin: %v", nickservPASSWORD != "", autojoin)
 								if nickservPASSWORD != "" {
 									servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
+									<-time.After(time.Second * 3) // ugh
 								}
 								for _, channel := range autojoin {
 									servConn.conn.Join(channel)
@@ -425,6 +427,8 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 
 			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
 			text := win.UTF16PtrToString(textptr)
+			log.Println("WM_DRAWITEM: shit: %#v", *item)
+			log.Println("             junk: %v", text)
 			textlen := int32(len(text))
 			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
 			win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, textlen)

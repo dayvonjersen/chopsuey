@@ -343,7 +343,7 @@ func stripFmtChars(str string) string {
 }
 
 func colorVisible(fg, bg int) bool {
-	return contrast(fg, bg) >= 4.5
+	return contrast(fg, bg) >= 5
 }
 
 func unpackColorFloat(color int) (r, g, b float64) {

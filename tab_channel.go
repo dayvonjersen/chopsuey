@@ -43,9 +43,9 @@ func (t *tabChannel) NickColor(nick string) int {
 	if color, ok := t.nickColors[nick]; ok {
 		return color
 	}
-	r := rand.Intn(98)
+	r := rand.Intn(15)
 	for !colorVisible(colorPalette[r], globalBackgroundColor) {
-		r = rand.Intn(98)
+		r = rand.Intn(15)
 	}
 	t.nickColors[nick] = r
 	return t.nickColors[nick]

@@ -121,11 +121,11 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 			max := int(lpsi.NMax)
 			pos := int(int32(lpsi.NPage) + lpsi.NPos)
 			// log.Printf("lpsi: %v min: %v max: %v pos: %v", lpsi, min, max, pos)
-			if lpsi.NPage == 0 {
-				shouldScroll = true
-			} else {
-				shouldScroll = pos >= max
-			}
+			// if lpsi.NPage == 0 {
+			// 	shouldScroll = true
+			// } else {
+			shouldScroll = pos >= max
+			// }
 		} else {
 			// log.Println("failed to GetScrollInfo()!")
 		}

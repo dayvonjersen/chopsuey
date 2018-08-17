@@ -285,7 +285,7 @@ func actionMsg(hl bool, text ...string) string {
 	} else {
 		line += " "
 	}
-	return line + "*" + strings.Join(text, " ") + "*"
+	return line + "*" + strings.TrimSpace(strings.Join(text, " ")) + "*"
 }
 
 func privateMsg(hl bool, text ...string) string {
