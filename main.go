@@ -297,7 +297,7 @@ func main() {
 								log.Println("in connectedCallback, nickserv_pass: %v autojoin: %v", nickservPASSWORD != "", autojoin)
 								if nickservPASSWORD != "" {
 									servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
-									<-time.After(time.Second * 3) // ugh
+									<-time.After(time.Second * 7) // ugh
 								}
 								for _, channel := range autojoin {
 									servConn.conn.Join(channel)
