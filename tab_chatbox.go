@@ -126,7 +126,7 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 			min := int(lpsi.NMin)
 			max := int(lpsi.NMax)
 			pos := int(int32(lpsi.NPage) + lpsi.NPos)
-			log.Printf("lpsi: %v min: %v max: %v pos: %v", lpsi, min, max, pos)
+			log.Printf("lpsi: %+v min: %v max: %v pos: %v", lpsi, min, max, pos)
 			if lpsi.NPage == 0 {
 				shouldScroll = true
 			} else {
@@ -135,6 +135,7 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 		} else {
 			log.Println("failed to GetScrollInfo()!")
 		}
+		log.Printf("shouldScroll: %v", shouldScroll)
 		if t.unread > 0 && !t.unreadSpaced {
 			// TODO(tso): think of something better than a bunch of whitespace
 			//            because apparently I have a tendency to focus and unfocus
