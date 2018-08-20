@@ -36,10 +36,10 @@ func (t *tabChannelList) Add(channel string, users int, topic string) {
 
 func (t *tabChannelList) Clear() {
 	t.mdl.items = []*channelListItem{}
-	t.tabPage.SetSuspended(true)
-	defer t.tabPage.SetSuspended(false)
-	t.mdl.PublishRowsReset()
-	t.mdl.Sort(t.mdl.sortColumn, t.mdl.sortOrder)
+	mw.Synchronize(func() {
+		t.mdl.PublishRowsReset()
+		t.mdl.Sort(t.mdl.sortColumn, t.mdl.sortOrder)
+	})
 }
 
 func (t *tabChannelList) Title() string {

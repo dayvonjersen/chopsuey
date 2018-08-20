@@ -57,6 +57,9 @@ func (t *tabChannel) Send(message string) {
 
 func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 	t.disconnected = servState.connState != CONNECTED
+	t.statusIcon = servState.tab.statusIcon
+	t.statusText = servState.tab.statusText
+
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		t.topicInput.SetText(chanState.topic)
@@ -65,9 +68,6 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 			SetStatusBarText(t.statusText)
 		}
 	})
-
-	t.statusIcon = servState.tab.statusIcon
-	t.statusText = servState.tab.statusText
 
 	SetSystrayContextMenu()
 }

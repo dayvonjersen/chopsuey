@@ -191,14 +191,29 @@ func main() {
 			switch t.(type) {
 			case *tabServer:
 				t := t.(*tabServer)
-				t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+				mw.Synchronize(func() {
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+				})
 			case *tabChannel:
 				t := t.(*tabChannel)
-				t.Resize()
-				t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+				mw.Synchronize(func() {
+					t.Resize()
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+				})
 			case *tabPrivmsg:
 				t := t.(*tabPrivmsg)
-				t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+				mw.Synchronize(func() {
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+					t.textBuffer.SendMessage(win.WM_VSCROLL, win.SB_BOTTOM, 0)
+				})
 			}
 		}
 	})

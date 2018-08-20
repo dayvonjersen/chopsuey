@@ -33,7 +33,9 @@ func (t *tabChatbox) Padlen(nick string) int {
 
 func (t *tabChatbox) Clear() {
 	t.nickQueue = &nickQueue{}
-	t.textBuffer.SetText("")
+	mw.Synchronize(func() {
+		t.textBuffer.SetText("")
+	})
 }
 
 func (t *tabChatbox) Title() string {
@@ -112,6 +114,9 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 		// -tso 7/16/2018 4:06:27 PM
 		for t.textBuffer == nil {
 			<-time.After(time.Millisecond * 500)
+			for i := 0; i < 100; i++ {
+				log.Println("textBuffer is nil! <- THIS IS STILL HAPPENING AAAAAaaaaaaaaaaaaaaaa")
+			}
 		}
 		lpsi := win.SCROLLINFO{}
 		lpsi.FMask = win.SIF_ALL

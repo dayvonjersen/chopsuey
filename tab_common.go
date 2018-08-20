@@ -66,23 +66,25 @@ func (t *tabCommon) Close() {
 	shouldChangeTabFocus := t.HasFocus()
 	myIndexWas := t.Index()
 
-	checkErr(tabWidget.Pages().Remove(t.tabPage))
-	t.tabPage.Dispose()
-	tabWidget.SaveState()
-
-	if tabWidget.Pages().Len() == 0 {
-		tabWidget.Pages().Clear()
-		shouldChangeTabFocus = false
-	}
-	if shouldChangeTabFocus {
-		newIndex := myIndexWas - 1
-		if newIndex < 0 {
-			newIndex = 0
-		}
-		checkErr(tabWidget.SetCurrentIndex(newIndex))
-
+	mw.Synchronize(func() {
+		checkErr(tabWidget.Pages().Remove(t.tabPage))
+		t.tabPage.Dispose()
 		tabWidget.SaveState()
-	} else {
-		tabWidget.SetCurrentIndex(tabWidget.CurrentIndex())
-	}
+
+		if tabWidget.Pages().Len() == 0 {
+			tabWidget.Pages().Clear()
+			shouldChangeTabFocus = false
+		}
+		if shouldChangeTabFocus {
+			newIndex := myIndexWas - 1
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			checkErr(tabWidget.SetCurrentIndex(newIndex))
+
+			tabWidget.SaveState()
+		} else {
+			tabWidget.SetCurrentIndex(tabWidget.CurrentIndex())
+		}
+	})
 }

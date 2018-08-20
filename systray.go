@@ -3,18 +3,12 @@ package main
 import (
 	"log"
 	"os/exec"
-	"sync"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
 
-// NOTE(tso): mutex needed because the ContextMenu is stored in a map...
-var mu = &sync.Mutex{}
-
 func SetSystrayContextMenu() {
-	mu.Lock()
-	defer mu.Unlock()
 
 	type menuItem struct {
 		separator bool
@@ -86,16 +80,18 @@ func SetSystrayContextMenu() {
 		},
 	)
 
-	systray.ContextMenu().Actions().Clear()
-	for _, item := range menu {
-		if item.separator {
-			systray.ContextMenu().Actions().Add(walk.NewSeparatorAction())
+	mw.Synchronize(func() {
+		systray.ContextMenu().Actions().Clear()
+		for _, item := range menu {
+			if item.separator {
+				systray.ContextMenu().Actions().Add(walk.NewSeparatorAction())
+			}
+			action := walk.NewAction()
+			action.SetText(item.text)
+			action.Triggered().Attach(item.fn)
+			systray.ContextMenu().Actions().Add(action)
 		}
-		action := walk.NewAction()
-		action.SetText(item.text)
-		action.Triggered().Attach(item.fn)
-		systray.ContextMenu().Actions().Add(action)
-	}
+	})
 }
 
 func reportIssue() {

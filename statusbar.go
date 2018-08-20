@@ -33,11 +33,15 @@ func SetStatusBarIcon(icofile string) {
 		return
 	}
 
-	mw.StatusBar().SendMessage(win.SB_SETICON, 0, uintptr(hIcon))
+	mw.Synchronize(func() {
+		mw.StatusBar().SendMessage(win.SB_SETICON, 0, uintptr(hIcon))
+	})
 }
 
 func SetStatusBarText(text string) {
 	txt, err := syscall.UTF16PtrFromString(text)
 	checkErr(err)
-	mw.StatusBar().SendMessage(win.SB_SETTEXT, win.SBT_OWNERDRAW, uintptr(unsafe.Pointer(txt)))
+	mw.Synchronize(func() {
+		mw.StatusBar().SendMessage(win.SB_SETTEXT, win.SBT_OWNERDRAW, uintptr(unsafe.Pointer(txt)))
+	})
 }
