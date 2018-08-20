@@ -28,7 +28,7 @@ func SetSystrayContextMenu() {
 		_, split := t.(*tabServer)
 		// NOTE(tso): have to do this and the curried function because of reasons
 		idx := t.Index()
-		if idx == -1 {
+		if idx == -1 || idx >= len(menu) /* I don't understand either */ {
 			idx = i
 			i--
 		}
