@@ -120,6 +120,16 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 
 		if servConn.retryConnectEnabled {
 			connectedCallback = func() {
+				for _, cfg := range clientCfg.AutoConnect {
+					if cfg.Host == servState.hostname && cfg.Port == servState.port {
+						if cfg.NickServPASSWORD != "" {
+							servConn.conn.Privmsg("NickServ", "IDENTIFY "+cfg.NickServPASSWORD)
+							<-time.After(time.Second * 7) // ugh
+						}
+						break
+					}
+				}
+
 				for _, channel := range servState.channels {
 					conn.Join(channel.channel)
 				}

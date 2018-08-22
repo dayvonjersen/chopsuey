@@ -309,7 +309,6 @@ func main() {
 					servConn = NewServerConnection(servState,
 						func(nickservPASSWORD string, autojoin []string) func() {
 							return func() {
-								log.Printf("in connectedCallback, nickserv_pass: %v autojoin: %v", nickservPASSWORD != "", autojoin)
 								if nickservPASSWORD != "" {
 									servConn.conn.Privmsg("NickServ", "IDENTIFY "+nickservPASSWORD)
 									<-time.After(time.Second * 7) // ugh
