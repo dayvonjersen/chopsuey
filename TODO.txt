@@ -1,13 +1,16 @@
 TODO {{{
 [[[                                 the short list                              ]]] {{{
 REMINDER(tso): terse desc != easy
- - autoconnect/reconnect: /msg NickServ IDENTIFY not sent
+ - SEE BUG #1
+   - MAJOR PRIORITY
+   - MOST ANNOYING THING EVER
+   - I DON'T KNOW WHY IT DOESN'T EVEN PANIC ANYMORE AND JUST EXITS IMMEDIATELY
+   - IT'S EITHER THE TabWidget OR THE RichEdit BUT I DON'T KNOW WHY
+   - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
  - /rejoin shouldn't close tab (fix /part first)
  - nick prefix not cleared on /rejoin (fix in NAMES? dunno)
- - statusbar still gets messed up 
-    - on resize
  - tab creation synchronization
-    - try using a chan string for AppendText
+   - I don't know if this is still a problem but it probably is
  - applyTheme() after Close()'ing multiple tabs seems to repaint nonexistent tabs
  - need more SetSuspended(true), Dispose(), Invalidate()
  - clean up tab_*.go 
@@ -22,8 +25,6 @@ REMINDER(tso): terse desc != easy
    - or around unicode bits of text only      
  - ctrl+f: search textBuffer
    - jump to selection
- - probably shouldn't send any JOINs until we get replies from NickServ 
-   - iff NickServPASSWORD != nil
  - don't log lines if DISCONNECTED
  - don't display lines if not sent
     - e.g. cannot send to channel (+m)
@@ -50,7 +51,6 @@ REMINDER(tso): terse desc != easy
    - store color value in nickList
 }}}
  - replace goirc refactor {{{
-   - get TLS working
    - get OAUTH working
    - use atoi and fucking CONSTANTS_PLZ
    - catch-all for unhandled messages
@@ -206,6 +206,7 @@ BUGS {{{
                                  but ofc since I did that it hasn't happened
                                  again
 
+            UPDATE(tso) 2018-08-23 17:33:21p: STILL HASN'T HAPPENED
 
            - each time richedit stops drawing correctly, only replacing the last line
            - tabs in the widget stop drawing but the panes update (click and ctrl+tab still work)
