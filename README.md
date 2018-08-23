@@ -27,11 +27,11 @@ contents:
 
 ### Download
 
- - ## [LATEST VERSION: 0.7[BETA] Windows 64-bit (x86_64) :point_left: ](https://github.com/generaltso/chopsuey/releases/download/0.7BETA/chopsuey-v0.7-BETA.tso.zip)
+ - ## [LATEST VERSION: 0.7[GAMMA] Windows 64-bit (x86_64) :point_left: ](https://github.com/generaltso/chopsuey/releases/download/0.7GAMMA/chopsuey-v0.7-GAMMA.tso.zip)
    - (*no win32 build sorry*)
 
 ##### Previous Releases:
-
+ - [0.7[BETA]](https://github.com/generaltso/chopsuey/releases/download/0.7BETA/chopsuey-v0.7-BETA.tso.zip): "try not to crash... try not to crash..." \*crashes a lot\*
  - 0.7[PRE-ALPHA]: we don't talk about it
 
 ### Getting Started
