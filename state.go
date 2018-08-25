@@ -30,9 +30,11 @@ type serverState struct {
 
 func (servState *serverState) AllTabs() []tabWithTextBuffer {
 	contexts := tabMan.FindAll(allServerTabsFinder(servState))
-	ret := make([]tabWithTextBuffer, len(contexts))
-	for i, ctx := range contexts {
-		ret[i] = ctx.tab.(tabWithTextBuffer)
+	ret := []tabWithTextBuffer{}
+	for _, ctx := range contexts {
+		if t, ok := ctx.tab.(tabWithTextBuffer); ok {
+			ret = append(ret, t)
+		}
 	}
 	return ret
 }
