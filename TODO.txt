@@ -7,10 +7,18 @@ REMINDER(tso): terse desc != easy
    - I DON'T KNOW WHY IT DOESN'T EVEN PANIC ANYMORE AND JUST EXITS IMMEDIATELY
    - IT'S EITHER THE TabWidget OR THE RichEdit BUT I DON'T KNOW WHY
    - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+ - /reconnect fails with "already connected to..." but only sometimes
  - /rejoin shouldn't close tab (fix /part first)
  - nick prefix not cleared on /rejoin (fix in NAMES? dunno)
+ - multiple nick prefixes displayed when e.g *** ChanServ sets mode +ao user
+ - nick color inconsistent (PRIVMSG vs ACTION)
  - tab creation synchronization
-   - I don't know if this is still a problem but it probably is
+   - incorrect tabIndex during autojoin causes rendering error
+ - mainWindow
+   - resizes back to default after ShowWindow/ToggleBorderless/Transparency
+     (might be unfixable due to aero snap, i've seen other applications
+     exhibit similar behavior)
+   - should display on top of all other windows when ShowWindow is toggled 
  - applyTheme() after Close()'ing multiple tabs seems to repaint nonexistent tabs
  - need more SetSuspended(true), Dispose(), Invalidate()
  - clean up tab_*.go 
