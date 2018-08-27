@@ -161,7 +161,6 @@ REMINDER(tso): terse desc != easy
    - 800 page LICENSE with click-to-agree (optional)
 }}}
  - tabcomplete {{{
-   - case-insensitive
    - show nicks in the nickqueue first
    - for commands
      - autofill channel for commands that take channel as an argument

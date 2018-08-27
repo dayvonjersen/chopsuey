@@ -102,14 +102,10 @@ func (nl *nickList) Set(n string, newNick *nick) {
 
 func (nl *nickList) Search(search string) []string {
 	res := []string{}
-	s := nl.data[:]
-	for {
-		i := sort.SearchStrings(s, search)
-		if i == len(s) || !strings.HasPrefix(s[i], search) {
-			break
+	for _, nick := range nl.data {
+		if strings.HasPrefix(strings.ToLower(nick), strings.ToLower(search)) {
+			res = append(res, nick)
 		}
-		res = append(res, s[i])
-		s = s[i+1:]
 	}
 	return res
 }
