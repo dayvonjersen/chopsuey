@@ -9,6 +9,7 @@ import (
 
 type nick struct {
 	prefix, name string
+	host         string
 }
 
 func (n *nick) String() string {
@@ -19,7 +20,7 @@ var nickRegex = regexp.MustCompile("^([~&@%+]*)(.+)$")
 
 func newNick(prefixed string) *nick {
 	m := nickRegex.FindAllStringSubmatch(prefixed, -1)
-	return &nick{m[0][1], m[0][2]}
+	return &nick{m[0][1], m[0][2], ""}
 }
 
 type nickList struct {
@@ -35,6 +36,16 @@ func newNickList() *nickList {
 		mu:     &sync.Mutex{},
 	}
 	return nl
+}
+
+func (nl *nickList) SetHost(nick, host string) {
+	nl.mu.Lock()
+	defer nl.mu.Unlock()
+
+	n, ok := nl.lookup[nick]
+	if ok {
+		n.host = host
+	}
 }
 
 func (nl *nickList) Add(n string) {
@@ -76,10 +87,9 @@ func (nl *nickList) Has(n string) bool {
 }
 
 func (nl *nickList) Get(n string) *nick {
-	nick, ok := nl.lookup[n]
-	if !ok {
-		panic("nick \"" + n + "\" not in lookup table")
-	}
+	nl.mu.Lock()
+	defer nl.mu.Unlock()
+	nick := nl.lookup[n]
 	return nick
 }
 

@@ -149,6 +149,10 @@ func init() {
 		"raw":        rawCmd,
 		"screenshot": screenshotCmd,
 		"theme":      themeCmd,
+
+		// harmful
+		"ignore":   ignoreCmd,
+		"unignore": unignoreCmd,
 	}
 }
 
@@ -911,4 +915,25 @@ func themeCmd(ctx *commandContext, args ...string) {
 	if err := applyTheme(args[0]); err != nil {
 		clientError(ctx.tab, "error applying theme:", err.Error())
 	}
+}
+
+func ignoreCmd(ctx *commandContext, args ...string) {
+	if ctx.chanState == nil || len(args) != 1 {
+		return
+	}
+
+	nick := ctx.chanState.nickList.Get(args[0])
+	if nick == nil {
+		return
+	}
+
+	ignoreList.Add(*nick)
+}
+
+func unignoreCmd(ctx *commandContext, args ...string) {
+	if len(args) != 1 {
+		return
+	}
+
+	ignoreList.Remove(args[0])
 }

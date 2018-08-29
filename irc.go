@@ -287,6 +287,10 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		conn.HandleFunc(code, printErrorMessage)
 	}
 
+	checkIgnore := func(l *goirc.Line) bool {
+		return ignoreList.Has(l.Nick, l.Host)
+	}
+
 	getMessageParams := func(l *goirc.Line) (t tabWithTextBuffer, nick, msg string) {
 		nick = l.Nick
 		dest := l.Args[0]
@@ -301,6 +305,8 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 			}
 		}
 		chanState := ensureChanState(servConn, servState, dest)
+		chanState.nickList.SetHost(l.Nick, l.Host)
+		ignoreList.UpdateHost(l.Nick, l.Host)
 		nick = chanState.nickList.Get(nick).String()
 		return chanState.tab, nick, msg
 	}
@@ -315,6 +321,10 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	}
 
 	conn.HandleFunc(goirc.CTCP, func(c *goirc.Conn, l *goirc.Line) {
+		if checkIgnore(l) {
+			log.Println("[[[IGNORED]]]")
+			return
+		}
 		// TODO(tso): DCC stuff
 		// debugPrint(l)
 		// if l.Args[0] == "DCC" {
@@ -323,21 +333,37 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 		clientMessage(servState.CurrentTab(), append([]string{now() + "C(" + l.Src + "->" + servState.user.nick + "):"}, l.Args...)...)
 	})
 	conn.HandleFunc(goirc.CTCPREPLY, func(c *goirc.Conn, l *goirc.Line) {
+		if checkIgnore(l) {
+			log.Println("[[[IGNORED]]]")
+			return
+		}
 		clientMessage(servState.CurrentTab(), append([]string{now() + "C(" + l.Src + "->" + servState.user.nick + "):"}, l.Args...)...)
 	})
 
 	conn.HandleFunc(goirc.PRIVMSG, func(c *goirc.Conn, l *goirc.Line) {
+		if checkIgnore(l) {
+			log.Println("[[[IGNORED]]]")
+			return
+		}
 		t, nick, msg := getMessageParams(l)
 		privateMessageWithHighlight(t, highlighter, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.ACTION, func(c *goirc.Conn, l *goirc.Line) {
+		if checkIgnore(l) {
+			log.Println("[[[IGNORED]]]")
+			return
+		}
 		t, nick, msg := getMessageParams(l)
 		nick = strings.Trim(nick, "~&@%+")
 		actionMessageWithHighlight(t, highlighter, nick, msg)
 	})
 
 	conn.HandleFunc(goirc.NOTICE, func(c *goirc.Conn, l *goirc.Line) {
+		if checkIgnore(l) {
+			log.Println("[[[IGNORED]]]")
+			return
+		}
 		var tab tabWithTextBuffer = servState.tab
 		if isChannel(l.Args[0]) {
 			chanState := ensureChanState(servConn, servState, l.Args[0])
@@ -467,6 +493,7 @@ func NewServerConnection(servState *serverState, connectedCallback func()) *serv
 	})
 
 	conn.HandleFunc(goirc.NICK, func(c *goirc.Conn, l *goirc.Line) {
+		ignoreList.UpdateNick(l.Nick, l.Args[0])
 		oldNick := newNick(l.Nick)
 		newNick := newNick(l.Args[0])
 		if oldNick.name == servState.user.nick {
