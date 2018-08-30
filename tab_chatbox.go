@@ -123,19 +123,19 @@ func (t *tabChatbox) Println(text string, styles [][]int) {
 		lpsi.CbSize = uint32(unsafe.Sizeof(lpsi))
 		shouldScroll := false
 		if win.GetScrollInfo(t.textBuffer.Handle(), win.SB_VERT, &lpsi) {
-			min := int(lpsi.NMin)
+			// min := int(lpsi.NMin)
 			max := int(lpsi.NMax)
 			pos := int(int32(lpsi.NPage) + lpsi.NPos)
-			log.Printf("lpsi: %+v min: %v max: %v pos: %v", lpsi, min, max, pos)
+			// log.Printf("lpsi: %+v min: %v max: %v pos: %v", lpsi, min, max, pos)
 			if lpsi.NPage == 0 {
 				shouldScroll = true
 			} else {
 				shouldScroll = pos >= max
 			}
 		} else {
-			log.Println("failed to GetScrollInfo()!")
+			// log.Println("failed to GetScrollInfo()!")
 		}
-		log.Printf("shouldScroll: %v", shouldScroll)
+		// log.Printf("shouldScroll: %v", shouldScroll)
 		if t.unread > 0 && !t.unreadSpaced {
 			// TODO(tso): think of something better than a bunch of whitespace
 			//            because apparently I have a tendency to focus and unfocus

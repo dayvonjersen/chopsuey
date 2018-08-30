@@ -444,8 +444,8 @@ func (mw *myMainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 
 			textptr := (*uint16)(unsafe.Pointer(item.ItemData))
 			text := win.UTF16PtrToString(textptr)
-			log.Printf("WM_DRAWITEM: shit: %#v", *item)
-			log.Printf("             junk: %v", text)
+			// log.Printf("WM_DRAWITEM: shit: %#v", *item)
+			// log.Printf("             junk: %v", text)
 			textlen := int32(len(text))
 			win.SetTextColor(item.HDC, rgb2COLORREF(globalForegroundColor))
 			win.TextOut(item.HDC, item.RcItem.Left, item.RcItem.Top, textptr, textlen)
