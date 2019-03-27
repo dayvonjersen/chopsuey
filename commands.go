@@ -809,9 +809,9 @@ func paletteCmd(ctx *commandContext, args ...string) {
 }
 
 func rawCmd(ctx *commandContext, args ...string) {
-	if !requireServConn(ctx) {
-		return
-	}
+	// if !requireServConn(ctx) {
+	// 	return
+	// }
 	ctx.servConn.conn.Raw(strings.Join(args, " "))
 }
 
