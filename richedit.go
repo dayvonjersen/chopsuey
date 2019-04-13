@@ -55,6 +55,8 @@ const (
 
 	CFM_BACKCOLOR = 0x04000000
 
+	EM_HIDESELECTION = (win.WM_USER + 63)
+
 	EM_SETCHARFORMAT    = (win.WM_USER + 68)
 	EM_SETEVENTMASK     = (win.WM_USER + 69)
 	EM_GETTEXTRANGE     = (win.WM_USER + 75)
@@ -321,6 +323,8 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 			// -tso 7/14/2018 7:09:42 AM
 		}
 	}
+
+	re.SendMessage(EM_HIDESELECTION, 1, 0)
 	re.SetTextSelection(l, l)
 	re.ReplaceSelectedText(text, false)
 	for _, style := range styles {
@@ -345,6 +349,7 @@ func (re *RichEdit) AppendText(text string, styles ...[]int) {
 		}
 	}
 	re.SetTextSelection(s, e)
+	re.SendMessage(EM_HIDESELECTION, 0, 0)
 	re.linecount += strings.Count(text, "\n") // HACK(tso): but number of new lines in the selection we just added doesnt matter? I'm so confused...
 	// XXX HACK FIXME(tso): actually, styles still aren't applied correctly
 	//                      if there are *any* newlines in text we add with
