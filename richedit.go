@@ -368,6 +368,8 @@ func (re *RichEdit) openURL(min, max int32) {
 
 	url := string(utf16.Decode(textRange.text))
 
+	url = strings.Replace(url, "&", "^&", -1)
+
 	cmd := exec.Command("cmd", "/c", "start", url)
 	if err := cmd.Run(); err != nil {
 		log.Println("cmd /c start", url, "returned error:\n", err)
