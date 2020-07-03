@@ -32,7 +32,7 @@ func defaultClientConfig() *clientConfig {
 	return &clientConfig{
 		AutoConnect: []*connectionConfig{},
 		TimeFormat:  "15:04",
-		Version:     "chopsuey IRC " + VERSION_STRING + " https://github.com/generaltso/chopsuey",
+		Version:     "chopsuey IRC " + VERSION_STRING + " https://github.com/dayvonjersen/chopsuey",
 		QuitMessage: quitMessage[rand.Intn(len(quitMessage)-1)],
 	}
 }

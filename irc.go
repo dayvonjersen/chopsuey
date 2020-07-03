@@ -85,7 +85,7 @@ func (servConn *serverConnection) Part(channel, reason string, servState *server
 func NewServerConnection(servState *serverState, connectedCallback func()) *serverConnection {
 	// goirc config
 	ident := "chopsuey"
-	name := "github.com/generaltso/chopsuey"
+	name := "github.com/dayvonjersen/chopsuey"
 	cfg := goirc.NewConfig(servState.user.nick, ident, name)
 	cfg.Version = clientCfg.Version
 	cfg.QuitMessage = clientCfg.QuitMessage

@@ -95,7 +95,7 @@ func SetSystrayContextMenu() {
 }
 
 func reportIssue() {
-	url := "https://github.com/generaltso/chopsuey/issues/new"
+	url := "https://github.com/dayvonjersen/chopsuey/issues/new"
 	cmd := exec.Command("cmd", "/c", "start", url)
 	if err := cmd.Run(); err != nil {
 		log.Println("cmd /c start", url, "returned error:\n", err)
@@ -105,7 +105,7 @@ func reportIssue() {
 func aboutDialog() {
 	walk.MsgBox(mw, "About", "    chopsuey "+VERSION_STRING+`
 
-    github.com/generaltso/chopsuey
+    github.com/dayvonjersen/chopsuey
 
     tso@teknik.io
     `, walk.MsgBoxOK)

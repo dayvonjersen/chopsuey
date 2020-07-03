@@ -155,7 +155,7 @@ func TestNoDuplicateTabInsert(test *testing.T) {
 		wg.Done()
 	}
 
-	horses := 100000
+	horses := 1000
 	wg.Add(horses)
 	for i := 0; i < horses; i++ {
 		go race()

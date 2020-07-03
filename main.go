@@ -251,7 +251,7 @@ func main() {
 	welcome := func() {
 		t := <-ch
 		clientMessage(t, "chopsuey "+VERSION_STRING)
-		clientMessage(t, "https://github.com/generaltso/chopsuey")
+		clientMessage(t, "https://github.com/dayvonjersen/chopsuey")
 		clientMessage(t, "")
 		clientMessage(t, "to connect to a network type:")
 		clientMessage(t, "/server ["+bold("hostname")+"] ["+bold("+")+"]["+bold("port")+"]")

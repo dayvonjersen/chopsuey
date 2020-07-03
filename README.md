@@ -27,11 +27,11 @@ contents:
 
 ### Download
 
- - ## [LATEST VERSION: 0.7[GAMMA] Windows 64-bit (x86_64) :point_left: ](https://github.com/generaltso/chopsuey/releases/download/0.7GAMMA/chopsuey-v0.7-GAMMA.tso.zip)
+ - ## [LATEST VERSION: 0.7[GAMMA] Windows 64-bit (x86_64) :point_left: ](https://github.com/dayvonjersen/chopsuey/releases/download/0.7GAMMA/chopsuey-v0.7-GAMMA.tso.zip)
    - (*no win32 build sorry*)
 
 ##### Previous Releases:
- - [0.7[BETA]](https://github.com/generaltso/chopsuey/releases/download/0.7BETA/chopsuey-v0.7-BETA.tso.zip): "try not to crash... try not to crash..." \*crashes a lot\*
+ - [0.7[BETA]](https://github.com/dayvonjersen/chopsuey/releases/download/0.7BETA/chopsuey-v0.7-BETA.tso.zip): "try not to crash... try not to crash..." \*crashes a lot\*
  - 0.7[PRE-ALPHA]: we don't talk about it
 
 ### Getting Started
@@ -62,7 +62,7 @@ contents:
 
 ### Known Issues
 
->See [TODO.txt](https://github.com/generaltso/chopsuey/blob/master/TODO.txt)
+>See [TODO.txt](https://github.com/dayvonjersen/chopsuey/blob/master/TODO.txt)
 
 ### List of Commands
 
@@ -177,7 +177,7 @@ exits the application
 
 run an external program and send its output as a message in the current channel or private message tab
 
-See examples in [scripts/](https://github.com/generaltso/chopsuey/tree/master/scripts)
+See examples in [scripts/](https://github.com/dayvonjersen/chopsuey/tree/master/scripts)
 
 >**NOTE**(tso): no ability to hook into irc or client state/events...yet
 
@@ -293,7 +293,7 @@ Windows other than 7SP1.
 ```
 mkdir -p $GOPATH/src/github.com
 cd !:2
-git clone git@github.com:generaltso/chopsuey
+git clone git@github.com:dayvonjersen/chopsuey
 cd chopsuey
 go get github.com/lxn/walk
 go get github.com/fluffle/goirc
@@ -308,7 +308,7 @@ If that doesn't work [tell me about it](mailto:tso@teknik.io?Subject=it%20doesnt
 
 ### Contributing and Feedback
 
-If you want to help me make this better [here's my TODO list](https://github.com/generaltso/chopsuey/blob/master/TODO.txt).
+If you want to help me make this better [here's my TODO list](https://github.com/dayvonjersen/chopsuey/blob/master/TODO.txt).
 
 You can also `git grep` for these tags: `NOTE` `TODO` `FIXME` `HACK` `WTF`
 

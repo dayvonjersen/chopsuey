@@ -1,5 +1,7 @@
 TODO {{{
 [[[                                 the short list                              ]]] {{{
+ - autocomplete in PM
+ - tab complete / commands
 REMINDER(tso): terse desc != easy
  - SEE BUG #1
    - MAJOR PRIORITY
@@ -544,8 +546,8 @@ RE: splitting main into subpackages {{{
 
 or "issues nobody raised yet but inevitably will part 1"
 
-who's going to import and use github.com/generaltso/chopsuey/widgets
-or github.com/generaltso/chopsuey/colors or messages or whatever?
+who's going to import and use github.com/dayvonjersen/chopsuey/widgets
+or github.com/dayvonjersen/chopsuey/colors or messages or whatever?
 nobody that's who because most of this code is specific to this application
 
 if the argument is well you should make the code decoupled for reuse,

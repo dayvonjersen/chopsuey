@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"sync"
+)
 
 type tabWithContext struct {
 	tabContext
@@ -141,6 +144,8 @@ func (tabMan *tabManager) Delete(tabs ...*tabWithContext) {
 	return
 }
 
+var t_mu sync.Mutex
+
 func newTabManager() *tabManager {
 	tabMan := &tabManager{
 		tabs:    []*tabWithContext{},
@@ -159,9 +164,11 @@ func newTabManager() *tabManager {
 				return
 
 			case req := <-tabMan.create:
+				t_mu.Lock()
 				if req.finder != nil {
 					for _, t := range tabMan.tabs {
 						if req.finder(t) {
+							t_mu.Unlock()
 							req.ret <- t
 							log.Println("found ctx:", t)
 							break here
@@ -177,6 +184,7 @@ func newTabManager() *tabManager {
 
 				tabMan.tabs = append(tabMan.tabs, t)
 				log.Println("created ctx:", t)
+				t_mu.Unlock()
 				req.ret <- t
 
 			case req := <-tabMan.count:
