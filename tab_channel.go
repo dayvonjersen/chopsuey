@@ -60,6 +60,11 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 	t.statusIcon = servState.tab.statusIcon
 	t.statusText = servState.tab.statusText
 
+	if t.disconnected {
+		chanState.nickList = newNickList()
+		t.updateNickList(chanState)
+	}
+
 	mw.WindowBase.Synchronize(func() {
 		t.tabPage.SetTitle(t.Title())
 		t.topicInput.SetText(chanState.topic)
@@ -74,6 +79,7 @@ func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
 
 func (t *tabChannel) updateNickList(chanState *channelState) {
 	nicks := chanState.nickList.StringSlice()
+
 	count := len(nicks)
 	ops := 0
 	for i, n := range nicks {
