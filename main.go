@@ -118,8 +118,16 @@ func main() {
 	})
 
 	// set default font
-	// TODO(tso): configurable font
-	font, err := walk.NewFont("Hack", 9, 0)
+	clientCfg, _ = getClientConfig()
+	fnt := clientCfg.Font
+	sz := clientCfg.FontSize
+	if fnt == "" {
+		fnt = "PT Mono"
+	}
+	if sz < 1 {
+		sz = 9
+	}
+	font, err := walk.NewFont(fnt, sz, 0)
 	checkErr(err)
 	mw.WindowBase.SetFont(font)
 

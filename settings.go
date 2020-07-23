@@ -22,6 +22,8 @@ type clientConfig struct {
 	HideHostnames   bool                `json:"hidehostnames"`
 	HideJoinParts   bool                `json:"hidejoinparts"`
 	ChatLogsEnabled bool                `json:"chatlogs"`
+	Font            string              `json:"font"`
+	FontSize        int                 `json:"fontsize"`
 	Theme           string              `json:"theme"`
 	TimeFormat      string              `json:"timeformat"`
 	Version         string              `json:"version"`
