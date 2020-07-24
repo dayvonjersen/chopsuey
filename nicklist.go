@@ -13,7 +13,10 @@ type nick struct {
 }
 
 func (n *nick) String() string {
-	return n.prefix + n.name
+	if len(n.prefix) > 0 {
+		return string(n.prefix[0]) + n.name
+	}
+	return n.name
 }
 
 var nickRegex = regexp.MustCompile("^([~&@%+]*)(.+)$")
