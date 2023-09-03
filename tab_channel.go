@@ -56,6 +56,10 @@ func (t *tabChannel) Send(message string) {
 }
 
 func (t *tabChannel) Update(servState *serverState, chanState *channelState) {
+	if servState == nil || chanState == nil {
+		log.Printf("nil pointer dereference!!! servState: %v chanState: %v", servState, chanState)
+		return
+	}
 	t.disconnected = servState.connState != CONNECTED
 	t.statusIcon = servState.tab.statusIcon
 	t.statusText = servState.tab.statusText

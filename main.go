@@ -103,7 +103,7 @@ func main() {
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	// create tab widget
-	tabWidget, err = walk.NewTabWidgetWithStyle(mw, win.TCS_MULTILINE)
+	tabWidget, err = walk.NewTabWidget(mw)
 	checkErr(err)
 	tabWidget.SetPersistent(true)
 	mw.Children().Insert(0, tabWidget)
@@ -137,7 +137,7 @@ func main() {
 	mw.SetIcon(ico)
 
 	// create system tray
-	systray, err = walk.NewNotifyIcon(mw.Handle())
+	systray, err = walk.NewNotifyIcon(mw)
 	checkErr(err)
 	defer systray.Dispose()
 	systray.SetIcon(ico)

@@ -1,22 +1,22 @@
 /*
-   NOTE(tso): this is an awful hackjob
-   - couldn't pick a good name for a "list of nicks"
-     because nickList is already a thing
-   - but nickList *SHOULD* actually be adapted for use instead of this shit
-     with the application of just a little critical thinking
-     which I'm apparently incapable of atm
-   - function signatures are inconsistent af because see above
-   - ignoreList should actually be per-server or even per-channel
-   - ignoreList should accept patterns *!@*.* whatever the syntax is i forget
-   - the type of ignoreList should be reusable for a "banList", "inviteList", ...
-   - even though we're using pointer values here we have to update name/host
-     manually because we replace the concrete value in the nickList for some
-     unknown reason I have to investigate why probably something to do with
-     prefixes which are fucked anyway
-   - scratch that we're using values because everything is terrible
-   - rushing to implement this in a suboptimal way because
-     I'm sick of people brewing soykaf and being forced to look at it
-     -tso 2018-08-29 04:03:16a
+NOTE(tso): this is an awful hackjob
+  - couldn't pick a good name for a "list of nicks"
+    because nickList is already a thing
+  - but nickList *SHOULD* actually be adapted for use instead of this shit
+    with the application of just a little critical thinking
+    which I'm apparently incapable of atm
+  - function signatures are inconsistent af because see above
+  - ignoreList should actually be per-server or even per-channel
+  - ignoreList should accept patterns *!@*.* whatever the syntax is i forget
+  - the type of ignoreList should be reusable for a "banList", "inviteList", ...
+  - even though we're using pointer values here we have to update name/host
+    manually because we replace the concrete value in the nickList for some
+    unknown reason I have to investigate why probably something to do with
+    prefixes which are fucked anyway
+  - scratch that we're using values because everything is terrible
+  - rushing to implement this in a suboptimal way because
+    I'm sick of people brewing soykaf and being forced to look at it
+    -tso 2018-08-29 04:03:16a
 */
 package main
 

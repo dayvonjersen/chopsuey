@@ -67,9 +67,10 @@ func (servConn *serverConnection) Connect(servState *serverState) {
 }
 
 // FIXME(tso): does this need to be a member function?
-//             I think we could access servConn.conn directly and then close the tab.
-//             wait we wanted to stop closing tabs for /part
-//             fix this.
+//
+//	I think we could access servConn.conn directly and then close the tab.
+//	wait we wanted to stop closing tabs for /part
+//	fix this.
 func (servConn *serverConnection) Part(channel, reason string, servState *serverState) {
 	if isChannel(channel) {
 		servConn.conn.Part(channel, reason)

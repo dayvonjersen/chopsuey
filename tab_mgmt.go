@@ -92,13 +92,12 @@ func (tabMan *tabManager) FindAll(finder finderFunc) []*tabWithContext {
 	return <-ret
 }
 
-//
 // finder funcs
 // usage: tabMan.Find(currentTabFinder)
-//        tabMan.Find(serverTabFinder(servState))
-//        tabMan.Find(channelTabFinder(chanState))
-//        tabMan.Find(someotherTabFinder) ...
 //
+//	tabMan.Find(serverTabFinder(servState))
+//	tabMan.Find(channelTabFinder(chanState))
+//	tabMan.Find(someotherTabFinder) ...
 func allTabsFinder(t *tabWithContext) bool {
 	return true
 }
