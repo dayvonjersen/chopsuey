@@ -26,11 +26,13 @@ contents:
 > multi-line tabs, borderless and transparent window
 
 ### Download
+ 
+ - ## [LATEST VERSION: 0.7[DELTA] Windows 64-bit (x86_64) :point_left:](https://github.com/dayvonjersen/chopsuey/releases/download/0.7DELTA/chopsuey-v0.7-DELTA.day.zip)
 
- - ## [LATEST VERSION: 0.7[GAMMA] Windows 64-bit (x86_64) :point_left: ](https://github.com/dayvonjersen/chopsuey/releases/download/0.7GAMMA/chopsuey-v0.7-GAMMA.tso.zip)
    - (*no win32 build sorry*)
 
 ##### Previous Releases:
+ - [0.7[GAMMA]](https://github.com/dayvonjersen/chopsuey/releases/download/0.7GAMMA/chopsuey-v0.7-GAMMA.tso.zip): works pretty well until you connect to > 1 network 💥
  - [0.7[BETA]](https://github.com/dayvonjersen/chopsuey/releases/download/0.7BETA/chopsuey-v0.7-BETA.tso.zip): "try not to crash... try not to crash..." \*crashes a lot\*
  - 0.7[PRE-ALPHA]: we don't talk about it
 
