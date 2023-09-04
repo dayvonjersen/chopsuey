@@ -67,6 +67,7 @@ func (t *tabCommon) Close() {
 	myIndexWas := t.Index()
 
 	mw.Synchronize(func() {
+		tabWidget.SetCurrentIndex(0)
 		checkErr(tabWidget.Pages().Remove(t.tabPage))
 		t.tabPage.Dispose()
 		tabWidget.SaveState()
