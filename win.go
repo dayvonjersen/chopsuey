@@ -4,13 +4,11 @@ import (
 	"syscall"
 
 	"github.com/lxn/win"
-
-	"golang.org/x/sys/windows"
 )
 
 var (
 	setLayeredWindowAttributes,
-	showScrollBar *windows.LazyProc
+	showScrollBar uintptr
 )
 
 const (
@@ -45,13 +43,19 @@ const (
 )
 
 func init() {
-	libuser32 := windows.NewLazySystemDLL("user32.dll")
-	setLayeredWindowAttributes = libuser32.NewProc("SetLayeredWindowAttributes")
-	showScrollBar = libuser32.NewProc("ShowScrollBar")
+	libuser32, err := syscall.LoadLibrary("user32.dll")
+	if err != nil {
+		panic(err)
+	}
+	setLayeredWindowAttributes, err = syscall.GetProcAddress(libuser32, "SetLayeredWindowAttributes")
+	if err != nil {
+		panic(err)
+	}
+	showScrollBar, err = syscall.GetProcAddress(libuser32, "ShowScrollBar")
 }
 
 func ShowScrollBar(hwnd win.HWND, wBar int, bShow int) {
-	syscall.Syscall(showScrollBar.Addr(), 3,
+	syscall.Syscall(showScrollBar, 3,
 		uintptr(hwnd),
 		uintptr(wBar),
 		uintptr(bShow),
@@ -59,7 +63,7 @@ func ShowScrollBar(hwnd win.HWND, wBar int, bShow int) {
 }
 
 func SetLayeredWindowAttributes(hwnd win.HWND, crKey, bAlpha, dwFlags int32) bool {
-	ret, _, _ := syscall.Syscall6(setLayeredWindowAttributes.Addr(), 4,
+	ret, _, _ := syscall.Syscall6(setLayeredWindowAttributes, 4,
 		uintptr(hwnd),
 		uintptr(crKey),
 		uintptr(bAlpha),

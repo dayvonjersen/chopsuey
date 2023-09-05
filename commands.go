@@ -817,6 +817,7 @@ func rawCmd(ctx *commandContext, args ...string) {
 
 func screenshotCmd(ctx *commandContext, args ...string) {
 	go func() {
+	retry:
 		// t. stackoverflow
 		// https://stackoverflow.com/a/3291411
 
@@ -853,13 +854,17 @@ func screenshotCmd(ctx *commandContext, args ...string) {
 			bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
 			hdc := win.GetDC(0)
 			if ret := win.GetDIBits(hdc, hBitmap, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
-				panic("GetDIBits get bitmapinfo failed")
+				log.Println("GetDIBits get bitmapinfo failed")
+				return
 			}
 
 			buf := make([]byte, bi.BmiHeader.BiSizeImage)
 			bi.BmiHeader.BiCompression = win.BI_RGB
 			if ret := win.GetDIBits(hdc, hBitmap, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
-				panic("GetDIBits failed")
+				log.Println("GetDIBits failed")
+				mw.ToggleTransparency()
+				mw.ToggleTransparency()
+				goto retry
 			}
 
 			width := int(bi.BmiHeader.BiWidth)

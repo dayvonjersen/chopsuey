@@ -99,7 +99,6 @@ func main() {
 	//  required for transparency:
 	mw.alpha = TRANSPARENCY_DEFAULT_ALPHA
 	win.SetWindowLong(mw.Handle(), win.GWL_EXSTYLE, win.WS_EX_CONTROLPARENT|win.WS_EX_STATICEDGE|win.WS_EX_LAYERED)
-	SetLayeredWindowAttributes(mw.Handle(), 0, 0xff, LWA_ALPHA) // have to do this for the window to draw if aero is disabled
 	win.ShowWindow(mw.Handle(), win.SW_NORMAL)
 
 	// create tab widget
